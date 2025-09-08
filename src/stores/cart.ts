@@ -119,18 +119,22 @@ export const useCartStore = defineStore('cart', () => {
       throw new Error('Carrinho vazio ou cliente não selecionado')
     }
 
+    // Converter produtos para o formato esperado pelo backend
+    const productsMap: Record<number, number> = {}
+    items.value.forEach(item => {
+      if (item.product.id) {
+        productsMap[item.product.id] = item.quantity
+      }
+    })
+
     return {
-      customerId: selectedCustomer.value.id,
+      customerId: selectedCustomer.value.id!,
+      products: productsMap,
+      status: 'PENDING',
       deliveryDate: deliveryDate.value,
-      observations: observations.value,
-      products: items.value.map(item => ({
-        productKey: item.product.key,
-        quantity: item.quantity,
-        unitPrice: item.unitPrice,
-        totalPrice: item.totalPrice
-      })),
-      totalCost: totalCost.value,
-      totalPrice: totalValue.value,
+      cost: totalCost.value,
+      price: totalValue.value,
+      debt: totalValue.value, // Inicialmente toda a quantia é dívida
       profit: totalProfit.value
     }
   }

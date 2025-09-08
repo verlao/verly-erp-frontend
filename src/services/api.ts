@@ -1,11 +1,9 @@
 import axios from 'axios'
 
-// Configuração de URL - alterne entre produção e desenvolvimento conforme necessário
-// export const apiUrl = 'https://verly-service-production.up.railway.app/verly-service'
-export const apiUrl = 'http://localhost:8080/verly-service'
-
-// Para desenvolvimento, você pode usar a variável de ambiente:
-// export const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8080/verly-service'
+// Configuração de URL usando variáveis de ambiente
+// Para produção: VITE_API_URL=https://api.verlyvidracaria.com/verly-service
+// Para desenvolvimento: usa localhost como fallback
+export const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8080/verly-service'
 
 const api = axios.create({
   baseURL: apiUrl,

@@ -101,7 +101,7 @@
       <select
         id="pageSize"
         :value="pageSize"
-        @change="changePageSize($event.target.value)"
+        @change="changePageSize(($event.target as HTMLSelectElement).value)"
         class="px-3 py-1 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-primary focus:border-primary"
       >
         <option value="10">10</option>

@@ -280,13 +280,13 @@ const cartStore = useCartStore()
 
 // Estado local
 const customers = ref<CustomerDTO[]>([])
-const selectedCustomerId = ref('')
+const selectedCustomerId = ref<string | number>('')
 const loading = ref(false)
 const showSuccessModal = ref(false)
 
 // Computed
 const selectedCustomer = computed(() => {
-  return customers.value.find((c: CustomerDTO) => c.id === selectedCustomerId.value) || null
+  return customers.value.find((c: CustomerDTO) => c.id?.toString() === selectedCustomerId.value.toString()) || null
 })
 
 // Lifecycle
@@ -307,7 +307,7 @@ async function loadCustomers() {
 }
 
 function onCustomerChange() {
-  const customer = customers.value.find((c: CustomerDTO) => c.id === selectedCustomerId.value)
+  const customer = customers.value.find((c: CustomerDTO) => c.id?.toString() === selectedCustomerId.value.toString())
   cartStore.setCustomer(customer || null)
 }
 

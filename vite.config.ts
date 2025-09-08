@@ -6,6 +6,7 @@ import path from 'path'
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [vue(), tailwindcss()],
+  base: process.env.NODE_ENV === 'production' ? '/verly/erp/' : '/',
   resolve: {
     alias: {
       '@': path.resolve(process.cwd(), 'src')
