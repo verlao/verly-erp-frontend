@@ -1,0 +1,43 @@
+name: Deploy ERP Frontend to Main Repository
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+        
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+        
+    - name: Install dependencies
+      run: npm ci
+        
+    - name: Build application
+      run: npm run build
+        
+    - name: Copy index.html to 404.html
+      run: cp dist/index.html dist/404.html
+        
+    - name: Deploy to Main Repository GitHub Pages
+      uses: peaceiris/actions-gh-pages@v3
+      with:
+        personal_token: ${{ secrets.DEPLOY_TOKEN }}
+        external_repository: verlao/verly
+        publish_dir: ./dist
+        destination_dir: erp
+        publish_branch: gh-pages
+        
+    - name: Deployment notification
+      run: |
+        echo "✅ ERP Frontend deployed successfully!"
+        echo "🌐 Available at: https://verlao.github.io/verly/erp/"
