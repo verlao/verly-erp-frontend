@@ -1,0 +1,41 @@
+version: '3.8'
+
+services:
+  verly-frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: verly-erp-frontend
+    ports:
+      - "3000:80"
+    environment:
+      - NODE_ENV=production
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - verly-network
+
+  # Nginx reverse proxy (opcional)
+  nginx:
+    image: nginx:alpine
+    container_name: verly-nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./ssl:/etc/nginx/ssl:ro
+    depends_on:
+      - verly-frontend
+    restart: unless-stopped
+    networks:
+      - verly-network
+
+networks:
+  verly-network:
+    driver: bridge
