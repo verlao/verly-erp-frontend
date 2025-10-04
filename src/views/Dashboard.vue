@@ -274,7 +274,7 @@ onMounted(async () => {
     
   } catch (error) {
     console.error('Erro ao carregar dados do dashboard:', error)
-    errorMessage.value = 'Erro ao conectar com o servidor. Verifique se o servidor está rodando em localhost:8080'
+    errorMessage.value = 'Erro ao conectar com o servidor. Verifique sua conexão e tente novamente.'
   } finally {
     loading.value = false
   }

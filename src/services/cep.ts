@@ -1,7 +1,4 @@
-import axios from 'axios'
-
-// Usa a mesma configuração de URL da API principal
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080/verly-service'
+import api from './api'
 
 export interface CepResponse {
   cep: string
@@ -25,7 +22,7 @@ export interface CepValidationResponse {
 class CepService {
   async buscarCep(cep: string): Promise<CepResponse | null> {
     try {
-      const response = await axios.get(`${API_BASE_URL}/cep/${cep}`)
+      const response = await api.get(`/cep/${cep}`)
       return response.data
     } catch (error) {
       console.error('Erro ao buscar CEP:', error)
@@ -35,7 +32,7 @@ class CepService {
 
   async buscarCepComEstrategia(cep: string, estrategia: string = 'default'): Promise<CepResponse | null> {
     try {
-      const response = await axios.get(`${API_BASE_URL}/cep/buscar`, {
+      const response = await api.get(`/cep/buscar`, {
         params: { cep, estrategia }
       })
       return response.data
@@ -47,7 +44,7 @@ class CepService {
 
   async validarCep(cep: string): Promise<CepValidationResponse> {
     try {
-      const response = await axios.post(`${API_BASE_URL}/cep/validar`, { cep })
+      const response = await api.post(`/cep/validar`, { cep })
       return response.data
     } catch (error) {
       console.error('Erro ao validar CEP:', error)
@@ -60,7 +57,7 @@ class CepService {
 
   async verificarStatusServicos(): Promise<string> {
     try {
-      const response = await axios.get(`${API_BASE_URL}/cep/status`)
+      const response = await api.get(`/cep/status`)
       return response.data.status
     } catch (error) {
       console.error('Erro ao verificar status dos serviços:', error)
