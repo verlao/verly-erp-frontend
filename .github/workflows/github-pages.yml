@@ -33,7 +33,8 @@ jobs:
       - name: Build application
         env:
           NODE_ENV: production
-          VITE_API_URL: https://api.verlyvidracaria.com
+          VITE_API_URL: https://api.verlyvidracaria.com/verly-service
+          CUSTOM_DOMAIN: true
         run: npm run build
         
       - name: Copy index.html to 404.html
