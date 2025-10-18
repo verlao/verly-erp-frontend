@@ -24,9 +24,6 @@ COPY nginx.conf /etc/nginx/nginx.conf
 # Copy built application
 COPY --from=builder /app/dist /usr/share/nginx/html
 
-# Copy additional nginx config if exists
-COPY nginx.conf /etc/nginx/conf.d/default.conf 2>/dev/null || true
-
 # Create non-root user
 RUN addgroup -g 1001 -S nodejs && \
     adduser -S nextjs -u 1001
