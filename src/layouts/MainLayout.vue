@@ -109,6 +109,19 @@
             <span :class="{ 'sr-only': isSidebarCollapsed }">Carrinho</span>
           </Button>
         </router-link>
+
+        <router-link v-if="authStore.isAdmin" to="users" custom v-slot="{ navigate, isActive }">
+          <Button
+            @click="navigate"
+            :variant="isActive ? 'secondary' : 'ghost'"
+            class="w-full justify-start transition-all duration-200 hover:scale-105 hover:shadow-md"
+          >
+            <span class="mr-2">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-shield-check"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/><path d="m9 12 2 2 4-4"/></svg>
+            </span>
+            <span :class="{ 'sr-only': isSidebarCollapsed }">Usuários</span>
+          </Button>
+        </router-link>
       </nav>
       <div :class="['absolute bottom-0 p-4 border-t border-border', isSidebarCollapsed ? 'w-16' : 'w-64']">
         <Button @click="logout" variant="ghost" class="w-full justify-start text-destructive hover:text-destructive-foreground hover:bg-destructive">
@@ -217,6 +230,8 @@ const pageTitle = computed(() => {
     return 'Taxas de Cartão'
   } else if (route.path.endsWith('cart')) {
     return 'Carrinho'
+  } else if (route.path.endsWith('users')) {
+    return 'Usuários'
   } else {
     return 'Verly ERP'
   }

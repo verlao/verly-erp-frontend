@@ -62,6 +62,12 @@ const routes = [
         name: 'Cart',
         component: () => import('../views/Cart.vue'),
       },
+      {
+        path: 'users',
+        name: 'Users',
+        component: () => import('../views/Users.vue'),
+        meta: { requiresAdmin: true }
+      },
     ]
   }
 ]
@@ -71,18 +77,47 @@ const router = createRouter({
   routes
 })
 
-// Navigation guard for authentication
+// Navigation guard for authentication and authorization
 router.beforeEach((to, _from, next) => {
   const requiresAuth = to.matched.some(record => record.meta.requiresAuth)
+  const requiresAdmin = to.matched.some(record => record.meta.requiresAdmin)
   const isAuthenticated = localStorage.getItem('token')
-  
+
   // Verificar se o token existe e é válido
   const isValidToken = isAuthenticated && isAuthenticated !== 'undefined' && isAuthenticated !== 'null'
-  
+
   if (requiresAuth && !isValidToken) {
     // Redirecionar para login se tentar acessar rota protegida sem autenticação válida
     next({ path: '/', query: { redirect: to.fullPath } })
-  } else if (to.path === '/' && isValidToken) {
+    return
+  }
+
+  // Verificar se a rota requer ADMIN
+  if (requiresAdmin && isValidToken) {
+    const userStr = localStorage.getItem('user')
+    if (userStr) {
+      try {
+        const user = JSON.parse(userStr)
+        const isAdmin = user.roles && Array.isArray(user.roles) && user.roles.includes('ROLE_ADMIN')
+
+        if (!isAdmin) {
+          // Usuário não tem permissão ADMIN, redirecionar para dashboard
+          next({ path: '/dashboard' })
+          return
+        }
+      } catch (error) {
+        console.error('Erro ao parsear dados do usuário:', error)
+        next({ path: '/dashboard' })
+        return
+      }
+    } else {
+      // Sem dados do usuário, redirecionar para dashboard
+      next({ path: '/dashboard' })
+      return
+    }
+  }
+
+  if (to.path === '/' && isValidToken) {
     // Redirecionar para dashboard se já estiver autenticado e tentar acessar login
     next('/dashboard')
   } else {
