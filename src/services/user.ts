@@ -30,7 +30,7 @@ const userService = {
 
   // Criar novo usuário
   create: async (user: CreateUserRequest): Promise<UserDTO> => {
-    const response = await api.post('/user', user)
+    const response = await api.post('/users', user)
     return response.data
   }
 }
