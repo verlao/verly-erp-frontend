@@ -21,8 +21,8 @@ FROM nginx:alpine
 # Copy built application from builder stage
 COPY --from=builder /app/dist /usr/share/nginx/html
 
-# Copy nginx configuration
-COPY nginx.conf /etc/nginx/nginx.conf
+# Copy optimized nginx configuration for Docker
+COPY nginx.docker.conf /etc/nginx/nginx.conf
 
 # Expose port
 EXPOSE 80
