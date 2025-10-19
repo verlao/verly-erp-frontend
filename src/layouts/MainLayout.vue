@@ -96,19 +96,6 @@
             <span :class="{ 'sr-only': isSidebarCollapsed }">Custos</span>
           </Button>
         </router-link>
-        
-        <router-link to="cart" custom v-slot="{ navigate, isActive }">
-          <Button
-            @click="navigate"
-            :variant="isActive ? 'secondary' : 'ghost'"
-            class="w-full justify-start transition-all duration-200 hover:scale-105 hover:shadow-md"
-          >
-            <span class="mr-2">
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-shopping-cart"><circle cx="8" cy="21" r="1"/><circle cx="19" cy="21" r="1"/><path d="m2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57L23 6H6"/></svg>
-            </span>
-            <span :class="{ 'sr-only': isSidebarCollapsed }">Carrinho</span>
-          </Button>
-        </router-link>
 
         <router-link v-if="authStore.isAdmin" to="users" custom v-slot="{ navigate, isActive }">
           <Button
@@ -139,8 +126,6 @@
         <div class="px-6 py-4 flex justify-between items-center">
           <h2 class="text-2xl font-bold text-foreground">{{ pageTitle }}</h2>
           <div class="flex items-center space-x-4">
-            <CartIcon />
-
             <DropdownMenu>
               <template #trigger>
                 <Button variant="ghost" class="flex items-center space-x-2">
@@ -183,7 +168,6 @@ import { useAuthStore } from '../stores/auth'
 
 import Button from '../components/ui/Button.vue'
 import DropdownMenu from '../components/ui/DropdownMenu.vue'
-import CartIcon from '../components/CartIcon.vue'
 
 
 const router = useRouter()
@@ -228,8 +212,6 @@ const pageTitle = computed(() => {
     return 'Custos de Vidro'
   } else if (route.path.endsWith('credit-card-costs')) {
     return 'Taxas de Cartão'
-  } else if (route.path.endsWith('cart')) {
-    return 'Carrinho'
   } else if (route.path.endsWith('users')) {
     return 'Usuários'
   } else {

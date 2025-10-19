@@ -190,16 +190,8 @@
               <td class="px-6 py-5 font-mono text-purple-600 font-semibold text-sm">{{ calculateProfit(product) }}</td>
               <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                   <div class="flex justify-end space-x-2">
-                    <button 
-                      @click="addToCart(product)" 
-                      class="text-green-600 hover:text-green-900 p-1"
-                      title="Adicionar ao Carrinho"
-                      :disabled="!product.price"
-                    >
-                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="21" r="1"/><circle cx="19" cy="21" r="1"/><path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57L23 6H6"/></svg>
-                    </button>
-                    <button 
-                      @click="openModal(product)" 
+                    <button
+                      @click="openModal(product)"
                       class="text-blue-600 hover:text-blue-900 p-1"
                       title="Editar Produto"
                     >
@@ -530,9 +522,7 @@ import type { ProductCostDTO } from '../services/product-cost'
 import type { PaginatedResponse } from '../services/order'
 import Pagination from '../components/ui/Pagination.vue'
 import EditableCell from '../components/EditableCell.vue'
-import { useCartStore } from '../stores/cart'
 
-const cartStore = useCartStore()
 const products = ref<ProductDTO[]>([])
 const productCosts = ref<ProductCostDTO | null>(null)
 const loading = ref(true)
@@ -789,16 +779,6 @@ async function deleteProduct() {
   } finally {
     deleting.value = false
   }
-}
-
-function addToCart(product: ProductDTO) {
-  if (!product.price) {
-    alert('Este produto não possui preço definido.')
-    return
-  }
-  
-  cartStore.addItem(product, 1)
-  alert(`${product.type} - ${product.color} adicionado ao carrinho!`)
 }
 
 // Funções para edição inline do kit
