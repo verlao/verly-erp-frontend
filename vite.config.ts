@@ -17,9 +17,7 @@ export default defineConfig({
       filename: 'dist/stats.html'
     })
   ],
-  base: process.env.NODE_ENV === 'production'
-    ? (process.env.CUSTOM_DOMAIN === 'true' ? '/' : '/verly/erp/')
-    : '/',
+  base: '/',
   resolve: {
     alias: {
       '@': path.resolve(process.cwd(), 'src')
