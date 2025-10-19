@@ -58,6 +58,9 @@ jobs:
           name: dist-files
           path: dist/
 
+      - name: Use CI dockerignore (allows dist/)
+        run: cp .dockerignore.ci .dockerignore
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
