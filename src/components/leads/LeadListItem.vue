@@ -70,79 +70,79 @@ const priorityClass = computed(() => {
     ]"
     @click="emit('select')"
   >
-    <div class="flex items-start gap-3 p-3">
+    <div class="flex items-start gap-2 md:gap-3 p-2 md:p-3">
       <!-- Checkbox -->
-      <div class="flex items-center pt-1">
+      <div class="flex items-center pt-0.5 md:pt-1">
         <input
           type="checkbox"
           :checked="checked"
-          class="h-4 w-4 rounded border-gray-300 text-primary focus:ring-2 focus:ring-primary focus:ring-offset-0"
+          class="h-3.5 w-3.5 md:h-4 md:w-4 rounded border-gray-300 text-primary focus:ring-2 focus:ring-primary focus:ring-offset-0"
           @click.stop
           @change="emit('toggle')"
         />
       </div>
 
-      <!-- Avatar -->
-      <Avatar :name="lead.name" class="mt-1" />
+      <!-- Avatar - Hidden on very small screens -->
+      <Avatar :name="lead.name" class="mt-0.5 md:mt-1 hidden xs:block h-8 w-8 md:h-10 md:w-10" />
 
       <!-- Main content -->
       <div class="flex-1 min-w-0">
-        <div class="flex items-start justify-between gap-2 mb-1">
-          <div class="flex items-center gap-2 flex-1 min-w-0">
+        <div class="flex items-start justify-between gap-1.5 mb-0.5 md:mb-1">
+          <div class="flex items-center gap-1.5 md:gap-2 flex-1 min-w-0">
             <!-- Unread dot -->
             <span
               v-if="isUnread"
-              class="flex h-2 w-2 shrink-0 rounded-full bg-blue-500"
+              class="flex h-1.5 w-1.5 md:h-2 md:w-2 shrink-0 rounded-full bg-blue-500"
             />
 
-            <h4 :class="['truncate text-sm', isUnread ? 'font-bold' : 'font-semibold']">
+            <h4 :class="['truncate text-xs md:text-sm', isUnread ? 'font-bold' : 'font-semibold']">
               {{ lead.name }}
             </h4>
           </div>
 
-          <div class="flex items-center gap-2 shrink-0">
-            <Badge :variant="statusConfig.variant" class="text-xs">
+          <div class="flex items-center gap-1 md:gap-2 shrink-0">
+            <Badge :variant="statusConfig.variant" class="text-[10px] md:text-xs px-1.5 md:px-2.5 py-0.5">
               {{ statusConfig.label }}
             </Badge>
-            <span class="text-xs text-muted-foreground">
+            <span class="text-[10px] md:text-xs text-muted-foreground whitespace-nowrap">
               {{ timeAgo }}
             </span>
           </div>
         </div>
 
-        <!-- Contact info -->
-        <div class="flex items-center gap-3 text-xs text-muted-foreground mb-1">
-          <span v-if="lead.email" class="flex items-center gap-1 truncate">
-            <Mail class="w-3 h-3 shrink-0" />
-            <span class="truncate">{{ lead.email }}</span>
+        <!-- Contact info - More compact on mobile -->
+        <div class="flex items-center gap-2 md:gap-3 text-[10px] md:text-xs text-muted-foreground mb-0.5 md:mb-1">
+          <span v-if="lead.email" class="flex items-center gap-0.5 md:gap-1 truncate">
+            <Mail class="w-2.5 h-2.5 md:w-3 md:h-3 shrink-0" />
+            <span class="truncate hidden sm:inline">{{ lead.email }}</span>
           </span>
-          <span v-if="lead.phone" class="flex items-center gap-1">
-            <Phone class="w-3 h-3 shrink-0" />
-            {{ lead.phone }}
+          <span v-if="lead.phone" class="flex items-center gap-0.5 md:gap-1">
+            <Phone class="w-2.5 h-2.5 md:w-3 md:h-3 shrink-0" />
+            <span class="hidden xs:inline">{{ lead.phone }}</span>
           </span>
         </div>
 
-        <!-- Description preview -->
-        <p class="text-xs text-muted-foreground line-clamp-2 mb-2">
+        <!-- Description preview - Hidden on very small screens -->
+        <p class="hidden sm:block text-xs text-muted-foreground line-clamp-2 mb-1 md:mb-2">
           {{ lead.description }}
         </p>
 
-        <!-- Location and meta -->
-        <div class="flex items-center gap-3 text-xs text-muted-foreground">
-          <span v-if="lead.neighborhood" class="flex items-center gap-1">
-            <MapPin class="w-3 h-3 shrink-0" />
-            {{ lead.neighborhood }}
+        <!-- Location and meta - More compact on mobile -->
+        <div class="flex items-center gap-2 md:gap-3 text-[10px] md:text-xs text-muted-foreground">
+          <span v-if="lead.neighborhood" class="flex items-center gap-0.5 md:gap-1 truncate">
+            <MapPin class="w-2.5 h-2.5 md:w-3 md:h-3 shrink-0" />
+            <span class="truncate">{{ lead.neighborhood }}</span>
           </span>
-          <span v-if="lead.utmSource" class="flex items-center gap-1">
+          <span v-if="lead.utmSource" class="hidden md:flex items-center gap-1">
             <span class="text-muted-foreground/60">•</span>
             {{ lead.utmSource }}
           </span>
         </div>
       </div>
 
-      <!-- Quick actions (visible on hover) -->
+      <!-- Quick actions (visible on hover) - Hidden on mobile -->
       <div
-        class="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity bg-background/95 p-1 rounded-md shadow-sm"
+        class="hidden md:flex absolute right-3 top-1/2 -translate-y-1/2 items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity bg-background border border-border p-1 rounded-md shadow-lg"
       >
         <button
           v-if="isUnread"

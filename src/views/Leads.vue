@@ -1,9 +1,9 @@
 <template>
   <div class="flex flex-col h-screen">
-    <!-- Header -->
-    <div class="px-6 py-4 border-b border-border bg-background">
-      <h1 class="text-3xl font-bold tracking-tight text-foreground">Leads</h1>
-      <p class="text-sm text-muted-foreground">Gerencie todos os leads do sistema</p>
+    <!-- Header - More compact on mobile -->
+    <div class="px-4 md:px-6 py-3 md:py-4 border-b border-border bg-background">
+      <h1 class="text-2xl md:text-3xl font-bold tracking-tight text-foreground">Leads</h1>
+      <p class="text-xs md:text-sm text-muted-foreground">Gerencie todos os leads do sistema</p>
     </div>
 
     <!-- Filters -->
@@ -43,12 +43,12 @@
         ]"
       >
         <!-- Mobile back button -->
-        <div v-if="isMobile && selectedLead" class="p-3 border-b border-border bg-background">
+        <div v-if="isMobile && selectedLead" class="sticky top-0 z-10 p-3 border-b border-border bg-background">
           <button
-            class="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
+            class="flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
             @click="selectedId = undefined"
           >
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
             </svg>
             Voltar
@@ -67,8 +67,11 @@
       </div>
     </div>
 
-    <!-- Pagination -->
-    <div v-if="totalPages > 1" class="p-4 border-t border-border bg-background">
+    <!-- Pagination - Hidden on mobile when lead is selected -->
+    <div
+      v-if="totalPages > 1 && !(isMobile && selectedLead)"
+      class="p-3 md:p-4 border-t border-border bg-background"
+    >
       <Pagination
         :current-page="currentPage"
         :total-pages="totalPages"
@@ -84,6 +87,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue'
 import { useWindowSize } from '@vueuse/core'
+import { useNotificationStore } from '../stores/notification'
 import LeadList from '../components/leads/LeadList.vue'
 import LeadPreview from '../components/leads/LeadPreview.vue'
 import LeadFilters from '../components/leads/LeadFilters.vue'
@@ -92,6 +96,9 @@ import leadService from '../services/lead'
 import type { LeadDTO, PaginatedResponse, LeadStatus } from '../services/lead'
 import { useLeadSelection } from '../composables/useLeadSelection'
 import { useLeadKeyboard } from '../composables/useLeadKeyboard'
+
+// Notification store
+const notification = useNotificationStore()
 
 // State
 const leads = ref<LeadDTO[]>([])
@@ -257,10 +264,10 @@ const handleConvert = async () => {
     await leadService.convertToCustomer(selectedLead.value.id)
     selectedLead.value.status = 'CONVERTED'
     await fetchCounts()
-    alert('Lead convertido em cliente com sucesso!')
+    notification.success('Lead convertido em cliente com sucesso!')
   } catch (error) {
     console.error('Erro ao converter lead:', error)
-    alert('Erro ao converter lead. Tente novamente.')
+    notification.error('Erro ao converter lead. Tente novamente.')
   }
 }
 
@@ -271,8 +278,10 @@ const handleMarkContacted = async () => {
     await leadService.updateStatus(selectedLead.value.id, 'CONTACTED')
     selectedLead.value.status = 'CONTACTED'
     await fetchCounts()
+    notification.success('Lead marcado como contatado')
   } catch (error) {
     console.error('Erro ao atualizar status:', error)
+    notification.error('Erro ao atualizar status do lead')
   }
 }
 
@@ -283,24 +292,28 @@ const handleMarkQualified = async () => {
     await leadService.updateStatus(selectedLead.value.id, 'QUALIFIED')
     selectedLead.value.status = 'QUALIFIED'
     await fetchCounts()
+    notification.success('Lead marcado como qualificado')
   } catch (error) {
     console.error('Erro ao atualizar status:', error)
+    notification.error('Erro ao atualizar status do lead')
   }
 }
 
 const handleMarkLost = async () => {
   if (!selectedLead.value) return
 
-  if (!confirm('Tem certeza que deseja marcar este lead como perdido?')) {
-    return
-  }
+  // Usar notificação de confirmação ao invés de confirm nativo
+  const confirmLost = confirm('Tem certeza que deseja marcar este lead como perdido?')
+  if (!confirmLost) return
 
   try {
     await leadService.updateStatus(selectedLead.value.id, 'LOST')
     selectedLead.value.status = 'LOST'
     await fetchCounts()
+    notification.warning('Lead marcado como perdido')
   } catch (error) {
     console.error('Erro ao atualizar status:', error)
+    notification.error('Erro ao atualizar status do lead')
   }
 }
 

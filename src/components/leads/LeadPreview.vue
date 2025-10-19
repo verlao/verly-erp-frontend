@@ -89,22 +89,22 @@ const canMarkQualified = computed(() => {
 
     <!-- Lead details -->
     <div v-else class="flex flex-col h-full">
-      <!-- Header -->
-      <div class="p-6 border-b border-border">
-        <div class="flex items-start justify-between mb-4">
-          <div class="flex items-start gap-3 flex-1">
-            <Avatar :name="lead.name" class="h-12 w-12" />
+      <!-- Header - More compact on mobile -->
+      <div class="p-4 md:p-6 border-b border-border">
+        <div class="flex items-start justify-between mb-3 md:mb-4">
+          <div class="flex items-start gap-2 md:gap-3 flex-1">
+            <Avatar :name="lead.name" class="h-10 w-10 md:h-12 md:w-12" />
             <div class="flex-1 min-w-0">
-              <h2 class="text-2xl font-bold text-foreground truncate">{{ lead.name }}</h2>
-              <Badge :variant="statusConfig.variant" class="mt-2">
+              <h2 class="text-lg md:text-2xl font-bold text-foreground truncate">{{ lead.name }}</h2>
+              <Badge :variant="statusConfig.variant" class="mt-1 md:mt-2">
                 {{ statusConfig.label }}
               </Badge>
             </div>
           </div>
         </div>
 
-        <!-- Quick actions -->
-        <div class="flex flex-wrap gap-2">
+        <!-- Quick actions - More compact on mobile -->
+        <div class="flex flex-wrap gap-1.5 md:gap-2">
           <Button
             v-if="canConvert"
             variant="default"
@@ -153,42 +153,42 @@ const canMarkQualified = computed(() => {
         </div>
       </div>
 
-      <!-- Content -->
-      <div class="flex-1 overflow-y-auto p-6 space-y-6">
+      <!-- Content - More compact on mobile -->
+      <div class="flex-1 overflow-y-auto p-4 md:p-6 space-y-4 md:space-y-6">
         <!-- Contact info -->
         <section>
-          <h3 class="text-sm font-semibold text-foreground mb-3">Informações de Contato</h3>
-          <div class="space-y-2">
-            <div v-if="lead.email" class="flex items-center gap-3 text-sm">
-              <Mail class="w-4 h-4 text-muted-foreground shrink-0" />
+          <h3 class="text-xs md:text-sm font-semibold text-foreground mb-2 md:mb-3">Informações de Contato</h3>
+          <div class="space-y-1.5 md:space-y-2">
+            <div v-if="lead.email" class="flex items-center gap-2 md:gap-3 text-xs md:text-sm">
+              <Mail class="w-3.5 h-3.5 md:w-4 md:h-4 text-muted-foreground shrink-0" />
               <a
                 :href="emailLink"
-                class="text-foreground hover:text-primary transition-colors flex items-center gap-1"
+                class="text-foreground hover:text-primary transition-colors flex items-center gap-1 truncate"
                 target="_blank"
               >
-                {{ lead.email }}
-                <ExternalLink class="w-3 h-3" />
+                <span class="truncate">{{ lead.email }}</span>
+                <ExternalLink class="w-2.5 h-2.5 md:w-3 md:h-3 shrink-0" />
               </a>
             </div>
-            <div v-if="lead.phone" class="flex items-center gap-3 text-sm">
-              <Phone class="w-4 h-4 text-muted-foreground shrink-0" />
+            <div v-if="lead.phone" class="flex items-center gap-2 md:gap-3 text-xs md:text-sm">
+              <Phone class="w-3.5 h-3.5 md:w-4 md:h-4 text-muted-foreground shrink-0" />
               <a
                 :href="whatsappLink"
                 class="text-foreground hover:text-primary transition-colors flex items-center gap-1"
                 target="_blank"
               >
                 {{ lead.phone }}
-                <ExternalLink class="w-3 h-3" />
+                <ExternalLink class="w-2.5 h-2.5 md:w-3 md:h-3 shrink-0" />
               </a>
             </div>
-            <div v-if="lead.neighborhood || lead.city" class="flex items-center gap-3 text-sm">
-              <MapPin class="w-4 h-4 text-muted-foreground shrink-0" />
+            <div v-if="lead.neighborhood || lead.city" class="flex items-center gap-2 md:gap-3 text-xs md:text-sm">
+              <MapPin class="w-3.5 h-3.5 md:w-4 md:h-4 text-muted-foreground shrink-0" />
               <span class="text-foreground">
                 {{ lead.neighborhood }}{{ lead.city ? `, ${lead.city}` : '' }}
               </span>
             </div>
-            <div v-if="formattedDate" class="flex items-center gap-3 text-sm">
-              <Calendar class="w-4 h-4 text-muted-foreground shrink-0" />
+            <div v-if="formattedDate" class="flex items-center gap-2 md:gap-3 text-xs md:text-sm">
+              <Calendar class="w-3.5 h-3.5 md:w-4 md:h-4 text-muted-foreground shrink-0" />
               <span class="text-foreground">{{ formattedDate }}</span>
             </div>
           </div>
@@ -198,32 +198,32 @@ const canMarkQualified = computed(() => {
 
         <!-- Description -->
         <section>
-          <h3 class="text-sm font-semibold text-foreground mb-3">Descrição</h3>
-          <p class="text-sm text-foreground leading-relaxed whitespace-pre-wrap">
+          <h3 class="text-xs md:text-sm font-semibold text-foreground mb-2 md:mb-3">Descrição</h3>
+          <p class="text-xs md:text-sm text-foreground leading-relaxed whitespace-pre-wrap">
             {{ lead.description || 'Sem descrição' }}
           </p>
         </section>
 
         <Separator />
 
-        <!-- Tracking info -->
+        <!-- Tracking info - Collapsible on mobile -->
         <section v-if="lead.utmSource || lead.deviceType || lead.referrer">
-          <h3 class="text-sm font-semibold text-foreground mb-3">Informações de Rastreamento</h3>
-          <div class="space-y-2">
-            <div v-if="lead.utmSource" class="flex items-start gap-3 text-sm">
-              <span class="text-muted-foreground shrink-0 w-24">Origem:</span>
+          <h3 class="text-xs md:text-sm font-semibold text-foreground mb-2 md:mb-3">Informações de Rastreamento</h3>
+          <div class="space-y-1.5 md:space-y-2">
+            <div v-if="lead.utmSource" class="flex items-start gap-2 md:gap-3 text-xs md:text-sm">
+              <span class="text-muted-foreground shrink-0 w-20 md:w-24">Origem:</span>
               <span class="text-foreground">{{ lead.utmSource }}</span>
             </div>
-            <div v-if="lead.utmMedium" class="flex items-start gap-3 text-sm">
-              <span class="text-muted-foreground shrink-0 w-24">Mídia:</span>
+            <div v-if="lead.utmMedium" class="flex items-start gap-2 md:gap-3 text-xs md:text-sm">
+              <span class="text-muted-foreground shrink-0 w-20 md:w-24">Mídia:</span>
               <span class="text-foreground">{{ lead.utmMedium }}</span>
             </div>
-            <div v-if="lead.utmCampaign" class="flex items-start gap-3 text-sm">
-              <span class="text-muted-foreground shrink-0 w-24">Campanha:</span>
+            <div v-if="lead.utmCampaign" class="flex items-start gap-2 md:gap-3 text-xs md:text-sm">
+              <span class="text-muted-foreground shrink-0 w-20 md:w-24">Campanha:</span>
               <span class="text-foreground">{{ lead.utmCampaign }}</span>
             </div>
-            <div v-if="lead.deviceType" class="flex items-start gap-3 text-sm">
-              <Monitor class="w-4 h-4 text-muted-foreground shrink-0 mt-0.5" />
+            <div v-if="lead.deviceType" class="flex items-start gap-2 md:gap-3 text-xs md:text-sm">
+              <Monitor class="w-3.5 h-3.5 md:w-4 md:h-4 text-muted-foreground shrink-0 mt-0.5" />
               <span class="text-foreground">
                 {{ lead.deviceType }}
                 <span v-if="lead.screenWidth && lead.screenHeight" class="text-muted-foreground">
@@ -231,8 +231,8 @@ const canMarkQualified = computed(() => {
                 </span>
               </span>
             </div>
-            <div v-if="lead.referrer" class="flex items-start gap-3 text-sm">
-              <span class="text-muted-foreground shrink-0 w-24">Referrer:</span>
+            <div v-if="lead.referrer" class="flex items-start gap-2 md:gap-3 text-xs md:text-sm">
+              <span class="text-muted-foreground shrink-0 w-20 md:w-24">Referrer:</span>
               <span class="text-foreground break-all">{{ lead.referrer }}</span>
             </div>
           </div>
@@ -242,10 +242,11 @@ const canMarkQualified = computed(() => {
 
         <!-- Danger zone -->
         <section v-if="canConvert">
-          <h3 class="text-sm font-semibold text-foreground mb-3">Zona de Perigo</h3>
+          <h3 class="text-xs md:text-sm font-semibold text-foreground mb-2 md:mb-3">Zona de Perigo</h3>
           <Button
             variant="destructive"
             size="sm"
+            class="w-full md:w-auto"
             @click="emit('markLost')"
           >
             Marcar como Perdido
