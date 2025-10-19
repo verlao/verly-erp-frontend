@@ -1,12 +1,22 @@
 <template>
-  <div class="flex flex-col h-screen">
-    <!-- Header - More compact on mobile -->
-    <div class="px-4 md:px-6 py-3 md:py-4 border-b border-border bg-background">
-      <h1 class="text-2xl md:text-3xl font-bold tracking-tight text-foreground">Leads</h1>
-      <p class="text-xs md:text-sm text-muted-foreground">Gerencie todos os leads do sistema</p>
+  <div>
+    <!-- Header inline (padrão do projeto) -->
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+      <div>
+        <h1 class="text-2xl font-semibold text-gray-900">Leads</h1>
+        <p class="text-sm text-gray-600 mt-1">Gerencie leads e converta em clientes</p>
+      </div>
+
+      <!-- Ações em lote -->
+      <div v-if="checkedIds.length > 0" class="flex items-center gap-2">
+        <span class="text-sm text-gray-600">{{ checkedIds.length }} selecionado(s)</span>
+        <Button variant="outline" size="sm" @click="clearSelection">
+          Limpar Seleção
+        </Button>
+      </div>
     </div>
 
-    <!-- Filters -->
+    <!-- Filtros inline -->
     <LeadFilters
       v-model:search="search"
       v-model:status-filter="statusFilter"
@@ -14,64 +24,54 @@
       @clear="clearFilters"
     />
 
-    <!-- Main content - Split view -->
-    <div class="flex-1 flex overflow-hidden">
-      <!-- Master panel - Lead list -->
-      <div
-        :class="[
-          'border-r border-border bg-background transition-all duration-200',
-          isMobile ? (selectedLead ? 'hidden' : 'w-full') : 'w-full md:w-2/5 lg:w-1/3'
-        ]"
-      >
+    <!-- Conteúdo Principal: Card com Split View -->
+    <div class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+      <!-- Desktop: Split View -->
+      <div class="hidden md:flex" style="height: calc(100vh - 360px)">
+        <!-- Lista Leads (40%) -->
+        <div class="w-2/5 border-r border-gray-200 overflow-y-auto">
+          <LeadList
+            :leads="filteredLeads"
+            :selected-id="selectedId"
+            :checked-ids="checkedIds"
+            :loading="loading"
+            @select="handleSelectLead"
+            @toggle="toggleCheck"
+            @toggle-all="toggleAll"
+            @quick-action="handleQuickAction"
+          />
+        </div>
+
+        <!-- Preview (60%) -->
+        <div class="flex-1 overflow-y-auto bg-gray-50">
+          <LeadPreview
+            :lead="selectedLead"
+            @convert="handleConvert"
+            @mark-contacted="handleMarkContacted"
+            @mark-qualified="handleMarkQualified"
+            @mark-lost="handleMarkLost"
+            @open-whatsapp="handleOpenWhatsapp"
+            @send-email="handleSendEmail"
+          />
+        </div>
+      </div>
+
+      <!-- Mobile: Lista Only -->
+      <div class="md:hidden max-h-[600px] overflow-y-auto">
         <LeadList
           :leads="filteredLeads"
           :selected-id="selectedId"
           :checked-ids="checkedIds"
           :loading="loading"
-          @select="handleSelectLead"
+          @select="openMobilePreview"
           @toggle="toggleCheck"
           @toggle-all="toggleAll"
-          @quick-action="handleQuickAction"
-        />
-      </div>
-
-      <!-- Detail panel - Lead preview -->
-      <div
-        :class="[
-          'bg-muted/20 transition-all duration-200',
-          isMobile ? (selectedLead ? 'w-full' : 'hidden') : 'flex-1'
-        ]"
-      >
-        <!-- Mobile back button -->
-        <div v-if="isMobile && selectedLead" class="sticky top-0 z-10 p-3 border-b border-border bg-background">
-          <button
-            class="flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
-            @click="selectedId = undefined"
-          >
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
-            </svg>
-            Voltar
-          </button>
-        </div>
-
-        <LeadPreview
-          :lead="selectedLead"
-          @convert="handleConvert"
-          @mark-contacted="handleMarkContacted"
-          @mark-qualified="handleMarkQualified"
-          @mark-lost="handleMarkLost"
-          @open-whatsapp="handleOpenWhatsapp"
-          @send-email="handleSendEmail"
         />
       </div>
     </div>
 
-    <!-- Pagination - Hidden on mobile when lead is selected -->
-    <div
-      v-if="totalPages > 1 && !(isMobile && selectedLead)"
-      class="p-3 md:p-4 border-t border-border bg-background"
-    >
+    <!-- Paginação -->
+    <div v-if="totalPages > 1" class="mt-4 flex justify-center">
       <Pagination
         :current-page="currentPage"
         :total-pages="totalPages"
@@ -81,6 +81,27 @@
         @page-size-changed="handlePageSizeChange"
       />
     </div>
+
+    <!-- Mobile: Dialog Preview -->
+    <Dialog v-model:open="showMobilePreview">
+      <DialogHeader class="relative">
+        <DialogTitle>{{ selectedLead?.name || 'Detalhes do Lead' }}</DialogTitle>
+        <DialogClose @click="showMobilePreview = false" />
+      </DialogHeader>
+      <DialogContent>
+        <LeadPreview
+          v-if="selectedLead"
+          :lead="selectedLead"
+          :is-mobile="true"
+          @convert="handleConvert"
+          @mark-contacted="handleMarkContacted"
+          @mark-qualified="handleMarkQualified"
+          @mark-lost="handleMarkLost"
+          @open-whatsapp="handleOpenWhatsapp"
+          @send-email="handleSendEmail"
+        />
+      </DialogContent>
+    </Dialog>
   </div>
 </template>
 
@@ -92,8 +113,14 @@ import LeadList from '../components/leads/LeadList.vue'
 import LeadPreview from '../components/leads/LeadPreview.vue'
 import LeadFilters from '../components/leads/LeadFilters.vue'
 import Pagination from '../components/ui/Pagination.vue'
+import Button from '../components/ui/Button.vue'
+import Dialog from '../components/ui/Dialog.vue'
+import DialogHeader from '../components/ui/DialogHeader.vue'
+import DialogContent from '../components/ui/DialogContent.vue'
+import DialogTitle from '../components/ui/DialogTitle.vue'
+import DialogClose from '../components/ui/DialogClose.vue'
 import leadService from '../services/lead'
-import type { LeadDTO, PaginatedResponse, LeadStatus } from '../services/lead'
+import type { LeadDTO, PaginatedResponse } from '../services/lead'
 import { useLeadSelection } from '../composables/useLeadSelection'
 import { useLeadKeyboard } from '../composables/useLeadKeyboard'
 
@@ -105,6 +132,7 @@ const leads = ref<LeadDTO[]>([])
 const loading = ref(true)
 const search = ref('')
 const statusFilter = ref('all')
+const showMobilePreview = ref(false)
 const counts = ref({
   all: 0,
   new: 0,
@@ -128,6 +156,7 @@ const {
   selectLead,
   toggleCheck,
   toggleAll,
+  clearSelection,
   selectNext,
   selectPrevious
 } = useLeadSelection(leads)
@@ -231,6 +260,17 @@ const handleSelectLead = (lead: LeadDTO) => {
   }
 }
 
+const openMobilePreview = (lead: LeadDTO) => {
+  selectLead(lead)
+  showMobilePreview.value = true
+
+  // Marcar como lido
+  if (!lead.isRead) {
+    leadService.markAsRead(lead.id).catch(console.error)
+    lead.isRead = true
+  }
+}
+
 const handleQuickAction = async (leadId: number, action: string) => {
   const lead = leads.value.find(l => l.id === leadId)
   if (!lead) return
@@ -265,6 +305,9 @@ const handleConvert = async () => {
     selectedLead.value.status = 'CONVERTED'
     await fetchCounts()
     notification.success('Lead convertido em cliente com sucesso!')
+    if (isMobile.value) {
+      showMobilePreview.value = false
+    }
   } catch (error) {
     console.error('Erro ao converter lead:', error)
     notification.error('Erro ao converter lead. Tente novamente.')
@@ -302,7 +345,6 @@ const handleMarkQualified = async () => {
 const handleMarkLost = async () => {
   if (!selectedLead.value) return
 
-  // Usar notificação de confirmação ao invés de confirm nativo
   const confirmLost = confirm('Tem certeza que deseja marcar este lead como perdido?')
   if (!confirmLost) return
 
@@ -311,6 +353,9 @@ const handleMarkLost = async () => {
     selectedLead.value.status = 'LOST'
     await fetchCounts()
     notification.warning('Lead marcado como perdido')
+    if (isMobile.value) {
+      showMobilePreview.value = false
+    }
   } catch (error) {
     console.error('Erro ao atualizar status:', error)
     notification.error('Erro ao atualizar status do lead')
@@ -348,6 +393,16 @@ const handlePageSizeChange = (size: number) => {
 useLeadKeyboard({
   onNext: selectNext,
   onPrevious: selectPrevious,
+  onOpen: () => {
+    if (isMobile.value && selectedLead.value) {
+      showMobilePreview.value = true
+    }
+  },
+  onClose: () => {
+    if (isMobile.value) {
+      showMobilePreview.value = false
+    }
+  },
   onMarkRead: () => {
     if (selectedLead.value && !selectedLead.value.isRead) {
       leadService.markAsRead(selectedLead.value.id)
@@ -364,7 +419,6 @@ useLeadKeyboard({
 
 // Watch for filter changes
 watch([search, statusFilter], () => {
-  // Reset para primeira página quando filtrar
   if (currentPage.value !== 1) {
     currentPage.value = 1
   }
@@ -376,7 +430,3 @@ onMounted(async () => {
   await fetchCounts()
 })
 </script>
-
-<style scoped>
-/* Animações já estão no Tailwind */
-</style>
