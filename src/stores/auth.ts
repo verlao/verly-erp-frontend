@@ -20,15 +20,25 @@ export const useAuthStore = defineStore('auth', {
     try {
       // Verificar se há um item 'user' no localStorage e se é uma string válida
       const userStr = localStorage.getItem('user');
+      console.log('=== STORE INITIALIZATION ===')
+      console.log('userStr from localStorage:', userStr)
+
       if (userStr && userStr !== 'undefined' && userStr !== 'null') {
         user = JSON.parse(userStr);
+        console.log('Parsed user:', user)
+        console.log('User roles:', user?.roles)
+        console.log('User roles type:', typeof user?.roles)
+        console.log('User roles isArray:', Array.isArray(user?.roles))
+      } else {
+        console.log('No valid user in localStorage')
       }
+      console.log('============================')
     } catch (e) {
       console.error('Erro ao fazer parse do usuário:', e);
       // Limpar o item inválido do localStorage
       localStorage.removeItem('user');
     }
-    
+
     return {
       token: localStorage.getItem('token'),
       user,
@@ -50,7 +60,16 @@ export const useAuthStore = defineStore('auth', {
         // Importar a instância api configurada
         const api = (await import('../services/api')).default
         const response = await api.post('/login-v2', { username, password })
-        console.log('Login response:', response.data) // Adicionado para depuração
+
+        // Logs detalhados para debug
+        console.log('=== LOGIN DEBUG ===')
+        console.log('Response completo:', response)
+        console.log('Response.data:', response.data)
+        console.log('Response.data type:', typeof response.data)
+        console.log('Response.data.roles:', response.data?.roles)
+        console.log('Response.data.roles type:', typeof response.data?.roles)
+        console.log('Response.data.roles isArray:', Array.isArray(response.data?.roles))
+        console.log('===================')
 
         // Verificar se a resposta contém os dados necessários
         if (!response.data || !response.data.accessToken) {
@@ -61,8 +80,15 @@ export const useAuthStore = defineStore('auth', {
         const accessToken = responseData.accessToken
         const responseUsername = responseData.username
         const responseRoles = responseData.roles || [] // Pegar roles do backend
+
+        console.log('Roles extraídos:', responseRoles)
+        console.log('Roles extraídos length:', responseRoles.length)
+
         const token = accessToken
         const user = { username: responseUsername, id: 0, roles: responseRoles }
+
+        console.log('User object criado:', user)
+        console.log('User.roles:', user.roles)
 
         this.token = token
         this.user = user
@@ -73,7 +99,14 @@ export const useAuthStore = defineStore('auth', {
 
         // Salvar novos valores
         localStorage.setItem('token', token)
-        localStorage.setItem('user', JSON.stringify(user))
+        const userJson = JSON.stringify(user)
+        console.log('Salvando user no localStorage:', userJson)
+        localStorage.setItem('user', userJson)
+
+        // Verificar o que foi salvo
+        const savedUser = localStorage.getItem('user')
+        console.log('User salvo no localStorage:', savedUser)
+        console.log('User parsed do localStorage:', JSON.parse(savedUser!))
 
         axios.defaults.headers.common['Authorization'] = `Bearer ${token}`
 
