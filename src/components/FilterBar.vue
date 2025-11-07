@@ -34,36 +34,27 @@
       <!-- Type Filter -->
       <div class="w-full lg:w-48">
         <Select
-          :model-value="localType"
+          v-model="localType"
           @update:model-value="handleTypeChange"
           placeholder="Todos os tipos"
         >
-          <template #trigger="{ value }">
-            <span :class="value ? '' : 'text-muted-foreground'">
-              {{ value || 'Todos os tipos' }}
-            </span>
-          </template>
           <SelectItem value="">Todos os tipos</SelectItem>
           <SelectItem value="PORTA">Porta</SelectItem>
           <SelectItem value="JANELA">Janela</SelectItem>
           <SelectItem value="SACADA">Sacada</SelectItem>
           <SelectItem value="BASCULANTE">Basculante</SelectItem>
           <SelectItem value="FIXO">Fixo</SelectItem>
+          <SelectItem value="BOX">Box</SelectItem>
         </Select>
       </div>
 
       <!-- Color Filter -->
       <div class="w-full lg:w-48">
         <Select
-          :model-value="localColor"
+          v-model="localColor"
           @update:model-value="handleColorChange"
           placeholder="Todas as cores"
         >
-          <template #trigger="{ value }">
-            <span :class="value ? '' : 'text-muted-foreground'">
-              {{ value || 'Todas as cores' }}
-            </span>
-          </template>
           <SelectItem value="">Todas as cores</SelectItem>
           <SelectItem value="INCOLOR">Incolor</SelectItem>
           <SelectItem value="VERDE">Verde</SelectItem>

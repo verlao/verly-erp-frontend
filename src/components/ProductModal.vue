@@ -18,16 +18,13 @@
                 id="type"
                 placeholder="Selecione o tipo"
               >
-                <template #trigger="{ value }">
-                  <span :class="value ? '' : 'text-muted-foreground'">
-                    {{ value ? typeLabels[value as keyof typeof typeLabels] : 'Selecione o tipo' }}
-                  </span>
-                </template>
+                <SelectItem value="">Selecione o tipo</SelectItem>
                 <SelectItem value="PORTA">Porta</SelectItem>
                 <SelectItem value="JANELA">Janela</SelectItem>
                 <SelectItem value="SACADA">Sacada</SelectItem>
                 <SelectItem value="BASCULANTE">Basculante</SelectItem>
                 <SelectItem value="FIXO">Fixo</SelectItem>
+                <SelectItem value="BOX">Box</SelectItem>
               </Select>
             </div>
 
@@ -78,11 +75,7 @@
                 id="color"
                 placeholder="Selecione a cor"
               >
-                <template #trigger="{ value }">
-                  <span :class="value ? '' : 'text-muted-foreground'">
-                    {{ value ? colorLabels[value as keyof typeof colorLabels] : 'Selecione a cor' }}
-                  </span>
-                </template>
+                <SelectItem value="">Selecione a cor</SelectItem>
                 <SelectItem value="INCOLOR">Incolor</SelectItem>
                 <SelectItem value="VERDE">Verde</SelectItem>
                 <SelectItem value="FUME">Fumê</SelectItem>

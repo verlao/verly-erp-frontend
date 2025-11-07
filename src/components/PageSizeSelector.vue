@@ -8,9 +8,6 @@
       @update:model-value="handleChange"
       class="w-20"
     >
-      <template #trigger="{ value }">
-        <span>{{ value }}</span>
-      </template>
       <SelectItem
         v-for="option in options"
         :key="option"
@@ -23,7 +20,6 @@
 </template>
 
 <script setup lang="ts">
-import { provide } from 'vue'
 import Select from './ui/Select.vue'
 import SelectItem from './ui/SelectItem.vue'
 
@@ -38,20 +34,6 @@ const props = withDefaults(defineProps<{
 const emit = defineEmits<{
   'update:modelValue': [value: number]
 }>()
-
-// Provide emit and close functions for SelectItem
-provide('select-emit', (event: string, value: string | number) => {
-  if (event === 'update:modelValue') {
-    handleChange(value)
-  }
-})
-
-const selectRef = { isOpen: false, close: () => {} }
-provide('select-close', () => {
-  if (selectRef && typeof selectRef.close === 'function') {
-    selectRef.close()
-  }
-})
 
 const handleChange = (value: string | number) => {
   const numValue = typeof value === 'string' ? parseInt(value) : value
