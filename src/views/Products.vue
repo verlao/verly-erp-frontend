@@ -119,7 +119,7 @@
               </tr>
             </thead>
             <tbody class="bg-white divide-y divide-gray-200">
-              <tr v-for="product in filteredProducts" :key="product.key" :data-product-key="product.key" class="hover:bg-gray-50">
+              <tr v-for="product in filteredProducts" :key="product.id || product.key" :data-product-id="product.id" :data-product-key="product.key" class="hover:bg-gray-50">
               <td class="px-6 py-5 font-medium text-gray-900 text-sm">
                 <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium" :class="{
                   'bg-blue-100 text-blue-800': product.type === 'PORTA',
@@ -151,8 +151,8 @@
                 </span>
               </td>
               <td class="px-6 py-5 text-gray-700 text-sm">
-                <input 
-                  v-if="editingKit === product.key"
+                <input
+                  v-if="editingKit === (product.id?.toString() || product.key)"
                   v-model="editKitValue"
                   @blur="saveKitValue()"
                   @keyup.enter="saveKitValue()"
@@ -162,12 +162,12 @@
                   ref="kitInput"
                   autofocus
                 />
-                <span 
+                <span
                   v-else
                   @click="startKitEdit(product)"
                   class="cursor-pointer hover:bg-gray-100 px-2 py-1 rounded"
                 >
-                  {{ formatCurrency(product.kit) }}
+                  {{ formatCurrency(product.accessory ?? product.kit) }}
                 </span>
               </td>
               <td class="px-6 py-5 font-mono text-blue-600 text-sm">
@@ -542,11 +542,13 @@ const totalItems = ref(0)
 const totalPages = ref(0)
 
 const currentProduct = ref<ProductDTO>({
+  id: undefined,
   key: '',
   category: '',
   type: '',
   sheets: 0,
-  kit: 0,
+  accessory: 0,  // New field name
+  kit: 0,        // Backward compatibility alias
   width: 0,
   height: 0,
   weight: 0,
@@ -697,31 +699,36 @@ function applyFilters() {
 function openModal(product?: ProductDTO) {
   if (product) {
     currentProduct.value = { ...product }
-    // Debug: Log do produto original
-    console.log('openModal - Produto original:', product)
-    console.log('openModal - Kit do produto:', product.kit)
-    console.log('openModal - currentProduct após cópia:', currentProduct.value)
-    console.log('openModal - Kit do currentProduct:', currentProduct.value.kit)
-    
-    // Sincronizar o valor do kit para o input com máscara
-    kitInputValue.value = product.kit ? `R$ ${product.kit.toFixed(2).replace('.', ',')}` : ''
-    console.log('openModal - kitInputValue definido como:', kitInputValue.value)
+
+    // Sync accessory and kit for backward compatibility
+    if (product.accessory !== undefined) {
+      currentProduct.value.kit = product.accessory
+    } else if (product.kit !== undefined) {
+      currentProduct.value.accessory = product.kit
+    }
+
+    // Sincronizar o valor do kit/accessory para o input com máscara
+    const kitValue = product.accessory ?? product.kit
+    kitInputValue.value = kitValue ? `R$ ${kitValue.toFixed(2).replace('.', ',')}` : ''
     isEditing.value = true
   } else {
     currentProduct.value = {
+      id: undefined,
       key: '',
-    category: '',
-    type: '',
-    sheets: 0,
-    kit: 0,
-    width: 0,
-    height: 0,
-    weight: 0,
-    measure: 0,
-    color: '',
-    cost: 0,
+      category: '',
+      type: '',
+      sheets: 0,
+      accessory: 0,
+      kit: 0,
+      width: 0,
+      height: 0,
+      weight: 0,
+      measure: 0,
+      color: '',
+      cost: 0,
       price: 0,
       profit: 0,
+      laborValue: 0,
       createdDate: '',
       installments: []
     }
@@ -734,21 +741,27 @@ function openModal(product?: ProductDTO) {
 async function saveProduct() {
   try {
     saving.value = true
-    
-    // Debug: Log do payload que será enviado
-    console.log('Payload sendo enviado:', JSON.stringify(currentProduct.value, null, 2))
-    console.log('Kit value:', currentProduct.value.kit)
-    console.log('Kit input value:', kitInputValue.value)
-    
-    if (isEditing.value && currentProduct.value.key) {
-      await productService.update(currentProduct.value.key, currentProduct.value)
+
+    // Sync accessory with kit value before saving
+    if (currentProduct.value.kit !== undefined) {
+      currentProduct.value.accessory = currentProduct.value.kit
+    } else if (currentProduct.value.accessory !== undefined) {
+      currentProduct.value.kit = currentProduct.value.accessory
+    }
+
+    // Use id or key for updates
+    const identifier = currentProduct.value.id?.toString() || currentProduct.value.key
+
+    if (isEditing.value && identifier) {
+      await productService.update(identifier, currentProduct.value)
     } else {
       const response = await productService.create(currentProduct.value)
-      if (response && response.key) {
-        currentProduct.value.key = response.key
+      if (response && (response.id || response.key)) {
+        currentProduct.value.id = response.id
+        currentProduct.value.key = response.key || response.id?.toString()
       }
     }
-    
+
     showModal.value = false
     await loadProducts()
   } catch (error) {
@@ -765,11 +778,12 @@ function confirmDelete(product: ProductDTO) {
 }
 
 async function deleteProduct() {
-  if (!productToDelete.value?.key) return
-  
+  const identifier = productToDelete.value?.id?.toString() || productToDelete.value?.key
+  if (!identifier) return
+
   try {
     deleting.value = true
-    await productService.delete(productToDelete.value.key)
+    await productService.delete(identifier)
     showDeleteModal.value = false
     productToDelete.value = null
     await loadProducts()
@@ -783,9 +797,13 @@ async function deleteProduct() {
 
 // Funções para edição inline do kit
 function startKitEdit(product: ProductDTO) {
-  editingKit.value = product.key || null
-  editKitValue.value = product.kit?.toString() || ''
-  
+  const identifier = product.id?.toString() || product.key
+  editingKit.value = identifier || null
+
+  // Use accessory or kit value
+  const kitValue = product.accessory ?? product.kit
+  editKitValue.value = kitValue?.toString() || ''
+
   // Garantir que o input receba foco após o DOM ser atualizado
   nextTick(() => {
     const input = document.querySelector(`input[ref="kitInput"]`) as HTMLInputElement
@@ -798,41 +816,48 @@ function startKitEdit(product: ProductDTO) {
 
 async function saveKitValue() {
   if (!editingKit.value) return
-  
-  const product = products.value.find(p => p.key === editingKit.value)
+
+  const product = products.value.find(p =>
+    (p.id?.toString() === editingKit.value) || (p.key === editingKit.value)
+  )
   if (!product) return
-  
-  const oldKitValue = product.kit
-  
+
+  const oldKitValue = product.accessory ?? product.kit
+
   try {
     const parsedValue = editKitValue.value.trim() === '' ? null : parseFloat(editKitValue.value)
-    
+
     if (editKitValue.value.trim() !== '' && (isNaN(parsedValue!) || parsedValue! < 0)) {
       alert('Por favor, insira um valor válido para o kit')
       return
     }
-    
-    // Atualizar o produto localmente primeiro
-     product.kit = parsedValue ?? undefined
-    
+
+    // Atualizar ambos kit e accessory localmente
+    product.accessory = parsedValue ?? undefined
+    product.kit = parsedValue ?? undefined
+
     // Chamar o serviço para atualizar no backend
-    const updatedProduct = await productService.update(product.key!, product)
-    
+    const identifier = product.id?.toString() || product.key
+    const updatedProduct = await productService.update(identifier!, product)
+
     // Atualizar o produto na lista local com os dados retornados do backend
-    const productIndex = products.value.findIndex(p => p.key === product.key)
+    const productIndex = products.value.findIndex(p =>
+      (p.id === product.id) || (p.key === product.key)
+    )
     if (productIndex !== -1) {
       products.value[productIndex] = updatedProduct
     }
-    
+
     // Limpar o estado de edição
     editingKit.value = null
     editKitValue.value = ''
   } catch (error) {
     console.error('Erro ao salvar kit:', error)
-    
+
     // Reverter a mudança local em caso de erro
+    product.accessory = oldKitValue
     product.kit = oldKitValue
-    
+
     alert('Erro ao salvar o valor do kit. Tente novamente.')
   }
 }
@@ -864,28 +889,26 @@ function calculateInstallmentPrice(price: number | undefined): number {
 function handleKitInput(event: Event) {
   const target = event.target as HTMLInputElement
   let value = target.value
-  
+
   // Remove tudo que não é dígito
   value = value.replace(/\D/g, '')
-  
+
   if (value === '') {
     kitInputValue.value = ''
     currentProduct.value.kit = 0
+    currentProduct.value.accessory = 0
     return
   }
-  
+
   // Converte para número e divide por 100 para ter centavos
   const numericValue = parseInt(value) / 100
-  
+
   // Formata como moeda brasileira
   kitInputValue.value = `R$ ${numericValue.toFixed(2).replace('.', ',')}`
+
+  // Update both fields for backward compatibility
   currentProduct.value.kit = numericValue
-  
-  // Debug: Log para verificar os valores
-  console.log('handleKitInput - Raw value:', target.value)
-  console.log('handleKitInput - Cleaned value:', value)
-  console.log('handleKitInput - Numeric value:', numericValue)
-  console.log('handleKitInput - currentProduct.kit:', currentProduct.value.kit)
+  currentProduct.value.accessory = numericValue
 }
 
 // Função para lidar com edição inline dos valores dos vidros

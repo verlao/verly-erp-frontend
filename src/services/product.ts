@@ -3,72 +3,118 @@ import type { PaginatedResponse, PaginationParams } from './order'
 
 export interface ProductDTO {
   id?: number
-  key?: string
-  name?: string
+  key?: string // Deprecated - kept for backward compatibility
   category?: string
   type?: string
   sheets?: number
-  kit?: number
+  accessory?: number // Renamed from "kit" to match backend
+  kit?: number // Deprecated alias for accessory (for backward compatibility)
   width?: number
   height?: number
   weight?: number
-  measure?: number
+  measure?: number // Calculated field from backend
   color?: string
-  cost?: number
-  price?: number
-  profit?: number
-  laborValue?: number
+  cost?: number // Calculated field from backend
+  price?: number // Calculated field from backend
+  profit?: number // Calculated field from backend
+  laborValue?: number // Calculated field from backend
   createdDate?: string
-  installments?: any[]
+  installments?: any[] // Calculated field from backend
+}
+
+// Helper function to normalize product data between old and new API contracts
+export function normalizeProduct(product: ProductDTO): ProductDTO {
+  // Sync accessory <-> kit for backward compatibility
+  if (product.accessory !== undefined && product.kit === undefined) {
+    product.kit = product.accessory
+  } else if (product.kit !== undefined && product.accessory === undefined) {
+    product.accessory = product.kit
+  }
+
+  // Use id as key if key is not present
+  if (!product.key && product.id) {
+    product.key = product.id.toString()
+  }
+
+  return product
+}
+
+// Helper function to prepare product payload for API
+export function prepareProductPayload(product: ProductDTO): any {
+  const payload: any = {
+    id: product.id,
+    category: product.category,
+    type: product.type,
+    sheets: product.sheets,
+    accessory: product.accessory ?? product.kit, // Use accessory, fallback to kit
+    width: product.width,
+    height: product.height,
+    weight: product.weight,
+    color: product.color
+  }
+
+  // Remove undefined values
+  Object.keys(payload).forEach(key => {
+    if (payload[key] === undefined) {
+      delete payload[key]
+    }
+  })
+
+  return payload
 }
 
 const productService = {
   getAll: async (params?: PaginationParams & { type?: string; color?: string }): Promise<PaginatedResponse<ProductDTO>> => {
     const queryParams = new URLSearchParams()
-    
+
     if (params?.type) queryParams.append('type', params.type)
     if (params?.color) queryParams.append('color', params.color)
     if (params?.page !== undefined) queryParams.append('page', params.page.toString())
     if (params?.size !== undefined) queryParams.append('size', params.size.toString())
-    
+
     const url = queryParams.toString() ? `/products?${queryParams.toString()}` : '/products'
     const response = await api.get(url)
-    console.log('getAll - Response data:', response.data)
-    if (response.data?.content && response.data.content.length > 0) {
-      console.log('getAll - First product kit:', response.data.content[0]?.kit)
+
+    // Normalize products for backward compatibility
+    if (response.data?.content) {
+      response.data.content = response.data.content.map(normalizeProduct)
     }
+
     return response.data
   },
   
   getAllNonPaginated: async (params?: { type?: string; color?: string }) => {
     const queryParams = new URLSearchParams()
-    
+
     if (params?.type) queryParams.append('type', params.type)
     if (params?.color) queryParams.append('color', params.color)
-    
+
     const url = queryParams.toString() ? `/products?${queryParams.toString()}` : '/products'
     const response = await api.get(url)
+
+    // Normalize products for backward compatibility
+    if (Array.isArray(response.data)) {
+      response.data = response.data.map(normalizeProduct)
+    }
+
     return response.data
   },
-  
+
   getByKey: async (key: string) => {
     const response = await api.get(`/products/${key}`)
-    console.log('getByKey - Response data:', response.data)
-    console.log('getByKey - Kit value:', response.data?.kit)
-    return response.data
+    return normalizeProduct(response.data)
   },
-  
+
   create: async (product: ProductDTO) => {
-    const response = await api.post('/products', product)
-    return response.data
+    const payload = prepareProductPayload(product)
+    const response = await api.post('/products', payload)
+    return normalizeProduct(response.data)
   },
-  
+
   update: async (key: string, product: ProductDTO) => {
-    console.log('ProductService.update - Key:', key)
-    console.log('ProductService.update - Product payload:', JSON.stringify(product, null, 2))
-    console.log('ProductService.update - Kit value:', product.kit)
-    const response = await api.put(`/products/${key}`, product)
-    return response.data
+    const payload = prepareProductPayload(product)
+    const response = await api.put(`/products/${key}`, payload)
+    return normalizeProduct(response.data)
   },
   
   delete: async (key: string) => {
@@ -78,6 +124,14 @@ const productService = {
   
   search: async (params: { query: string; type?: string; color?: string; page?: number; size?: number }) => {
     const response = await api.get('/products/search', { params })
+
+    // Normalize products for backward compatibility
+    if (response.data?.content) {
+      response.data.content = response.data.content.map(normalizeProduct)
+    } else if (Array.isArray(response.data)) {
+      response.data = response.data.map(normalizeProduct)
+    }
+
     return response.data
   }
 }
