@@ -1,5 +1,5 @@
-import { useDark, useStorage, usePreferredDark } from '@vueuse/core'
-import { watch } from 'vue'
+import { ref, watch, onMounted } from 'vue'
+import { useStorage, usePreferredDark } from '@vueuse/core'
 
 export type ThemeMode = 'light' | 'dark' | 'system'
 
@@ -10,62 +10,63 @@ export function useTheme() {
   // Get system dark mode preference
   const preferredDark = usePreferredDark()
 
-  // Determine if dark mode should be active
-  const isDark = useDark({
-    selector: 'html',
-    attribute: 'class',
-    valueDark: 'dark',
-    valueLight: 'light',
-    storageKey: 'theme-mode-internal',
-    onChanged: (dark: boolean) => {
-      // Apply theme class to document element
-      const html = document.documentElement
-      if (dark) {
-        html.classList.add('dark')
-        html.classList.remove('light')
-      } else {
-        html.classList.add('light')
-        html.classList.remove('dark')
-      }
-    },
-  })
+  // Current applied theme
+  const isDark = ref(false)
+
+  // Apply theme to document
+  const applyTheme = (dark: boolean) => {
+    const html = document.documentElement
+    if (dark) {
+      html.classList.add('dark')
+      html.classList.remove('light')
+    } else {
+      html.classList.add('light')
+      html.classList.remove('dark')
+    }
+    isDark.value = dark
+  }
+
+  // Determine if dark mode should be active based on themeMode
+  const resolveTheme = () => {
+    if (themeMode.value === 'dark') {
+      return true
+    } else if (themeMode.value === 'light') {
+      return false
+    } else {
+      // system
+      return preferredDark.value
+    }
+  }
 
   // Function to set theme mode
   const setThemeMode = (mode: ThemeMode) => {
     themeMode.value = mode
-
-    if (mode === 'system') {
-      // Follow system preference
-      isDark.value = preferredDark.value
-    } else {
-      // Set explicit light or dark
-      isDark.value = mode === 'dark'
-    }
+    applyTheme(resolveTheme())
   }
+
+  // Watch for theme mode changes
+  watch(themeMode, () => {
+    applyTheme(resolveTheme())
+  })
 
   // Watch for system preference changes when in system mode
   watch(preferredDark, (newPreferredDark) => {
     if (themeMode.value === 'system') {
-      isDark.value = newPreferredDark
+      applyTheme(newPreferredDark)
     }
   })
 
-  // Initialize theme on load
-  const initTheme = () => {
-    if (themeMode.value === 'system') {
-      isDark.value = preferredDark.value
-    } else {
-      isDark.value = themeMode.value === 'dark'
-    }
-  }
+  // Initialize theme
+  onMounted(() => {
+    applyTheme(resolveTheme())
+  })
 
-  // Initialize immediately
-  initTheme()
+  // Also initialize immediately for SSR/hydration
+  applyTheme(resolveTheme())
 
   return {
     themeMode,
     isDark,
     setThemeMode,
-    initTheme,
   }
 }
