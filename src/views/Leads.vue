@@ -3,13 +3,13 @@
     <!-- Header inline (padrão do projeto) -->
     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
       <div>
-        <h1 class="text-2xl font-semibold text-gray-900">Leads</h1>
-        <p class="text-sm text-gray-600 mt-1">Gerencie leads e converta em clientes</p>
+        <h1 class="text-2xl font-semibold text-foreground">Leads</h1>
+        <p class="text-sm text-muted-foreground mt-1">Gerencie leads e converta em clientes</p>
       </div>
 
       <!-- Ações em lote -->
       <div v-if="checkedIds.length > 0" class="flex items-center gap-2">
-        <span class="text-sm text-gray-600">{{ checkedIds.length }} selecionado(s)</span>
+        <span class="text-sm text-muted-foreground">{{ checkedIds.length }} selecionado(s)</span>
         <Button variant="outline" size="sm" @click="clearSelection">
           Limpar Seleção
         </Button>
@@ -25,11 +25,11 @@
     />
 
     <!-- Conteúdo Principal: Card com Split View -->
-    <div class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+    <div class="bg-card rounded-lg shadow-sm border border-border overflow-hidden">
       <!-- Desktop: Split View -->
       <div class="hidden md:flex" style="height: calc(100vh - 360px)">
         <!-- Lista Leads (40%) -->
-        <div class="w-2/5 border-r border-gray-200 overflow-y-auto">
+        <div class="w-2/5 border-r border-border overflow-y-auto">
           <LeadList
             :leads="filteredLeads"
             :selected-id="selectedId"
@@ -43,7 +43,7 @@
         </div>
 
         <!-- Preview (60%) -->
-        <div class="flex-1 overflow-y-auto bg-gray-50">
+        <div class="flex-1 overflow-y-auto bg-muted/30">
           <LeadPreview
             :lead="selectedLead"
             @convert="handleConvert"
