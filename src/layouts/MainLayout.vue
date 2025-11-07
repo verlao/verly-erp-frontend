@@ -71,16 +71,16 @@
           </Button>
         </router-link>
         
-        <router-link to="cash-flow" custom v-slot="{ navigate, isActive }">
+        <router-link to="ledger" custom v-slot="{ navigate, isActive }">
           <Button
             @click="navigate"
             :variant="isActive ? 'secondary' : 'ghost'"
             class="w-full justify-start transition-all duration-200 hover:scale-105 hover:shadow-md"
           >
             <span class="mr-2">
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-banknote"><rect width="20" height="12" x="2" y="6" rx="2"/><circle cx="12" cy="12" r="2"/><path d="M6 12h.01M18 12h.01"/></svg>
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-book-text"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/><path d="M8 7h6"/><path d="M8 11h8"/></svg>
             </span>
-            <span :class="{ 'sr-only': isSidebarCollapsed }">Fluxo de Caixa</span>
+            <span :class="{ 'sr-only': isSidebarCollapsed }">Lançamentos</span>
           </Button>
         </router-link>
         
@@ -126,6 +126,7 @@
         <div class="px-6 py-4 flex justify-between items-center">
           <h2 class="text-2xl font-bold text-foreground">{{ pageTitle }}</h2>
           <div class="flex items-center space-x-4">
+            <ThemeToggle />
             <DropdownMenu>
               <template #trigger>
                 <Button variant="ghost" class="flex items-center space-x-2">
@@ -154,7 +155,7 @@
       </header>
 
       <!-- Content -->
-      <main class="flex-1 overflow-x-hidden overflow-y-auto bg-gray-100 p-6 h-[calc(100vh-80px)]">
+      <main class="flex-1 overflow-x-hidden overflow-y-auto bg-muted/30 p-6 h-[calc(100vh-80px)]">
         <router-view />
       </main>
     </div>
@@ -168,6 +169,7 @@ import { useAuthStore } from '../stores/auth'
 
 import Button from '../components/ui/Button.vue'
 import DropdownMenu from '../components/ui/DropdownMenu.vue'
+import ThemeToggle from '../components/ui/ThemeToggle.vue'
 
 
 const router = useRouter()
@@ -202,8 +204,8 @@ const pageTitle = computed(() => {
     return 'Produtos'
   } else if (route.path.endsWith('orders')) {
     return 'Pedidos'
-  } else if (route.path.endsWith('cash-flow')) {
-    return 'Fluxo de Caixa'
+  } else if (route.path.endsWith('ledger')) {
+    return 'Lançamentos Contábeis'
   } else if (route.path.endsWith('leads')) {
     return 'Leads'
   } else if (route.path.endsWith('cost-selection')) {

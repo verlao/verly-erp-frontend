@@ -33,9 +33,9 @@ const routes = [
         component: () => import('../views/Orders.vue'),
       },
       {
-        path: 'cash-flow',
-        name: 'CashFlow',
-        component: () => import('../views/CashFlow.vue'),
+        path: 'ledger',
+        name: 'Ledger',
+        component: () => import('../views/Ledger.vue'),
       },
       {
         path: 'leads',

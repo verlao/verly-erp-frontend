@@ -5,7 +5,7 @@ export interface DashboardMetrics {
   totalProducts: number
   totalOrders: number
   totalLeads: number
-  totalCashFlows: number
+  totalLedgers: number
   ordersThisMonth: number
   ordersThisWeek: number
   ordersToday: number

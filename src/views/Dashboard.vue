@@ -64,8 +64,8 @@
             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-banknote"><rect width="20" height="12" x="2" y="6" rx="2"/><circle cx="12" cy="12" r="2"/><path d="M6 12h.01M18 12h.01"/></svg>
           </div>
           <div class="ml-4">
-            <h2 class="text-muted-foreground text-sm font-medium">Saldo Atual</h2>
-            <p v-if="!loading" class="text-3xl font-bold text-foreground">R$ {{ cashFlowBalance.toFixed(2) }}</p>
+            <h2 class="text-muted-foreground text-sm font-medium">Total de Lançamentos</h2>
+            <p v-if="!loading" class="text-3xl font-bold text-foreground">{{ ledgerBalance }}</p>
             <Skeleton v-else class="h-8 w-20" />
           </div>
         </div>
@@ -257,7 +257,7 @@ const customerCount = computed(() => dashboardData.value?.metrics?.totalCustomer
 const productCount = computed(() => dashboardData.value?.metrics?.totalProducts || 0)
 const orderCount = computed(() => dashboardData.value?.metrics?.totalOrders || 0)
 const leadCount = computed(() => dashboardData.value?.metrics?.totalLeads || 0)
-const cashFlowBalance = computed(() => dashboardData.value?.metrics?.totalCashFlows || 0)
+const ledgerBalance = computed(() => dashboardData.value?.metrics?.totalLedgers || 0)
 const recentOrders = computed(() => dashboardData.value?.activities?.recentOrders || [])
 const recentLeads = computed(() => dashboardData.value?.activities?.recentLeads || [])
 const monthlyRevenue = computed(() => dashboardData.value?.revenue?.monthlyRevenue || 0)
