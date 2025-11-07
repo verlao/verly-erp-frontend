@@ -4,6 +4,7 @@ import type { PaginatedResponse, PaginationParams } from './order'
 export interface ProductDTO {
   id?: number
   key?: string // Deprecated - kept for backward compatibility
+  name?: string // Optional display name
   category?: string
   type?: string
   sheets?: number
