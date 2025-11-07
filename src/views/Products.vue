@@ -1,11 +1,11 @@
 <template>
-  <div class="min-h-screen bg-gray-50">
+  <div class="min-h-screen bg-background">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <!-- Header -->
       <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
         <div>
-          <h1 class="text-2xl font-semibold text-gray-900">Produtos</h1>
-          <p class="text-gray-600 mt-1">Gerencie seus produtos de vidro temperado</p>
+          <h1 class="text-2xl font-semibold text-foreground">Produtos</h1>
+          <p class="text-muted-foreground mt-1">Gerencie seus produtos de vidro temperado</p>
         </div>
         <button
           @click="openModal()"
@@ -20,11 +20,11 @@
       </div>
 
       <!-- Custos do Vidro Temperado -->
-      <div v-if="productCosts" class="bg-white rounded-lg shadow-sm border border-gray-200 p-4 mb-6">
-        <h2 class="text-base font-medium text-gray-900 mb-3">Custos do Vidro Temperado</h2>
+      <div v-if="productCosts" class="bg-card rounded-lg shadow-sm border border-border p-4 mb-6">
+        <h2 class="text-base font-medium text-foreground mb-3">Custos do Vidro Temperado</h2>
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div class="border border-gray-200 rounded-lg p-4">
-            <label class="block text-sm font-medium text-gray-700 mb-2">Incolor</label>
+          <div class="border border-border rounded-lg p-4">
+            <label class="block text-sm font-medium text-foreground mb-2">Incolor</label>
             <EditableCell 
               :cost="productCosts" 
               field="incolor" 
@@ -32,17 +32,17 @@
               @update="handleGlassInlineEdit"
             />
           </div>
-          <div class="border border-gray-200 rounded-lg p-4">
-            <label class="block text-sm font-medium text-gray-700 mb-2">Verde</label>
-            <EditableCell 
-              :cost="productCosts" 
-              field="verde" 
+          <div class="border border-border rounded-lg p-4">
+            <label class="block text-sm font-medium text-foreground mb-2">Verde</label>
+            <EditableCell
+              :cost="productCosts"
+              field="verde"
               :is-money="true"
               @update="handleGlassInlineEdit"
             />
           </div>
-          <div class="border border-gray-200 rounded-lg p-4">
-            <label class="block text-sm font-medium text-gray-700 mb-2">Fumê</label>
+          <div class="border border-border rounded-lg p-4">
+            <label class="block text-sm font-medium text-foreground mb-2">Fumê</label>
             <EditableCell 
               :cost="productCosts" 
               field="fume" 
@@ -61,28 +61,28 @@
       />
 
       <!-- Tabela de Produtos -->
-      <div class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-        <div class="px-6 py-4 border-b border-gray-200">
-          <h2 class="text-lg font-medium text-gray-900">Lista de Produtos</h2>
-          <p class="text-sm text-gray-600 mt-1">{{ totalItems }} produtos encontrados</p>
+      <div class="bg-card rounded-lg shadow-sm border border-border overflow-hidden">
+        <div class="px-6 py-4 border-b border-border">
+          <h2 class="text-lg font-medium text-foreground">Lista de Produtos</h2>
+          <p class="text-sm text-muted-foreground mt-1">{{ totalItems }} produtos encontrados</p>
         </div>
-        
+
         <div v-if="loading" class="flex items-center justify-center h-64">
           <div class="flex items-center space-x-3">
             <svg class="animate-spin h-8 w-8 text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
               <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
               <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
             </svg>
-            <span class="text-gray-600 font-medium">Carregando produtos...</span>
+            <span class="text-muted-foreground font-medium">Carregando produtos...</span>
           </div>
         </div>
-        
+
         <div v-else-if="filteredProducts.length === 0" class="text-center py-16">
-          <div class="bg-gray-50 rounded-full w-20 h-20 flex items-center justify-center mx-auto mb-4">
-            <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-gray-400"><path d="m7.5 4.27 9 5.15"/><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/></svg>
+          <div class="bg-muted rounded-full w-20 h-20 flex items-center justify-center mx-auto mb-4">
+            <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-muted-foreground"><path d="m7.5 4.27 9 5.15"/><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/></svg>
           </div>
-          <h3 class="text-xl font-semibold text-gray-900 mb-2">Nenhum produto encontrado</h3>
-          <p class="text-gray-500 mb-6">Comece criando seu primeiro produto ou ajuste sua busca.</p>
+          <h3 class="text-xl font-semibold text-foreground mb-2">Nenhum produto encontrado</h3>
+          <p class="text-muted-foreground mb-6">Comece criando seu primeiro produto ou ajuste sua busca.</p>
           <button
             @click="openModal()"
             class="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white px-6 py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
@@ -93,49 +93,49 @@
         </div>
       <div v-else class="overflow-x-auto">
           <table class="w-full">
-            <thead class="bg-gray-50">
-              <tr class="border-b border-gray-200">
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tipo</th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Folhas</th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-32">Dimensões</th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Cor</th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-24">Kit</th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-28">Mão de Obra</th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-24">Custo</th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-24">Preço à Vista</th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Preço 12x</th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Lucro</th>
-                <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Ações</th>
+            <thead class="bg-muted">
+              <tr class="border-b border-border">
+                <th class="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Tipo</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Folhas</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider w-32">Dimensões</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Cor</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider w-24">Kit</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider w-28">Mão de Obra</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider w-24">Custo</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider w-24">Preço à Vista</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Preço 12x</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Lucro</th>
+                <th class="px-6 py-3 text-center text-xs font-medium text-muted-foreground uppercase tracking-wider">Ações</th>
               </tr>
             </thead>
-            <tbody class="bg-white divide-y divide-gray-200">
-              <tr v-for="product in filteredProducts" :key="product.id || product.key" :data-product-id="product.id" :data-product-key="product.key" class="hover:bg-gray-50">
-              <td class="px-6 py-5 font-medium text-gray-900 text-sm">
+            <tbody class="bg-card divide-y divide-border">
+              <tr v-for="product in filteredProducts" :key="product.id || product.key" :data-product-id="product.id" :data-product-key="product.key" class="hover:bg-accent/50">
+              <td class="px-6 py-5 font-medium text-foreground text-sm">
                 <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium" :class="{
-                  'bg-blue-100 text-blue-800': product.type === 'PORTA',
-                  'bg-green-100 text-green-800': product.type === 'JANELA',
-                  'bg-purple-100 text-purple-800': product.type === 'SACADA',
-                  'bg-orange-100 text-orange-800': product.type === 'BASCULANTE',
-                  'bg-gray-100 text-gray-800': product.type === 'FIXO',
-                  'bg-gray-100 text-gray-500': !product.type
+                  'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400': product.type === 'PORTA',
+                  'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400': product.type === 'JANELA',
+                  'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400': product.type === 'SACADA',
+                  'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400': product.type === 'BASCULANTE',
+                  'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-400': product.type === 'FIXO',
+                  'bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-500': !product.type
                 }">
                   {{ product.type || '-' }}
                 </span>
               </td>
-              <td class="px-6 py-5 text-gray-700 text-sm">{{ product.sheets || '-' }}</td>
-              <td class="px-6 py-5 text-gray-700 text-sm">
+              <td class="px-6 py-5 text-foreground text-sm">{{ product.sheets || '-' }}</td>
+              <td class="px-6 py-5 text-foreground text-sm">
                 <div class="text-xs">
                   <div>{{ product.width ? product.width + 'cm' : '-' }} × {{ product.height ? product.height + 'cm' : '-' }}</div>
-                  <div class="text-gray-400">{{ product.measure ? product.measure.toFixed(2) + 'm²' : '-' }}</div>
+                  <div class="text-muted-foreground">{{ product.measure ? product.measure.toFixed(2) + 'm²' : '-' }}</div>
                 </div>
               </td>
-              <td class="px-6 py-5 text-gray-700 text-sm">
+              <td class="px-6 py-5 text-foreground text-sm">
                 <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium" :class="{
-                  'bg-blue-100 text-blue-800': product.color === 'INCOLOR',
-                  'bg-green-100 text-green-800': product.color === 'VERDE',
-                  'bg-gray-100 text-gray-800': product.color === 'FUME',
-                  'bg-amber-100 text-amber-800': product.color === 'BRONZE',
-                  'bg-gray-100 text-gray-500': !product.color
+                  'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400': product.color === 'INCOLOR',
+                  'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400': product.color === 'VERDE',
+                  'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-400': product.color === 'FUME',
+                  'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400': product.color === 'BRONZE',
+                  'bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-500': !product.color
                 }">
                   {{ product.color || '-' }}
                 </span>
@@ -155,16 +155,16 @@
                   @update="(field, value) => handleLaborInlineEdit(field, value, product)"
                 />
               </td>
-              <td class="px-6 py-5 font-mono font-semibold text-gray-900 text-sm">{{ product.cost ? 'R$ ' + product.cost.toFixed(2) : '-' }}</td>
-              <td class="px-6 py-5 font-mono font-semibold text-green-600 text-sm">{{ product.price ? 'R$ ' + product.price.toFixed(2) : '-' }}</td>
+              <td class="px-6 py-5 font-mono font-semibold text-foreground text-sm">{{ product.cost ? 'R$ ' + product.cost.toFixed(2) : '-' }}</td>
+              <td class="px-6 py-5 font-mono font-semibold text-green-600 dark:text-green-400 text-sm">{{ product.price ? 'R$ ' + product.price.toFixed(2) : '-' }}</td>
               <td class="px-6 py-5 text-sm">
                 <div v-if="product.price" class="space-y-1">
-                  <div class="font-mono font-semibold text-blue-600">R$ {{ (product.price * 1.2).toFixed(2) }}</div>
-                  <div class="text-xs text-gray-500">12x de R$ {{ ((product.price * 1.2) / 12).toFixed(2) }}</div>
+                  <div class="font-mono font-semibold text-blue-600 dark:text-blue-400">R$ {{ (product.price * 1.2).toFixed(2) }}</div>
+                  <div class="text-xs text-muted-foreground">12x de R$ {{ ((product.price * 1.2) / 12).toFixed(2) }}</div>
                 </div>
-                <span v-else class="text-gray-400">-</span>
+                <span v-else class="text-muted-foreground">-</span>
               </td>
-              <td class="px-6 py-5 font-mono text-purple-600 font-semibold text-sm">{{ calculateProfit(product) }}</td>
+              <td class="px-6 py-5 font-mono text-purple-600 dark:text-purple-400 font-semibold text-sm">{{ calculateProfit(product) }}</td>
               <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                   <div class="flex justify-end space-x-2">
                     <button
@@ -191,12 +191,12 @@
       </div>
       
         <!-- Paginação -->
-        <div v-if="totalPages > 1" class="flex items-center justify-between px-6 py-3 bg-white border-t border-gray-200">
+        <div v-if="totalPages > 1" class="flex items-center justify-between px-6 py-3 bg-card border-t border-border">
           <div class="flex-1 flex justify-between sm:hidden">
             <button
               @click="currentPage > 1 && handlePageChange(currentPage - 1)"
               :disabled="currentPage === 1"
-              class="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+              class="relative inline-flex items-center px-4 py-2 border border-border text-sm font-medium rounded-md text-foreground bg-card hover:bg-accent disabled:opacity-50 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
               aria-label="Página anterior"
             >
               Anterior
@@ -204,7 +204,7 @@
             <button
               @click="currentPage < totalPages && handlePageChange(currentPage + 1)"
               :disabled="currentPage === totalPages"
-              class="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+              class="ml-3 relative inline-flex items-center px-4 py-2 border border-border text-sm font-medium rounded-md text-foreground bg-card hover:bg-accent disabled:opacity-50 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
               aria-label="Próxima página"
             >
               Próximo
@@ -212,7 +212,7 @@
           </div>
           <div class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
             <div class="flex items-center gap-4">
-              <p class="text-sm text-gray-700">
+              <p class="text-sm text-foreground">
                 Mostrando
                 <span class="font-medium">{{ (currentPage - 1) * pageSize + 1 }}</span>
                 até
@@ -231,7 +231,7 @@
                 <button
                   @click="currentPage > 1 && handlePageChange(currentPage - 1)"
                   :disabled="currentPage === 1"
-                  class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+                  class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-border bg-card text-sm font-medium text-muted-foreground hover:bg-accent disabled:opacity-50 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
                   aria-label="Página anterior"
                 >
                   <span class="sr-only">Anterior</span>
@@ -245,8 +245,8 @@
                   @click="handlePageChange(page)"
                   :class="[
                     page === currentPage
-                      ? 'z-10 bg-blue-50 border-blue-500 text-blue-600'
-                      : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50',
+                      ? 'z-10 bg-blue-50 border-blue-500 text-blue-600 dark:bg-blue-900/30 dark:border-blue-500 dark:text-blue-400'
+                      : 'bg-card border-border text-muted-foreground hover:bg-accent',
                     'relative inline-flex items-center px-4 py-2 border text-sm font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500'
                   ]"
                   :aria-label="`Ir para página ${page}`"
@@ -257,7 +257,7 @@
                 <button
                   @click="currentPage < totalPages && handlePageChange(currentPage + 1)"
                   :disabled="currentPage === totalPages"
-                  class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+                  class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-border bg-card text-sm font-medium text-muted-foreground hover:bg-accent disabled:opacity-50 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
                   aria-label="Próxima página"
                 >
                   <span class="sr-only">Próximo</span>
