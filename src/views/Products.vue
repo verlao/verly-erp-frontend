@@ -82,22 +82,28 @@
                   <tbody>
                     <tr class="bg-background hover:bg-accent/30 transition-colors">
                       <td class="border border-border px-1 py-1">
-                        <input
-                          v-model.number="creditCardCost.debit"
-                          type="number"
-                          step="0.01"
-                          class="w-full px-2 py-1 text-sm text-center border-0 focus:outline-none focus:ring-1 focus:ring-blue-500 bg-transparent"
-                          @change="saveCreditCardCost"
-                        />
+                        <div class="flex items-center justify-center gap-1">
+                          <input
+                            v-model.number="creditCardCost.debit"
+                            type="number"
+                            step="0.01"
+                            class="w-16 px-2 py-1 text-sm text-center border-0 focus:outline-none focus:ring-1 focus:ring-blue-500 bg-transparent"
+                            @change="saveCreditCardCost"
+                          />
+                          <span class="text-xs text-muted-foreground">%</span>
+                        </div>
                       </td>
                       <td v-for="i in 12" :key="`tax${i}x`" class="border border-border px-1 py-1">
-                        <input
-                          v-model.number="(creditCardCost as any)[`tax${i}x`]"
-                          type="number"
-                          step="0.01"
-                          class="w-full px-2 py-1 text-sm text-center border-0 focus:outline-none focus:ring-1 focus:ring-blue-500 bg-transparent"
-                          @change="saveCreditCardCost"
-                        />
+                        <div class="flex items-center justify-center gap-1">
+                          <input
+                            v-model.number="(creditCardCost as any)[`tax${i}x`]"
+                            type="number"
+                            step="0.01"
+                            class="w-16 px-2 py-1 text-sm text-center border-0 focus:outline-none focus:ring-1 focus:ring-blue-500 bg-transparent"
+                            @change="saveCreditCardCost"
+                          />
+                          <span class="text-xs text-muted-foreground">%</span>
+                        </div>
                       </td>
                     </tr>
                   </tbody>
@@ -149,7 +155,10 @@
                         <td class="border border-border px-3 py-2 text-center text-foreground">{{ labor.type }}</td>
                         <td class="border border-border px-3 py-2 text-center text-foreground">{{ labor.sheets }}</td>
                         <td class="border border-border px-1 py-1">
-                          <input v-model.number="labor.laborValue" type="number" step="0.01" class="w-full px-2 py-1 text-sm text-center border-0 focus:outline-none focus:ring-1 focus:ring-green-500 bg-transparent" @change="updateLaborCost(labor)" />
+                          <div class="flex items-center justify-center gap-1">
+                            <span class="text-xs text-muted-foreground">R$</span>
+                            <input v-model.number="labor.laborValue" type="number" step="0.01" class="w-20 px-2 py-1 text-sm text-center border-0 focus:outline-none focus:ring-1 focus:ring-green-500 bg-transparent" @change="updateLaborCost(labor)" />
+                          </div>
                         </td>
                         <td class="border border-border px-2 py-2 text-center">
                           <button @click="deleteLaborCost(labor.id!)" class="text-red-600 hover:text-red-900 dark:hover:text-red-400 transition-colors text-xs font-medium">
@@ -175,7 +184,10 @@
                           <input v-model.number="newLaborCost.sheets" type="number" min="1" placeholder="Folhas" class="w-full px-2 py-1.5 text-sm text-center border-0 focus:outline-none focus:ring-1 focus:ring-green-500 bg-transparent" />
                         </td>
                         <td class="border border-border px-1 py-1">
-                          <input v-model.number="newLaborCost.laborValue" type="number" step="0.01" placeholder="Valor (R$)" class="w-full px-2 py-1.5 text-sm text-center border-0 focus:outline-none focus:ring-1 focus:ring-green-500 bg-transparent" />
+                          <div class="flex items-center justify-center gap-1">
+                            <span class="text-xs text-muted-foreground">R$</span>
+                            <input v-model.number="newLaborCost.laborValue" type="number" step="0.01" placeholder="Valor" class="w-20 px-2 py-1.5 text-sm text-center border-0 focus:outline-none focus:ring-1 focus:ring-green-500 bg-transparent" />
+                          </div>
                         </td>
                         <td class="border border-border px-2 py-2 text-center">
                           <button @click="addLaborCost" class="px-2 py-1 bg-green-600 text-white rounded hover:bg-green-700 transition-colors text-xs font-medium">+</button>
@@ -230,10 +242,20 @@
                       <tr v-for="glass in glassCosts" :key="glass.id" class="bg-background hover:bg-accent/30 transition-colors">
                         <td class="border border-border px-3 py-2 text-center text-foreground font-medium">{{ glass.color }}</td>
                         <td class="border border-border px-1 py-1">
-                          <input v-model.number="glass.cost" type="number" step="0.01" class="w-full px-2 py-1 text-sm text-center border-0 focus:outline-none focus:ring-1 focus:ring-purple-500 bg-transparent" @change="updateGlassCost(glass)" />
+                          <div class="flex items-center justify-center gap-1">
+                            <span class="text-xs text-muted-foreground">R$</span>
+                            <input v-model.number="glass.cost" type="number" step="0.01" class="w-20 px-2 py-1 text-sm text-center border-0 focus:outline-none focus:ring-1 focus:ring-purple-500 bg-transparent" @change="updateGlassCost(glass)" />
+                          </div>
                         </td>
                         <td class="border border-border px-1 py-1">
-                          <input v-model="glass.supplier" type="text" placeholder="Fornecedor" class="w-full px-2 py-1 text-sm text-center border-0 focus:outline-none focus:ring-1 focus:ring-purple-500 bg-transparent" @change="updateGlassCost(glass)" />
+                          <select v-model="glass.supplier" class="w-full px-2 py-1 text-sm text-center border-0 focus:outline-none focus:ring-1 focus:ring-purple-500 bg-transparent" @change="updateGlassCost(glass)">
+                            <option value="">Selecione</option>
+                            <option value="Fornecedor A">Fornecedor A</option>
+                            <option value="Fornecedor B">Fornecedor B</option>
+                            <option value="Fornecedor C">Fornecedor C</option>
+                            <option value="Fornecedor D">Fornecedor D</option>
+                            <option value="Outro">Outro</option>
+                          </select>
                         </td>
                         <td class="border border-border px-2 py-2 text-center">
                           <button @click="deleteGlassCost(glass.color)" class="text-red-600 hover:text-red-900 dark:hover:text-red-400 transition-colors text-xs font-medium">
@@ -256,10 +278,20 @@
                           </select>
                         </td>
                         <td class="border border-border px-1 py-1">
-                          <input v-model.number="newGlassCost.cost" type="number" step="0.01" placeholder="Custo (R$/m²)" class="w-full px-2 py-1.5 text-sm text-center border-0 focus:outline-none focus:ring-1 focus:ring-purple-500 bg-transparent" />
+                          <div class="flex items-center justify-center gap-1">
+                            <span class="text-xs text-muted-foreground">R$</span>
+                            <input v-model.number="newGlassCost.cost" type="number" step="0.01" placeholder="Custo" class="w-20 px-2 py-1.5 text-sm text-center border-0 focus:outline-none focus:ring-1 focus:ring-purple-500 bg-transparent" />
+                          </div>
                         </td>
                         <td class="border border-border px-1 py-1">
-                          <input v-model="newGlassCost.supplier" type="text" placeholder="Fornecedor" class="w-full px-2 py-1.5 text-sm text-center border-0 focus:outline-none focus:ring-1 focus:ring-purple-500 bg-transparent" />
+                          <select v-model="newGlassCost.supplier" class="w-full px-2 py-1.5 text-sm text-center border-0 focus:outline-none focus:ring-1 focus:ring-purple-500 bg-transparent">
+                            <option value="">Selecione</option>
+                            <option value="Fornecedor A">Fornecedor A</option>
+                            <option value="Fornecedor B">Fornecedor B</option>
+                            <option value="Fornecedor C">Fornecedor C</option>
+                            <option value="Fornecedor D">Fornecedor D</option>
+                            <option value="Outro">Outro</option>
+                          </select>
                         </td>
                         <td class="border border-border px-2 py-2 text-center">
                           <button @click="addGlassCost" class="px-2 py-1 bg-purple-600 text-white rounded hover:bg-purple-700 transition-colors text-xs font-medium">+</button>
@@ -307,8 +339,6 @@
                         <th class="px-3 py-2 text-xs font-semibold text-center border border-border text-foreground">Tipo</th>
                         <th class="px-3 py-2 text-xs font-semibold text-center border border-border text-foreground">Folhas</th>
                         <th class="px-3 py-2 text-xs font-semibold text-center border border-border text-foreground">Ganho (%)</th>
-                        <th class="px-3 py-2 text-xs font-semibold text-center border border-border text-foreground">Descrição</th>
-                        <th class="px-3 py-2 text-xs font-semibold text-center border border-border text-foreground w-16">Ativo</th>
                         <th class="px-3 py-2 text-xs font-semibold text-center border border-border text-foreground w-20">Ações</th>
                       </tr>
                     </thead>
@@ -317,13 +347,10 @@
                         <td class="border border-border px-3 py-2 text-center text-foreground">{{ gain.type }}</td>
                         <td class="border border-border px-3 py-2 text-center text-foreground">{{ gain.sheets }}</td>
                         <td class="border border-border px-1 py-1">
-                          <input v-model.number="gain.gainValue" type="number" step="0.01" class="w-full px-2 py-1 text-sm text-center border-0 focus:outline-none focus:ring-1 focus:ring-orange-500 bg-transparent" @change="updateGain(gain)" />
-                        </td>
-                        <td class="border border-border px-1 py-1">
-                          <input v-model="gain.description" type="text" placeholder="Descrição" class="w-full px-2 py-1 text-sm text-center border-0 focus:outline-none focus:ring-1 focus:ring-orange-500 bg-transparent" @change="updateGain(gain)" />
-                        </td>
-                        <td class="border border-border px-2 py-2 text-center">
-                          <input v-model="gain.active" type="checkbox" class="w-4 h-4 text-orange-600 border-gray-300 rounded focus:ring-orange-500" @change="updateGain(gain)" />
+                          <div class="flex items-center justify-center gap-1">
+                            <input v-model.number="gain.gainValue" type="number" step="0.01" class="w-16 px-2 py-1 text-sm text-center border-0 focus:outline-none focus:ring-1 focus:ring-orange-500 bg-transparent" @change="updateGain(gain)" />
+                            <span class="text-xs text-muted-foreground">%</span>
+                          </div>
                         </td>
                         <td class="border border-border px-2 py-2 text-center">
                           <button @click="deleteGain(gain.id!)" class="text-red-600 hover:text-red-900 dark:hover:text-red-400 transition-colors text-xs font-medium">
@@ -349,13 +376,10 @@
                           <input v-model.number="newGain.sheets" type="number" min="1" placeholder="Folhas" class="w-full px-2 py-1.5 text-sm text-center border-0 focus:outline-none focus:ring-1 focus:ring-orange-500 bg-transparent" />
                         </td>
                         <td class="border border-border px-1 py-1">
-                          <input v-model.number="newGain.gainValue" type="number" step="0.01" placeholder="Ganho (%)" class="w-full px-2 py-1.5 text-sm text-center border-0 focus:outline-none focus:ring-1 focus:ring-orange-500 bg-transparent" />
-                        </td>
-                        <td class="border border-border px-1 py-1">
-                          <input v-model="newGain.description" type="text" placeholder="Descrição" class="w-full px-2 py-1.5 text-sm text-center border-0 focus:outline-none focus:ring-1 focus:ring-orange-500 bg-transparent" />
-                        </td>
-                        <td class="border border-border px-2 py-2 text-center">
-                          <input v-model="newGain.active" type="checkbox" class="w-4 h-4 text-orange-600 border-gray-300 rounded focus:ring-orange-500" />
+                          <div class="flex items-center justify-center gap-1">
+                            <input v-model.number="newGain.gainValue" type="number" step="0.01" placeholder="Ganho" class="w-16 px-2 py-1.5 text-sm text-center border-0 focus:outline-none focus:ring-1 focus:ring-orange-500 bg-transparent" />
+                            <span class="text-xs text-muted-foreground">%</span>
+                          </div>
                         </td>
                         <td class="border border-border px-2 py-2 text-center">
                           <button @click="addGain" class="px-2 py-1 bg-orange-600 text-white rounded hover:bg-orange-700 transition-colors text-xs font-medium">+</button>
@@ -1232,7 +1256,13 @@ async function loadGains() {
 
 async function addGain() {
   try {
-    const created = await gainService.create(newGain.value)
+    // Sempre criar ganho como ativo
+    const gainToCreate = { 
+      ...newGain.value, 
+      active: true, 
+      description: newGain.value.description || '' 
+    }
+    const created = await gainService.create(gainToCreate)
     gains.value.push(created)
     newGain.value = { type: 'PORTA', sheets: 1, gainValue: 0, active: true, description: '' }
     notification.success('Sucesso', 'Ganho adicionado!')
@@ -1245,7 +1275,9 @@ async function addGain() {
 
 async function updateGain(gain: GainDTO) {
   try {
-    await gainService.update(gain.id!, gain)
+    // Sempre manter ganho como ativo ao atualizar
+    const gainToUpdate = { ...gain, active: true }
+    await gainService.update(gain.id!, gainToUpdate)
     notification.success('Sucesso', 'Ganho atualizado!')
     await loadProducts()
   } catch (error) {
