@@ -233,18 +233,25 @@
 
       </div>
 
-      <!-- Filter Bar -->
-      <FilterBar
-        v-model:search="searchQuery"
-        v-model:type="selectedType"
-        v-model:color="selectedColor"
-      />
-
       <!-- Tabela de Produtos -->
       <div class="bg-card rounded-lg shadow-sm border border-border overflow-hidden">
         <div class="px-6 py-4 border-b border-border">
-          <h2 class="text-lg font-medium text-foreground">Lista de Produtos</h2>
-          <p class="text-sm text-muted-foreground mt-1">{{ totalItems }} produtos encontrados</p>
+          <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+            <!-- Título -->
+            <div class="flex-shrink-0">
+              <h2 class="text-lg font-medium text-foreground">Lista de Produtos</h2>
+              <p class="text-sm text-muted-foreground mt-1">{{ totalItems }} produtos encontrados</p>
+            </div>
+            
+            <!-- Filter Bar Inline -->
+            <div class="flex-1 max-w-4xl">
+              <FilterBar
+                v-model:search="searchQuery"
+                v-model:type="selectedType"
+                v-model:color="selectedColor"
+              />
+            </div>
+          </div>
         </div>
 
         <div v-if="loading" class="flex items-center justify-center h-64">
