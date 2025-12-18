@@ -16,11 +16,21 @@ export interface ProductDTO {
   measure?: number // Calculated field from backend
   color?: string
   cost?: number // Calculated field from backend
-  price?: number // Calculated field from backend
+  price?: number // Calculated field from backend (À vista dinheiro)
   profit?: number // Calculated field from backend
   laborValue?: number // Calculated field from backend
   createdDate?: string
   installments?: any[] // Calculated field from backend
+  
+  // Novas opções de preço (calculadas no backend)
+  priceOptions?: {
+    cashMoney?: number      // À vista dinheiro
+    cashCard?: number       // À vista cartão
+    installments4x?: number // Parcelado 4x
+    installments6x?: number // Parcelado 6x
+    installments10x?: number // Parcelado 10x
+    installments12x?: number // Parcelado 12x
+  }
 }
 
 // Helper function to normalize product data between old and new API contracts

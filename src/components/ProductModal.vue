@@ -129,7 +129,7 @@
 
           <!-- Price Info (when editing) -->
           <div
-            v-if="isEditing && product && product.price"
+            v-if="isEditing && product && (product.price || product.priceOptions)"
             class="mt-6 p-4 bg-green-50 rounded-lg border border-green-200"
           >
             <h4 class="text-sm font-semibold text-green-800 mb-3 flex items-center">
@@ -148,28 +148,58 @@
               </svg>
               Informações de Preço
             </h4>
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+              <!-- À Vista Dinheiro -->
               <div class="text-center p-3 bg-white rounded-lg border">
-                <div class="text-xs text-gray-500 mb-1">Preço à Vista</div>
+                <div class="text-xs text-gray-500 mb-1">À Vista Dinheiro</div>
+                <div class="font-mono text-lg font-semibold text-green-700">
+                  {{ formatCurrency(product.priceOptions?.cashMoney ?? product.price ?? 0) }}
+                </div>
+              </div>
+              <!-- À Vista Cartão -->
+              <div class="text-center p-3 bg-white rounded-lg border">
+                <div class="text-xs text-gray-500 mb-1">À Vista Cartão</div>
+                <div class="font-mono text-lg font-semibold text-green-600">
+                  {{ formatCurrency(product.priceOptions?.cashCard ?? 0) }}
+                </div>
+              </div>
+              <!-- Custo -->
+              <div class="text-center p-3 bg-white rounded-lg border">
+                <div class="text-xs text-gray-500 mb-1">Custo Total</div>
                 <div class="font-mono text-lg font-semibold text-gray-900">
-                  {{ formatCurrency(product.price) }}
+                  {{ formatCurrency(product.cost ?? 0) }}
                 </div>
               </div>
-              <div class="text-center p-3 bg-white rounded-lg border">
-                <div class="text-xs text-gray-500 mb-1">Preço Total 12x</div>
-                <div class="font-mono text-lg font-semibold text-orange-600">
-                  {{ formatCurrency(product.price * 1.2) }}
+            </div>
+            <!-- Parcelamentos -->
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+              <div class="text-center p-2 bg-white rounded border">
+                <div class="text-xs text-gray-500 mb-1">Parc 4x</div>
+                <div class="font-mono text-sm font-semibold text-blue-600">
+                  {{ product.priceOptions?.installments4x ? formatCurrency(product.priceOptions.installments4x) : '-' }}
                 </div>
               </div>
-              <div class="text-center p-3 bg-white rounded-lg border">
-                <div class="text-xs text-gray-500 mb-1">Valor da Parcela</div>
-                <div class="font-mono text-lg font-semibold text-blue-600">
-                  12x {{ formatCurrency((product.price * 1.2) / 12) }}
+              <div class="text-center p-2 bg-white rounded border">
+                <div class="text-xs text-gray-500 mb-1">Parc 6x</div>
+                <div class="font-mono text-sm font-semibold text-blue-600">
+                  {{ product.priceOptions?.installments6x ? formatCurrency(product.priceOptions.installments6x) : '-' }}
+                </div>
+              </div>
+              <div class="text-center p-2 bg-white rounded border">
+                <div class="text-xs text-gray-500 mb-1">Parc 10x</div>
+                <div class="font-mono text-sm font-semibold text-blue-700">
+                  {{ product.priceOptions?.installments10x ? formatCurrency(product.priceOptions.installments10x) : '-' }}
+                </div>
+              </div>
+              <div class="text-center p-2 bg-white rounded border">
+                <div class="text-xs text-gray-500 mb-1">Parc 12x</div>
+                <div class="font-mono text-sm font-semibold text-blue-700">
+                  {{ product.priceOptions?.installments12x ? formatCurrency(product.priceOptions.installments12x) : '-' }}
                 </div>
               </div>
             </div>
             <div class="mt-3 text-xs text-gray-600 text-center">
-              * Parcelamento com taxa de 20% aplicada sobre o preço à vista
+              * Preços calculados automaticamente pelo backend
             </div>
           </div>
 
@@ -284,7 +314,15 @@ const formData = ref<ProductDTO>({
   profit: 0,
   laborValue: 0,
   createdDate: '',
-  installments: []
+  installments: [],
+  priceOptions: {
+    cashMoney: 0,
+    cashCard: 0,
+    installments4x: 0,
+    installments6x: 0,
+    installments10x: 0,
+    installments12x: 0
+  }
 })
 
 // Watch for product changes
@@ -315,7 +353,15 @@ watch(() => props.product, (newProduct) => {
       profit: 0,
       laborValue: 0,
       createdDate: '',
-      installments: []
+      installments: [],
+      priceOptions: {
+        cashMoney: 0,
+        cashCard: 0,
+        installments4x: 0,
+        installments6x: 0,
+        installments10x: 0,
+        installments12x: 0
+      }
     }
   }
 }, { immediate: true })
