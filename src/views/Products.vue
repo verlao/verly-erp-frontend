@@ -19,38 +19,218 @@
         </button>
       </div>
 
-      <!-- Custos do Vidro Temperado -->
-      <div v-if="productCosts" class="bg-card rounded-lg shadow-sm border border-border p-4 mb-6">
-        <h2 class="text-base font-medium text-foreground mb-3">Custos do Vidro Temperado</h2>
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div class="border border-border rounded-lg p-4">
-            <label class="block text-sm font-medium text-foreground mb-2">Incolor</label>
-            <EditableCell 
-              :cost="productCosts" 
-              field="incolor" 
-              :is-money="true"
-              @update="handleGlassInlineEdit"
-            />
-          </div>
-          <div class="border border-border rounded-lg p-4">
-            <label class="block text-sm font-medium text-foreground mb-2">Verde</label>
-            <EditableCell
-              :cost="productCosts"
-              field="verde"
-              :is-money="true"
-              @update="handleGlassInlineEdit"
-            />
-          </div>
-          <div class="border border-border rounded-lg p-4">
-            <label class="block text-sm font-medium text-foreground mb-2">Fumê</label>
-            <EditableCell 
-              :cost="productCosts" 
-              field="fume" 
-              :is-money="true"
-              @update="handleGlassInlineEdit"
-            />
-          </div>
+      <!-- Configurações (Accordions) -->
+      <div class="space-y-3 mb-6">
+        
+        <!-- Accordion 1: Taxas de Cartão -->
+        <div class="border border-border rounded-lg overflow-hidden bg-card shadow-sm">
+          <button
+            @click="activeAccordion = activeAccordion === 'creditCard' ? null : 'creditCard'"
+            class="w-full px-4 py-3 flex items-center justify-between bg-gradient-to-r from-blue-50 to-blue-100 dark:from-blue-950/30 dark:to-blue-900/30 hover:from-blue-100 hover:to-blue-150 dark:hover:from-blue-900/40 dark:hover:to-blue-800/40 transition-colors"
+          >
+            <div class="flex items-center space-x-2">
+              <svg class="w-5 h-5 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"></path>
+              </svg>
+              <span class="text-sm font-semibold text-foreground">Taxas de Cartão</span>
+            </div>
+            <svg 
+              class="w-4 h-4 text-muted-foreground transition-transform duration-200" 
+              :class="{ 'rotate-180': activeAccordion === 'creditCard' }"
+              fill="none" 
+              stroke="currentColor" 
+              viewBox="0 0 24 24"
+            >
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+            </svg>
+          </button>
+          
+          <transition name="accordion">
+            <div v-show="activeAccordion === 'creditCard'" class="border-t border-border">
+              <div v-if="creditCardCost" class="p-4">
+                <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3">
+                  <div>
+                    <label class="block text-xs font-medium text-muted-foreground mb-1">Débito (%)</label>
+                    <input
+                      v-model.number="creditCardCost.debit"
+                      type="number"
+                      step="0.01"
+                      class="w-full px-2 py-1.5 text-sm border border-border rounded focus:outline-none focus:ring-2 focus:ring-blue-500 bg-background"
+                      @change="saveCreditCardCost"
+                    />
+                  </div>
+                  <div v-for="i in 6" :key="`tax${i}x`">
+                    <label class="block text-xs font-medium text-muted-foreground mb-1">{{ i }}x (%)</label>
+                    <input
+                      v-model.number="creditCardCost[`tax${i}x`]"
+                      type="number"
+                      step="0.01"
+                      class="w-full px-2 py-1.5 text-sm border border-border rounded focus:outline-none focus:ring-2 focus:ring-blue-500 bg-background"
+                      @change="saveCreditCardCost"
+                    />
+                  </div>
+                </div>
+                <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3 mt-3">
+                  <div v-for="i in [7,8,9,10,11,12]" :key="`tax${i}x`">
+                    <label class="block text-xs font-medium text-muted-foreground mb-1">{{ i }}x (%)</label>
+                    <input
+                      v-model.number="creditCardCost[`tax${i}x`]"
+                      type="number"
+                      step="0.01"
+                      class="w-full px-2 py-1.5 text-sm border border-border rounded focus:outline-none focus:ring-2 focus:ring-blue-500 bg-background"
+                      @change="saveCreditCardCost"
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </transition>
         </div>
+
+        <!-- Accordion 2: Mão de Obra -->
+        <div class="border border-border rounded-lg overflow-hidden bg-card shadow-sm">
+          <button
+            @click="activeAccordion = activeAccordion === 'labor' ? null : 'labor'"
+            class="w-full px-4 py-3 flex items-center justify-between bg-gradient-to-r from-green-50 to-green-100 dark:from-green-950/30 dark:to-green-900/30 hover:from-green-100 hover:to-green-150 dark:hover:from-green-900/40 dark:hover:to-green-800/40 transition-colors"
+          >
+            <div class="flex items-center space-x-2">
+              <svg class="w-5 h-5 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
+              </svg>
+              <span class="text-sm font-semibold text-foreground">Mão de Obra</span>
+            </div>
+            <svg 
+              class="w-4 h-4 text-muted-foreground transition-transform duration-200" 
+              :class="{ 'rotate-180': activeAccordion === 'labor' }"
+              fill="none" 
+              stroke="currentColor" 
+              viewBox="0 0 24 24"
+            >
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+            </svg>
+          </button>
+          
+          <transition name="accordion">
+            <div v-show="activeAccordion === 'labor'" class="border-t border-border">
+              <div class="p-4">
+                <!-- Add New -->
+                <div class="bg-green-50 dark:bg-green-950/20 p-3 rounded-lg mb-3">
+                  <div class="grid grid-cols-1 md:grid-cols-4 gap-2">
+                    <select v-model="newLaborCost.type" class="px-2 py-1.5 text-sm border border-border rounded focus:outline-none focus:ring-2 focus:ring-green-500 bg-background">
+                      <option value="PORTA">PORTA</option>
+                      <option value="JANELA">JANELA</option>
+                      <option value="BOX">BOX</option>
+                      <option value="FIXO">FIXO</option>
+                      <option value="BASCULANTE">BASCULANTE</option>
+                      <option value="SACADA">SACADA</option>
+                    </select>
+                    <input v-model.number="newLaborCost.sheets" type="number" min="1" placeholder="Folhas" class="px-2 py-1.5 text-sm border border-border rounded focus:outline-none focus:ring-2 focus:ring-green-500 bg-background" />
+                    <input v-model.number="newLaborCost.laborValue" type="number" step="0.01" placeholder="Valor (R$)" class="px-2 py-1.5 text-sm border border-border rounded focus:outline-none focus:ring-2 focus:ring-green-500 bg-background" />
+                    <button @click="addLaborCost" class="px-3 py-1.5 bg-green-600 text-white rounded hover:bg-green-700 transition-colors text-sm">Adicionar</button>
+                  </div>
+                </div>
+
+                <!-- Table -->
+                <div class="overflow-x-auto">
+                  <table class="w-full text-sm">
+                    <thead class="bg-muted">
+                      <tr>
+                        <th class="px-3 py-2 text-left text-xs font-medium text-muted-foreground">Tipo</th>
+                        <th class="px-3 py-2 text-left text-xs font-medium text-muted-foreground">Folhas</th>
+                        <th class="px-3 py-2 text-left text-xs font-medium text-muted-foreground">Valor (R$)</th>
+                        <th class="px-3 py-2 text-right text-xs font-medium text-muted-foreground">Ações</th>
+                      </tr>
+                    </thead>
+                    <tbody class="divide-y divide-border">
+                      <tr v-for="labor in laborCosts" :key="labor.id">
+                        <td class="px-3 py-2 text-foreground">{{ labor.type }}</td>
+                        <td class="px-3 py-2 text-foreground">{{ labor.sheets }}</td>
+                        <td class="px-3 py-2">
+                          <input v-model.number="labor.laborValue" type="number" step="0.01" class="w-24 px-2 py-1 text-sm border border-border rounded focus:outline-none focus:ring-2 focus:ring-green-500 bg-background" @change="updateLaborCost(labor)" />
+                        </td>
+                        <td class="px-3 py-2 text-right">
+                          <button @click="deleteLaborCost(labor.id!)" class="text-red-600 hover:text-red-900 dark:hover:text-red-400 transition-colors text-xs">Excluir</button>
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </transition>
+        </div>
+
+        <!-- Accordion 3: Valor do Vidro -->
+        <div class="border border-border rounded-lg overflow-hidden bg-card shadow-sm">
+          <button
+            @click="activeAccordion = activeAccordion === 'glass' ? null : 'glass'"
+            class="w-full px-4 py-3 flex items-center justify-between bg-gradient-to-r from-purple-50 to-purple-100 dark:from-purple-950/30 dark:to-purple-900/30 hover:from-purple-100 hover:to-purple-150 dark:hover:from-purple-900/40 dark:hover:to-purple-800/40 transition-colors"
+          >
+            <div class="flex items-center space-x-2">
+              <svg class="w-5 h-5 text-purple-600 dark:text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
+              </svg>
+              <span class="text-sm font-semibold text-foreground">Valor do Vidro (R$/m²)</span>
+            </div>
+            <svg 
+              class="w-4 h-4 text-muted-foreground transition-transform duration-200" 
+              :class="{ 'rotate-180': activeAccordion === 'glass' }"
+              fill="none" 
+              stroke="currentColor" 
+              viewBox="0 0 24 24"
+            >
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+            </svg>
+          </button>
+          
+          <transition name="accordion">
+            <div v-show="activeAccordion === 'glass'" class="border-t border-border">
+              <div class="p-4">
+                <!-- Add New -->
+                <div class="bg-purple-50 dark:bg-purple-950/20 p-3 rounded-lg mb-3">
+                  <div class="grid grid-cols-1 md:grid-cols-4 gap-2">
+                    <select v-model="newGlassCost.color" class="px-2 py-1.5 text-sm border border-border rounded focus:outline-none focus:ring-2 focus:ring-purple-500 bg-background">
+                      <option value="INCOLOR">Incolor</option>
+                      <option value="FUME">Fumê</option>
+                      <option value="VERDE">Verde</option>
+                      <option value="BRONZE">Bronze</option>
+                      <option value="AZUL">Azul</option>
+                      <option value="CINZA">Cinza</option>
+                    </select>
+                    <input v-model.number="newGlassCost.cost" type="number" step="0.01" placeholder="Custo (R$/m²)" class="px-2 py-1.5 text-sm border border-border rounded focus:outline-none focus:ring-2 focus:ring-purple-500 bg-background" />
+                    <input v-model="newGlassCost.supplier" type="text" placeholder="Fornecedor (opcional)" class="px-2 py-1.5 text-sm border border-border rounded focus:outline-none focus:ring-2 focus:ring-purple-500 bg-background" />
+                    <button @click="addGlassCost" class="px-3 py-1.5 bg-purple-600 text-white rounded hover:bg-purple-700 transition-colors text-sm">Adicionar</button>
+                  </div>
+                </div>
+
+                <!-- Grid -->
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                  <div v-for="glass in glassCosts" :key="glass.id" class="border border-border rounded-lg p-3 hover:shadow-md transition-shadow">
+                    <div class="flex items-center justify-between mb-2">
+                      <h4 class="font-semibold text-foreground text-sm">{{ glass.color }}</h4>
+                      <button @click="deleteGlassCost(glass.color)" class="text-red-600 hover:text-red-900 dark:hover:text-red-400 transition-colors">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                        </svg>
+                      </button>
+                    </div>
+                    <div class="space-y-2">
+                      <div>
+                        <label class="block text-xs text-muted-foreground mb-1">Custo (R$/m²)</label>
+                        <input v-model.number="glass.cost" type="number" step="0.01" class="w-full px-2 py-1.5 text-sm border border-border rounded focus:outline-none focus:ring-2 focus:ring-purple-500 bg-background" @change="updateGlassCost(glass)" />
+                      </div>
+                      <div v-if="glass.supplier">
+                        <label class="block text-xs text-muted-foreground mb-1">Fornecedor</label>
+                        <input v-model="glass.supplier" type="text" class="w-full px-2 py-1.5 text-sm border border-border rounded focus:outline-none focus:ring-2 focus:ring-purple-500 bg-background" @change="updateGlassCost(glass)" />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </transition>
+        </div>
+
       </div>
 
       <!-- Filter Bar -->
@@ -312,6 +492,9 @@
 import { ref, onMounted, computed, watch } from 'vue'
 import productService from '../services/product'
 import productCostService from '../services/product-cost'
+import creditCardCostService, { type CreditCardCostDTO } from '../services/credit-card-cost'
+import laborCostService, { type LaborCostDTO } from '../services/labor-cost'
+import glassCostService, { type GlassCostDTO } from '../services/glass-cost'
 import type { ProductDTO } from '../services/product'
 import type { ProductCostDTO } from '../services/product-cost'
 import type { PaginatedResponse } from '../services/order'
@@ -337,6 +520,22 @@ const saving = ref(false)
 const selectedType = ref('')
 const selectedColor = ref('')
 const searchQuery = ref('')
+
+// Accordions state
+const activeAccordion = ref<'creditCard' | 'labor' | 'glass' | null>(null)
+const creditCardCost = ref<CreditCardCostDTO | null>(null)
+const laborCosts = ref<LaborCostDTO[]>([])
+const glassCosts = ref<GlassCostDTO[]>([])
+const newLaborCost = ref<Omit<LaborCostDTO, 'id'>>({
+  type: 'PORTA',
+  sheets: 1,
+  laborValue: 0
+})
+const newGlassCost = ref<Omit<GlassCostDTO, 'id'>>({
+  color: 'INCOLOR',
+  cost: 0,
+  supplier: ''
+})
 
 // Paginação
 const currentPage = ref(1)
@@ -418,7 +617,13 @@ function getVisiblePages() {
 }
 
 onMounted(async () => {
-  await Promise.all([loadProducts(), loadProductCosts()])
+  await Promise.all([
+    loadProducts(), 
+    loadProductCosts(),
+    loadCreditCardCost(),
+    loadLaborCosts(),
+    loadGlassCosts()
+  ])
 })
 
 async function loadProductCosts() {
@@ -696,4 +901,145 @@ async function handleLaborInlineEdit(field: string, value: number, product: Prod
     await loadProducts()
   }
 }
+
+// ========== ACCORDION FUNCTIONS ==========
+
+// Credit Card Functions
+async function loadCreditCardCost() {
+  try {
+    const costs = await creditCardCostService.getAll()
+    if (costs && costs.length > 0) {
+      creditCardCost.value = costs[0]
+    }
+  } catch (error) {
+    console.error('Erro ao carregar taxas de cartão:', error)
+  }
+}
+
+async function saveCreditCardCost() {
+  if (!creditCardCost.value) return
+  
+  try {
+    await creditCardCostService.update(creditCardCost.value)
+    notification.success('Sucesso', 'Taxas de cartão atualizadas!')
+    await loadProducts() // Recarregar produtos para atualizar preços
+  } catch (error) {
+    console.error('Erro ao salvar taxas de cartão:', error)
+    notification.error('Erro', 'Erro ao salvar taxas de cartão')
+  }
+}
+
+// Labor Cost Functions
+async function loadLaborCosts() {
+  try {
+    laborCosts.value = await laborCostService.getAll()
+  } catch (error) {
+    console.error('Erro ao carregar custos de mão de obra:', error)
+  }
+}
+
+async function addLaborCost() {
+  try {
+    const created = await laborCostService.create(newLaborCost.value)
+    laborCosts.value.push(created)
+    newLaborCost.value = { type: 'PORTA', sheets: 1, laborValue: 0 }
+    notification.success('Sucesso', 'Custo de mão de obra adicionado!')
+    await loadProducts()
+  } catch (error) {
+    console.error('Erro ao adicionar custo de mão de obra:', error)
+    notification.error('Erro', 'Erro ao adicionar custo de mão de obra')
+  }
+}
+
+async function updateLaborCost(labor: LaborCostDTO) {
+  try {
+    await laborCostService.update(labor.id!, labor)
+    notification.success('Sucesso', 'Custo de mão de obra atualizado!')
+    await loadProducts()
+  } catch (error) {
+    console.error('Erro ao atualizar custo de mão de obra:', error)
+    notification.error('Erro', 'Erro ao atualizar custo de mão de obra')
+  }
+}
+
+async function deleteLaborCost(id: number) {
+  if (!confirm('Tem certeza que deseja excluir este custo de mão de obra?')) return
+  
+  try {
+    await laborCostService.delete(id)
+    laborCosts.value = laborCosts.value.filter(l => l.id !== id)
+    notification.success('Sucesso', 'Custo de mão de obra excluído!')
+    await loadProducts()
+  } catch (error) {
+    console.error('Erro ao excluir custo de mão de obra:', error)
+    notification.error('Erro', 'Erro ao excluir custo de mão de obra')
+  }
+}
+
+// Glass Cost Functions
+async function loadGlassCosts() {
+  try {
+    glassCosts.value = await glassCostService.getAll()
+  } catch (error) {
+    console.error('Erro ao carregar custos de vidro:', error)
+  }
+}
+
+async function addGlassCost() {
+  try {
+    const created = await glassCostService.create(newGlassCost.value)
+    glassCosts.value.push(created)
+    newGlassCost.value = { color: 'INCOLOR', cost: 0, supplier: '' }
+    notification.success('Sucesso', 'Custo de vidro adicionado!')
+    await loadProducts()
+  } catch (error) {
+    console.error('Erro ao adicionar custo de vidro:', error)
+    notification.error('Erro', 'Erro ao adicionar custo de vidro')
+  }
+}
+
+async function updateGlassCost(glass: GlassCostDTO) {
+  try {
+    await glassCostService.update(glass.id!, glass)
+    notification.success('Sucesso', 'Custo de vidro atualizado!')
+    await loadProducts()
+  } catch (error) {
+    console.error('Erro ao atualizar custo de vidro:', error)
+    notification.error('Erro', 'Erro ao atualizar custo de vidro')
+  }
+}
+
+async function deleteGlassCost(color: string) {
+  if (!confirm(`Tem certeza que deseja excluir o custo do vidro ${color}?`)) return
+  
+  try {
+    await glassCostService.delete(color)
+    glassCosts.value = glassCosts.value.filter(g => g.color !== color)
+    notification.success('Sucesso', 'Custo de vidro excluído!')
+    await loadProducts()
+  } catch (error) {
+    console.error('Erro ao excluir custo de vidro:', error)
+    notification.error('Erro', 'Erro ao excluir custo de vidro')
+  }
+}
 </script>
+
+<style scoped>
+.accordion-enter-active,
+.accordion-leave-active {
+  transition: all 0.3s ease;
+}
+
+.accordion-enter-from,
+.accordion-leave-to {
+  max-height: 0;
+  opacity: 0;
+  overflow: hidden;
+}
+
+.accordion-enter-to,
+.accordion-leave-from {
+  max-height: 500px;
+  opacity: 1;
+}
+</style>
