@@ -58,11 +58,6 @@ const routes = [
         component: () => import('../views/CreditCardCosts.vue'),
       },
       {
-        path: 'settings',
-        name: 'Settings',
-        component: () => import('../views/Settings.vue'),
-      },
-      {
         path: 'users',
         name: 'Users',
         component: () => import('../views/Users.vue'),
