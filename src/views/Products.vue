@@ -47,40 +47,50 @@
           
           <transition name="accordion">
             <div v-show="activeAccordion === 'creditCard'" class="border-t border-border">
-              <div v-if="creditCardCost" class="p-4">
-                <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3">
-                  <div>
-                    <label class="block text-xs font-medium text-muted-foreground mb-1">Débito (%)</label>
-                    <input
-                      v-model.number="creditCardCost.debit"
-                      type="number"
-                      step="0.01"
-                      class="w-full px-2 py-1.5 text-sm border border-border rounded focus:outline-none focus:ring-2 focus:ring-blue-500 bg-background"
-                      @change="saveCreditCardCost"
-                    />
-                  </div>
-                  <div v-for="i in 6" :key="`tax${i}x`">
-                    <label class="block text-xs font-medium text-muted-foreground mb-1">{{ i }}x (%)</label>
-                    <input
-                      v-model.number="(creditCardCost as any)[`tax${i}x`]"
-                      type="number"
-                      step="0.01"
-                      class="w-full px-2 py-1.5 text-sm border border-border rounded focus:outline-none focus:ring-2 focus:ring-blue-500 bg-background"
-                      @change="saveCreditCardCost"
-                    />
-                  </div>
-                </div>
-                <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3 mt-3">
-                  <div v-for="i in [7,8,9,10,11,12]" :key="`tax${i}x`">
-                    <label class="block text-xs font-medium text-muted-foreground mb-1">{{ i }}x (%)</label>
-                    <input
-                      v-model.number="(creditCardCost as any)[`tax${i}x`]"
-                      type="number"
-                      step="0.01"
-                      class="w-full px-2 py-1.5 text-sm border border-border rounded focus:outline-none focus:ring-2 focus:ring-blue-500 bg-background"
-                      @change="saveCreditCardCost"
-                    />
-                  </div>
+              <div class="p-4 overflow-x-auto">
+                <table v-if="creditCardCost" class="w-full text-sm border-collapse">
+                  <thead class="bg-blue-50 dark:bg-blue-950/30">
+                    <tr>
+                      <th class="px-2 py-2 text-xs font-semibold text-center border border-border text-foreground">Débito</th>
+                      <th class="px-2 py-2 text-xs font-semibold text-center border border-border text-foreground">1x</th>
+                      <th class="px-2 py-2 text-xs font-semibold text-center border border-border text-foreground">2x</th>
+                      <th class="px-2 py-2 text-xs font-semibold text-center border border-border text-foreground">3x</th>
+                      <th class="px-2 py-2 text-xs font-semibold text-center border border-border text-foreground">4x</th>
+                      <th class="px-2 py-2 text-xs font-semibold text-center border border-border text-foreground">5x</th>
+                      <th class="px-2 py-2 text-xs font-semibold text-center border border-border text-foreground">6x</th>
+                      <th class="px-2 py-2 text-xs font-semibold text-center border border-border text-foreground">7x</th>
+                      <th class="px-2 py-2 text-xs font-semibold text-center border border-border text-foreground">8x</th>
+                      <th class="px-2 py-2 text-xs font-semibold text-center border border-border text-foreground">9x</th>
+                      <th class="px-2 py-2 text-xs font-semibold text-center border border-border text-foreground">10x</th>
+                      <th class="px-2 py-2 text-xs font-semibold text-center border border-border text-foreground">11x</th>
+                      <th class="px-2 py-2 text-xs font-semibold text-center border border-border text-foreground">12x</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr class="bg-background hover:bg-accent/30 transition-colors">
+                      <td class="border border-border px-1 py-1">
+                        <input
+                          v-model.number="creditCardCost.debit"
+                          type="number"
+                          step="0.01"
+                          class="w-full px-2 py-1 text-sm text-center border-0 focus:outline-none focus:ring-1 focus:ring-blue-500 bg-transparent"
+                          @change="saveCreditCardCost"
+                        />
+                      </td>
+                      <td v-for="i in 12" :key="`tax${i}x`" class="border border-border px-1 py-1">
+                        <input
+                          v-model.number="(creditCardCost as any)[`tax${i}x`]"
+                          type="number"
+                          step="0.01"
+                          class="w-full px-2 py-1 text-sm text-center border-0 focus:outline-none focus:ring-1 focus:ring-blue-500 bg-transparent"
+                          @change="saveCreditCardCost"
+                        />
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+                <div v-else class="text-center py-4 text-muted-foreground text-sm">
+                  Carregando taxas de cartão...
                 </div>
               </div>
             </div>
@@ -113,43 +123,52 @@
           <transition name="accordion">
             <div v-show="activeAccordion === 'labor'" class="border-t border-border">
               <div class="p-4">
-                <!-- Add New -->
-                <div class="bg-green-50 dark:bg-green-950/20 p-3 rounded-lg mb-3">
-                  <div class="grid grid-cols-1 md:grid-cols-4 gap-2">
-                    <select v-model="newLaborCost.type" class="px-2 py-1.5 text-sm border border-border rounded focus:outline-none focus:ring-2 focus:ring-green-500 bg-background">
-                      <option value="PORTA">PORTA</option>
-                      <option value="JANELA">JANELA</option>
-                      <option value="BOX">BOX</option>
-                      <option value="FIXO">FIXO</option>
-                      <option value="BASCULANTE">BASCULANTE</option>
-                      <option value="SACADA">SACADA</option>
-                    </select>
-                    <input v-model.number="newLaborCost.sheets" type="number" min="1" placeholder="Folhas" class="px-2 py-1.5 text-sm border border-border rounded focus:outline-none focus:ring-2 focus:ring-green-500 bg-background" />
-                    <input v-model.number="newLaborCost.laborValue" type="number" step="0.01" placeholder="Valor (R$)" class="px-2 py-1.5 text-sm border border-border rounded focus:outline-none focus:ring-2 focus:ring-green-500 bg-background" />
-                    <button @click="addLaborCost" class="px-3 py-1.5 bg-green-600 text-white rounded hover:bg-green-700 transition-colors text-sm">Adicionar</button>
-                  </div>
-                </div>
-
-                <!-- Table -->
+                <!-- Tabela Estilo Excel -->
                 <div class="overflow-x-auto">
-                  <table class="w-full text-sm">
-                    <thead class="bg-muted">
+                  <table class="w-full text-sm border-collapse">
+                    <thead class="bg-green-50 dark:bg-green-950/30">
                       <tr>
-                        <th class="px-3 py-2 text-left text-xs font-medium text-muted-foreground">Tipo</th>
-                        <th class="px-3 py-2 text-left text-xs font-medium text-muted-foreground">Folhas</th>
-                        <th class="px-3 py-2 text-left text-xs font-medium text-muted-foreground">Valor (R$)</th>
-                        <th class="px-3 py-2 text-right text-xs font-medium text-muted-foreground">Ações</th>
+                        <th class="px-3 py-2 text-xs font-semibold text-center border border-border text-foreground">Tipo</th>
+                        <th class="px-3 py-2 text-xs font-semibold text-center border border-border text-foreground">Folhas</th>
+                        <th class="px-3 py-2 text-xs font-semibold text-center border border-border text-foreground">Valor (R$)</th>
+                        <th class="px-3 py-2 text-xs font-semibold text-center border border-border text-foreground w-20">Ações</th>
                       </tr>
                     </thead>
-                    <tbody class="divide-y divide-border">
-                      <tr v-for="labor in laborCosts" :key="labor.id">
-                        <td class="px-3 py-2 text-foreground">{{ labor.type }}</td>
-                        <td class="px-3 py-2 text-foreground">{{ labor.sheets }}</td>
-                        <td class="px-3 py-2">
-                          <input v-model.number="labor.laborValue" type="number" step="0.01" class="w-24 px-2 py-1 text-sm border border-border rounded focus:outline-none focus:ring-2 focus:ring-green-500 bg-background" @change="updateLaborCost(labor)" />
+                    <tbody>
+                      <tr v-for="labor in laborCosts" :key="labor.id" class="bg-background hover:bg-accent/30 transition-colors">
+                        <td class="border border-border px-3 py-2 text-center text-foreground">{{ labor.type }}</td>
+                        <td class="border border-border px-3 py-2 text-center text-foreground">{{ labor.sheets }}</td>
+                        <td class="border border-border px-1 py-1">
+                          <input v-model.number="labor.laborValue" type="number" step="0.01" class="w-full px-2 py-1 text-sm text-center border-0 focus:outline-none focus:ring-1 focus:ring-green-500 bg-transparent" @change="updateLaborCost(labor)" />
                         </td>
-                        <td class="px-3 py-2 text-right">
-                          <button @click="deleteLaborCost(labor.id!)" class="text-red-600 hover:text-red-900 dark:hover:text-red-400 transition-colors text-xs">Excluir</button>
+                        <td class="border border-border px-2 py-2 text-center">
+                          <button @click="deleteLaborCost(labor.id!)" class="text-red-600 hover:text-red-900 dark:hover:text-red-400 transition-colors text-xs font-medium">
+                            <svg class="w-4 h-4 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                            </svg>
+                          </button>
+                        </td>
+                      </tr>
+                      <!-- Add New Row -->
+                      <tr class="bg-green-50/50 dark:bg-green-950/20">
+                        <td class="border border-border px-1 py-1">
+                          <select v-model="newLaborCost.type" class="w-full px-2 py-1.5 text-sm text-center border-0 focus:outline-none focus:ring-1 focus:ring-green-500 bg-transparent">
+                            <option value="PORTA">PORTA</option>
+                            <option value="JANELA">JANELA</option>
+                            <option value="BOX">BOX</option>
+                            <option value="FIXO">FIXO</option>
+                            <option value="BASCULANTE">BASCULANTE</option>
+                            <option value="SACADA">SACADA</option>
+                          </select>
+                        </td>
+                        <td class="border border-border px-1 py-1">
+                          <input v-model.number="newLaborCost.sheets" type="number" min="1" placeholder="Folhas" class="w-full px-2 py-1.5 text-sm text-center border-0 focus:outline-none focus:ring-1 focus:ring-green-500 bg-transparent" />
+                        </td>
+                        <td class="border border-border px-1 py-1">
+                          <input v-model.number="newLaborCost.laborValue" type="number" step="0.01" placeholder="Valor (R$)" class="w-full px-2 py-1.5 text-sm text-center border-0 focus:outline-none focus:ring-1 focus:ring-green-500 bg-transparent" />
+                        </td>
+                        <td class="border border-border px-2 py-2 text-center">
+                          <button @click="addLaborCost" class="px-2 py-1 bg-green-600 text-white rounded hover:bg-green-700 transition-colors text-xs font-medium">+</button>
                         </td>
                       </tr>
                     </tbody>
@@ -186,45 +205,58 @@
           <transition name="accordion">
             <div v-show="activeAccordion === 'glass'" class="border-t border-border">
               <div class="p-4">
-                <!-- Add New -->
-                <div class="bg-purple-50 dark:bg-purple-950/20 p-3 rounded-lg mb-3">
-                  <div class="grid grid-cols-1 md:grid-cols-4 gap-2">
-                    <select v-model="newGlassCost.color" class="px-2 py-1.5 text-sm border border-border rounded focus:outline-none focus:ring-2 focus:ring-purple-500 bg-background">
-                      <option value="INCOLOR">Incolor</option>
-                      <option value="FUME">Fumê</option>
-                      <option value="VERDE">Verde</option>
-                      <option value="BRONZE">Bronze</option>
-                      <option value="AZUL">Azul</option>
-                      <option value="CINZA">Cinza</option>
-                    </select>
-                    <input v-model.number="newGlassCost.cost" type="number" step="0.01" placeholder="Custo (R$/m²)" class="px-2 py-1.5 text-sm border border-border rounded focus:outline-none focus:ring-2 focus:ring-purple-500 bg-background" />
-                    <input v-model="newGlassCost.supplier" type="text" placeholder="Fornecedor (opcional)" class="px-2 py-1.5 text-sm border border-border rounded focus:outline-none focus:ring-2 focus:ring-purple-500 bg-background" />
-                    <button @click="addGlassCost" class="px-3 py-1.5 bg-purple-600 text-white rounded hover:bg-purple-700 transition-colors text-sm">Adicionar</button>
-                  </div>
-                </div>
-
-                <!-- Grid -->
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                  <div v-for="glass in glassCosts" :key="glass.id" class="border border-border rounded-lg p-3 hover:shadow-md transition-shadow">
-                    <div class="flex items-center justify-between mb-2">
-                      <h4 class="font-semibold text-foreground text-sm">{{ glass.color }}</h4>
-                      <button @click="deleteGlassCost(glass.color)" class="text-red-600 hover:text-red-900 dark:hover:text-red-400 transition-colors">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
-                        </svg>
-                      </button>
-                    </div>
-                    <div class="space-y-2">
-                      <div>
-                        <label class="block text-xs text-muted-foreground mb-1">Custo (R$/m²)</label>
-                        <input v-model.number="glass.cost" type="number" step="0.01" class="w-full px-2 py-1.5 text-sm border border-border rounded focus:outline-none focus:ring-2 focus:ring-purple-500 bg-background" @change="updateGlassCost(glass)" />
-                      </div>
-                      <div v-if="glass.supplier">
-                        <label class="block text-xs text-muted-foreground mb-1">Fornecedor</label>
-                        <input v-model="glass.supplier" type="text" class="w-full px-2 py-1.5 text-sm border border-border rounded focus:outline-none focus:ring-2 focus:ring-purple-500 bg-background" @change="updateGlassCost(glass)" />
-                      </div>
-                    </div>
-                  </div>
+                <!-- Tabela Estilo Excel -->
+                <div class="overflow-x-auto">
+                  <table class="w-full text-sm border-collapse">
+                    <thead class="bg-purple-50 dark:bg-purple-950/30">
+                      <tr>
+                        <th class="px-3 py-2 text-xs font-semibold text-center border border-border text-foreground">Cor</th>
+                        <th class="px-3 py-2 text-xs font-semibold text-center border border-border text-foreground">Custo (R$/m²)</th>
+                        <th class="px-3 py-2 text-xs font-semibold text-center border border-border text-foreground">Fornecedor</th>
+                        <th class="px-3 py-2 text-xs font-semibold text-center border border-border text-foreground w-20">Ações</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr v-for="glass in glassCosts" :key="glass.id" class="bg-background hover:bg-accent/30 transition-colors">
+                        <td class="border border-border px-3 py-2 text-center text-foreground font-medium">{{ glass.color }}</td>
+                        <td class="border border-border px-1 py-1">
+                          <input v-model.number="glass.cost" type="number" step="0.01" class="w-full px-2 py-1 text-sm text-center border-0 focus:outline-none focus:ring-1 focus:ring-purple-500 bg-transparent" @change="updateGlassCost(glass)" />
+                        </td>
+                        <td class="border border-border px-1 py-1">
+                          <input v-model="glass.supplier" type="text" placeholder="Fornecedor" class="w-full px-2 py-1 text-sm text-center border-0 focus:outline-none focus:ring-1 focus:ring-purple-500 bg-transparent" @change="updateGlassCost(glass)" />
+                        </td>
+                        <td class="border border-border px-2 py-2 text-center">
+                          <button @click="deleteGlassCost(glass.color)" class="text-red-600 hover:text-red-900 dark:hover:text-red-400 transition-colors text-xs font-medium">
+                            <svg class="w-4 h-4 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                            </svg>
+                          </button>
+                        </td>
+                      </tr>
+                      <!-- Add New Row -->
+                      <tr class="bg-purple-50/50 dark:bg-purple-950/20">
+                        <td class="border border-border px-1 py-1">
+                          <select v-model="newGlassCost.color" class="w-full px-2 py-1.5 text-sm text-center border-0 focus:outline-none focus:ring-1 focus:ring-purple-500 bg-transparent">
+                            <option value="INCOLOR">Incolor</option>
+                            <option value="FUME">Fumê</option>
+                            <option value="VERDE">Verde</option>
+                            <option value="BRONZE">Bronze</option>
+                            <option value="AZUL">Azul</option>
+                            <option value="CINZA">Cinza</option>
+                          </select>
+                        </td>
+                        <td class="border border-border px-1 py-1">
+                          <input v-model.number="newGlassCost.cost" type="number" step="0.01" placeholder="Custo (R$/m²)" class="w-full px-2 py-1.5 text-sm text-center border-0 focus:outline-none focus:ring-1 focus:ring-purple-500 bg-transparent" />
+                        </td>
+                        <td class="border border-border px-1 py-1">
+                          <input v-model="newGlassCost.supplier" type="text" placeholder="Fornecedor" class="w-full px-2 py-1.5 text-sm text-center border-0 focus:outline-none focus:ring-1 focus:ring-purple-500 bg-transparent" />
+                        </td>
+                        <td class="border border-border px-2 py-2 text-center">
+                          <button @click="addGlassCost" class="px-2 py-1 bg-purple-600 text-white rounded hover:bg-purple-700 transition-colors text-xs font-medium">+</button>
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
                 </div>
               </div>
             </div>
@@ -257,52 +289,66 @@
           <transition name="accordion">
             <div v-show="activeAccordion === 'gain'" class="border-t border-border">
               <div class="p-4">
-                <!-- Add New -->
-                <div class="bg-orange-50 dark:bg-orange-950/20 p-3 rounded-lg mb-3">
-                  <div class="grid grid-cols-1 md:grid-cols-5 gap-2">
-                    <select v-model="newGain.type" class="px-2 py-1.5 text-sm border border-border rounded focus:outline-none focus:ring-2 focus:ring-orange-500 bg-background">
-                      <option value="PORTA">PORTA</option>
-                      <option value="JANELA">JANELA</option>
-                      <option value="BOX">BOX</option>
-                      <option value="FIXO">FIXO</option>
-                      <option value="BASCULANTE">BASCULANTE</option>
-                      <option value="SACADA">SACADA</option>
-                    </select>
-                    <input v-model.number="newGain.sheets" type="number" min="1" placeholder="Folhas" class="px-2 py-1.5 text-sm border border-border rounded focus:outline-none focus:ring-2 focus:ring-orange-500 bg-background" />
-                    <input v-model.number="newGain.gainValue" type="number" step="0.01" placeholder="Ganho (%)" class="px-2 py-1.5 text-sm border border-border rounded focus:outline-none focus:ring-2 focus:ring-orange-500 bg-background" />
-                    <input v-model="newGain.description" type="text" placeholder="Descrição (opcional)" class="px-2 py-1.5 text-sm border border-border rounded focus:outline-none focus:ring-2 focus:ring-orange-500 bg-background" />
-                    <button @click="addGain" class="px-3 py-1.5 bg-orange-600 text-white rounded hover:bg-orange-700 transition-colors text-sm">Adicionar</button>
-                  </div>
-                </div>
-
-                <!-- Table -->
+                <!-- Tabela Estilo Excel -->
                 <div class="overflow-x-auto">
-                  <table class="w-full text-sm">
-                    <thead class="bg-muted">
+                  <table class="w-full text-sm border-collapse">
+                    <thead class="bg-orange-50 dark:bg-orange-950/30">
                       <tr>
-                        <th class="px-3 py-2 text-left text-xs font-medium text-muted-foreground">Tipo</th>
-                        <th class="px-3 py-2 text-left text-xs font-medium text-muted-foreground">Folhas</th>
-                        <th class="px-3 py-2 text-left text-xs font-medium text-muted-foreground">Ganho (%)</th>
-                        <th class="px-3 py-2 text-left text-xs font-medium text-muted-foreground">Descrição</th>
-                        <th class="px-3 py-2 text-center text-xs font-medium text-muted-foreground">Ativo</th>
-                        <th class="px-3 py-2 text-right text-xs font-medium text-muted-foreground">Ações</th>
+                        <th class="px-3 py-2 text-xs font-semibold text-center border border-border text-foreground">Tipo</th>
+                        <th class="px-3 py-2 text-xs font-semibold text-center border border-border text-foreground">Folhas</th>
+                        <th class="px-3 py-2 text-xs font-semibold text-center border border-border text-foreground">Ganho (%)</th>
+                        <th class="px-3 py-2 text-xs font-semibold text-center border border-border text-foreground">Descrição</th>
+                        <th class="px-3 py-2 text-xs font-semibold text-center border border-border text-foreground w-16">Ativo</th>
+                        <th class="px-3 py-2 text-xs font-semibold text-center border border-border text-foreground w-20">Ações</th>
                       </tr>
                     </thead>
-                    <tbody class="divide-y divide-border">
-                      <tr v-for="gain in gains" :key="gain.id">
-                        <td class="px-3 py-2 text-foreground">{{ gain.type }}</td>
-                        <td class="px-3 py-2 text-foreground">{{ gain.sheets }}</td>
-                        <td class="px-3 py-2">
-                          <input v-model.number="gain.gainValue" type="number" step="0.01" class="w-20 px-2 py-1 text-sm border border-border rounded focus:outline-none focus:ring-2 focus:ring-orange-500 bg-background" @change="updateGain(gain)" />
+                    <tbody>
+                      <tr v-for="gain in gains" :key="gain.id" class="bg-background hover:bg-accent/30 transition-colors">
+                        <td class="border border-border px-3 py-2 text-center text-foreground">{{ gain.type }}</td>
+                        <td class="border border-border px-3 py-2 text-center text-foreground">{{ gain.sheets }}</td>
+                        <td class="border border-border px-1 py-1">
+                          <input v-model.number="gain.gainValue" type="number" step="0.01" class="w-full px-2 py-1 text-sm text-center border-0 focus:outline-none focus:ring-1 focus:ring-orange-500 bg-transparent" @change="updateGain(gain)" />
                         </td>
-                        <td class="px-3 py-2">
-                          <input v-model="gain.description" type="text" class="w-full px-2 py-1 text-sm border border-border rounded focus:outline-none focus:ring-2 focus:ring-orange-500 bg-background" @change="updateGain(gain)" />
+                        <td class="border border-border px-1 py-1">
+                          <input v-model="gain.description" type="text" placeholder="Descrição" class="w-full px-2 py-1 text-sm text-center border-0 focus:outline-none focus:ring-1 focus:ring-orange-500 bg-transparent" @change="updateGain(gain)" />
                         </td>
-                        <td class="px-3 py-2 text-center">
+                        <td class="border border-border px-2 py-2 text-center">
                           <input v-model="gain.active" type="checkbox" class="w-4 h-4 text-orange-600 border-gray-300 rounded focus:ring-orange-500" @change="updateGain(gain)" />
                         </td>
-                        <td class="px-3 py-2 text-right">
-                          <button @click="deleteGain(gain.id!)" class="text-red-600 hover:text-red-900 dark:hover:text-red-400 transition-colors text-xs">Excluir</button>
+                        <td class="border border-border px-2 py-2 text-center">
+                          <button @click="deleteGain(gain.id!)" class="text-red-600 hover:text-red-900 dark:hover:text-red-400 transition-colors text-xs font-medium">
+                            <svg class="w-4 h-4 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                            </svg>
+                          </button>
+                        </td>
+                      </tr>
+                      <!-- Add New Row -->
+                      <tr class="bg-orange-50/50 dark:bg-orange-950/20">
+                        <td class="border border-border px-1 py-1">
+                          <select v-model="newGain.type" class="w-full px-2 py-1.5 text-sm text-center border-0 focus:outline-none focus:ring-1 focus:ring-orange-500 bg-transparent">
+                            <option value="PORTA">PORTA</option>
+                            <option value="JANELA">JANELA</option>
+                            <option value="BOX">BOX</option>
+                            <option value="FIXO">FIXO</option>
+                            <option value="BASCULANTE">BASCULANTE</option>
+                            <option value="SACADA">SACADA</option>
+                          </select>
+                        </td>
+                        <td class="border border-border px-1 py-1">
+                          <input v-model.number="newGain.sheets" type="number" min="1" placeholder="Folhas" class="w-full px-2 py-1.5 text-sm text-center border-0 focus:outline-none focus:ring-1 focus:ring-orange-500 bg-transparent" />
+                        </td>
+                        <td class="border border-border px-1 py-1">
+                          <input v-model.number="newGain.gainValue" type="number" step="0.01" placeholder="Ganho (%)" class="w-full px-2 py-1.5 text-sm text-center border-0 focus:outline-none focus:ring-1 focus:ring-orange-500 bg-transparent" />
+                        </td>
+                        <td class="border border-border px-1 py-1">
+                          <input v-model="newGain.description" type="text" placeholder="Descrição" class="w-full px-2 py-1.5 text-sm text-center border-0 focus:outline-none focus:ring-1 focus:ring-orange-500 bg-transparent" />
+                        </td>
+                        <td class="border border-border px-2 py-2 text-center">
+                          <input v-model="newGain.active" type="checkbox" class="w-4 h-4 text-orange-600 border-gray-300 rounded focus:ring-orange-500" />
+                        </td>
+                        <td class="border border-border px-2 py-2 text-center">
+                          <button @click="addGain" class="px-2 py-1 bg-orange-600 text-white rounded hover:bg-orange-700 transition-colors text-xs font-medium">+</button>
                         </td>
                       </tr>
                     </tbody>
