@@ -108,7 +108,9 @@ export const useAuthStore = defineStore('auth', {
         console.log('User salvo no localStorage:', savedUser)
         console.log('User parsed do localStorage:', JSON.parse(savedUser!))
 
-        axios.defaults.headers.common['Authorization'] = `Bearer ${token}`
+        // Não precisa configurar axios.defaults aqui
+        // O interceptor em api.ts já pega o token do localStorage automaticamente
+        // axios.defaults.headers.common['Authorization'] = `Bearer ${token}` // REMOVIDO
 
         return true
       } catch (error: any) {
@@ -131,14 +133,18 @@ export const useAuthStore = defineStore('auth', {
       localStorage.removeItem('token')
       localStorage.removeItem('user')
       
-      delete axios.defaults.headers.common['Authorization']
+      // Não precisa deletar axios.defaults, o interceptor cuida disso
+      // delete axios.defaults.headers.common['Authorization'] // REMOVIDO
     },
     
     initializeAuth() {
+      // O interceptor em api.ts já pega o token automaticamente
+      // Não precisa configurar axios.defaults aqui
       const token = localStorage.getItem('token')
-      if (token) {
-        axios.defaults.headers.common['Authorization'] = `Bearer ${token}`
-      }
+      console.log('initializeAuth: token encontrado =', !!token)
+      // if (token) {
+      //   axios.defaults.headers.common['Authorization'] = `Bearer ${token}`
+      // }
     }
   }
 })
