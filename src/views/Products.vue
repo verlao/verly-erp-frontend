@@ -393,7 +393,7 @@
           </transition>
         </div>
 
-        <!-- Accordion 5: Custo de Kits -->
+        <!-- Accordion 5: Custo de Kits - Matriz Completa -->
         <div class="border border-border rounded-lg overflow-hidden bg-card shadow-sm">
           <button
             @click="activeAccordion = activeAccordion === 'kit' ? null : 'kit'"
@@ -403,7 +403,7 @@
               <svg class="w-5 h-5 text-cyan-600 dark:text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
               </svg>
-              <span class="text-sm font-semibold text-foreground">Custo de Kits/Acessórios (R$)</span>
+              <span class="text-sm font-semibold text-foreground">Custo de Kits/Acessórios (R$) - Todas Combinações</span>
             </div>
             <svg 
               class="w-4 h-4 text-muted-foreground transition-transform duration-200" 
@@ -419,62 +419,41 @@
           <transition name="accordion">
             <div v-show="activeAccordion === 'kit'" class="border-t border-border">
               <div class="p-4">
-                <!-- Tabela Estilo Excel -->
+                <!-- Tabela Matriz Completa Estilo Excel -->
                 <div class="overflow-x-auto">
                   <table class="w-full text-sm border-collapse">
                     <thead class="bg-cyan-50 dark:bg-cyan-950/30">
                       <tr>
-                        <th class="px-3 py-2 text-xs font-semibold text-center border border-border text-foreground">Tipo</th>
-                        <th class="px-3 py-2 text-xs font-semibold text-center border border-border text-foreground">Folhas</th>
-                        <th class="px-3 py-2 text-xs font-semibold text-center border border-border text-foreground">Custo Kit (R$)</th>
-                        <th class="px-3 py-2 text-xs font-semibold text-center border border-border text-foreground w-20">Ações</th>
+                        <th class="px-3 py-2 text-xs font-semibold text-center border border-border text-foreground sticky left-0 bg-cyan-50 dark:bg-cyan-950/30">Tipo</th>
+                        <th v-for="sheets in [1, 2, 3, 4]" :key="sheets" class="px-3 py-2 text-xs font-semibold text-center border border-border text-foreground">
+                          {{ sheets }} {{ sheets === 1 ? 'Folha' : 'Folhas' }}
+                        </th>
                       </tr>
                     </thead>
                     <tbody>
-                      <tr v-for="kit in kitCosts" :key="kit.id" class="bg-background hover:bg-accent/30 transition-colors">
-                        <td class="border border-border px-3 py-2 text-center text-foreground">{{ kit.type }}</td>
-                        <td class="border border-border px-3 py-2 text-center text-foreground">{{ kit.sheets }}</td>
-                        <td class="border border-border px-1 py-1">
+                      <tr v-for="type in kitProductTypes" :key="type" class="bg-background hover:bg-accent/30 transition-colors">
+                        <td class="border border-border px-3 py-2 text-center text-foreground font-medium sticky left-0 bg-background">{{ type }}</td>
+                        <td v-for="sheets in [1, 2, 3, 4]" :key="`${type}-${sheets}`" class="border border-border px-1 py-1">
                           <div class="flex items-center justify-center gap-1">
                             <span class="text-xs text-muted-foreground">R$</span>
-                            <input v-model.number="kit.kitValue" type="number" step="0.01" class="w-20 px-2 py-1 text-sm text-center border-0 focus:outline-none focus:ring-1 focus:ring-cyan-500 bg-transparent" @change="updateKitCost(kit)" />
+                            <input 
+                              :value="getKitValue(type, sheets)" 
+                              @input="(e) => updateKitMatrix(type, sheets, parseFloat((e.target as HTMLInputElement).value) || 0)"
+                              @blur="(e) => saveKitValue(type, sheets, parseFloat((e.target as HTMLInputElement).value) || 0)"
+                              type="number" 
+                              step="0.01" 
+                              min="0"
+                              placeholder="0"
+                              class="w-20 px-2 py-1 text-sm text-center border-0 focus:outline-none focus:ring-2 focus:ring-cyan-500 bg-transparent rounded"
+                            />
                           </div>
-                        </td>
-                        <td class="border border-border px-2 py-2 text-center">
-                          <button @click="deleteKitCost(kit.id!)" class="text-red-600 hover:text-red-900 dark:hover:text-red-400 transition-colors text-xs font-medium">
-                            <svg class="w-4 h-4 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
-                            </svg>
-                          </button>
-                        </td>
-                      </tr>
-                      <!-- Add New Row -->
-                      <tr class="bg-cyan-50/50 dark:bg-cyan-950/20">
-                        <td class="border border-border px-1 py-1">
-                          <select v-model="newKitCost.type" class="w-full px-2 py-1.5 text-sm text-center border-0 focus:outline-none focus:ring-1 focus:ring-cyan-500 bg-transparent">
-                            <option value="PORTA">PORTA</option>
-                            <option value="JANELA">JANELA</option>
-                            <option value="BOX">BOX</option>
-                            <option value="FIXO">FIXO</option>
-                            <option value="BASCULANTE">BASCULANTE</option>
-                            <option value="SACADA">SACADA</option>
-                          </select>
-                        </td>
-                        <td class="border border-border px-1 py-1">
-                          <input v-model.number="newKitCost.sheets" type="number" min="1" placeholder="Folhas" class="w-full px-2 py-1.5 text-sm text-center border-0 focus:outline-none focus:ring-1 focus:ring-cyan-500 bg-transparent" />
-                        </td>
-                        <td class="border border-border px-1 py-1">
-                          <div class="flex items-center justify-center gap-1">
-                            <span class="text-xs text-muted-foreground">R$</span>
-                            <input v-model.number="newKitCost.kitValue" type="number" step="0.01" placeholder="Valor" class="w-20 px-2 py-1.5 text-sm text-center border-0 focus:outline-none focus:ring-1 focus:ring-cyan-500 bg-transparent" />
-                          </div>
-                        </td>
-                        <td class="border border-border px-2 py-2 text-center">
-                          <button @click="addKitCost" class="px-2 py-1 bg-cyan-600 text-white rounded hover:bg-cyan-700 transition-colors text-xs font-medium">+</button>
                         </td>
                       </tr>
                     </tbody>
                   </table>
+                </div>
+                <div class="mt-2 text-xs text-muted-foreground">
+                  💡 Dica: Digite o valor e pressione Enter ou clique fora para salvar. Valores vazios = R$ 0 (sem kit aplicado).
                 </div>
               </div>
             </div>
@@ -788,6 +767,8 @@ const laborCosts = ref<LaborCostDTO[]>([])
 const glassCosts = ref<GlassCostDTO[]>([])
 const gains = ref<GainDTO[]>([])
 const kitCosts = ref<KitCostDTO[]>([])
+const kitProductTypes = ['PORTA', 'JANELA', 'BOX', 'FIXO', 'BASCULANTE', 'SACADA']
+const kitMatrix = ref<Record<string, number>>({})
 const newLaborCost = ref<Omit<LaborCostDTO, 'id'>>({
   type: 'PORTA',
   sheets: 1,
@@ -1400,8 +1381,55 @@ async function deleteGain(id: number) {
 async function loadKitCosts() {
   try {
     kitCosts.value = await kitCostService.getAll()
+    
+    // Popula a matriz com os valores existentes
+    kitMatrix.value = {}
+    kitCosts.value.forEach(kit => {
+      const key = `${kit.type}_${kit.sheets}`
+      kitMatrix.value[key] = kit.kitValue
+    })
   } catch (error) {
     console.error('Erro ao carregar custos de kit:', error)
+  }
+}
+
+function getKitValue(type: string, sheets: number): number {
+  const key = `${type}_${sheets}`
+  return kitMatrix.value[key] || 0
+}
+
+function updateKitMatrix(type: string, sheets: number, value: number) {
+  const key = `${type}_${sheets}`
+  kitMatrix.value[key] = value
+}
+
+async function saveKitValue(type: string, sheets: number, value: number) {
+  try {
+    // Verifica se já existe um kit cadastrado
+    const existing = kitCosts.value.find(k => k.type === type && k.sheets === sheets)
+    
+    if (existing) {
+      // Atualiza kit existente
+      existing.kitValue = value
+      await kitCostService.update(existing.id!, existing)
+      notification.success('Atualizado', `Kit ${type} ${sheets} folha(s): R$ ${value.toFixed(2)}`)
+    } else {
+      // Cria novo kit
+      const newKit = await kitCostService.create({
+        type,
+        sheets,
+        kitValue: value,
+        active: true
+      })
+      kitCosts.value.push(newKit)
+      notification.success('Criado', `Kit ${type} ${sheets} folha(s): R$ ${value.toFixed(2)}`)
+    }
+    
+    // Recalcula produtos após alteração
+    await loadProducts()
+  } catch (error) {
+    console.error('Erro ao salvar custo de kit:', error)
+    notification.error('Erro', 'Erro ao salvar custo de kit')
   }
 }
 
@@ -1409,6 +1437,11 @@ async function addKitCost() {
   try {
     const created = await kitCostService.create(newKitCost.value)
     kitCosts.value.push(created)
+    
+    // Atualiza matriz
+    const key = `${created.type}_${created.sheets}`
+    kitMatrix.value[key] = created.kitValue
+    
     newKitCost.value = { type: 'PORTA', sheets: 1, kitValue: 0 }
     notification.success('Sucesso', 'Custo de kit adicionado!')
     await loadProducts()
@@ -1421,6 +1454,11 @@ async function addKitCost() {
 async function updateKitCost(kit: KitCostDTO) {
   try {
     await kitCostService.update(kit.id!, kit)
+    
+    // Atualiza matriz
+    const key = `${kit.type}_${kit.sheets}`
+    kitMatrix.value[key] = kit.kitValue
+    
     notification.success('Sucesso', 'Custo de kit atualizado!')
     await loadProducts()
   } catch (error) {
@@ -1433,6 +1471,13 @@ async function deleteKitCost(id: number) {
   if (!confirm('Tem certeza que deseja excluir este custo de kit?')) return
   
   try {
+    const kit = kitCosts.value.find(k => k.id === id)
+    if (kit) {
+      // Remove da matriz
+      const key = `${kit.type}_${kit.sheets}`
+      delete kitMatrix.value[key]
+    }
+    
     await kitCostService.delete(id)
     kitCosts.value = kitCosts.value.filter(k => k.id !== id)
     notification.success('Sucesso', 'Custo de kit excluído!')
