@@ -2,48 +2,49 @@
   <Teleport to="body">
     <div
       v-if="isVisible"
-      class="fixed top-4 right-4 z-50 max-w-sm w-full bg-white dark:bg-gray-800 shadow-xl rounded-lg pointer-events-auto flex ring-1 ring-gray-200 dark:ring-gray-700 backdrop-blur-sm"
+      class="fixed top-4 right-4 z-50 max-w-sm w-full shadow-2xl rounded-lg pointer-events-auto flex ring-2 ring-black/10"
       :class="{
-        'border-l-4 border-green-500 dark:border-green-400': type === 'success',
-        'border-l-4 border-blue-500 dark:border-blue-400': type === 'info',
-        'border-l-4 border-yellow-500 dark:border-yellow-400': type === 'warning',
-        'border-l-4 border-red-500 dark:border-red-400': type === 'error'
+        'bg-white border-l-4 border-green-500': type === 'success',
+        'bg-white border-l-4 border-blue-500': type === 'info',
+        'bg-white border-l-4 border-yellow-500': type === 'warning',
+        'bg-white border-l-4 border-red-500': type === 'error'
       }"
+      style="background-color: #ffffff !important;"
     >
       <div class="flex-1 w-0 p-4">
         <div class="flex items-start">
           <div class="flex-shrink-0 pt-0.5">
-            <div v-if="type === 'success'" class="h-10 w-10 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-green-600 dark:text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <div v-if="type === 'success'" class="h-10 w-10 rounded-full bg-green-100 flex items-center justify-center">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
               </svg>
             </div>
-            <div v-else-if="type === 'info'" class="h-10 w-10 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-blue-600 dark:text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <div v-else-if="type === 'info'" class="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
             </div>
-            <div v-else-if="type === 'warning'" class="h-10 w-10 rounded-full bg-yellow-100 dark:bg-yellow-900/30 flex items-center justify-center">
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-yellow-600 dark:text-yellow-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <div v-else-if="type === 'warning'" class="h-10 w-10 rounded-full bg-yellow-100 flex items-center justify-center">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-yellow-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
               </svg>
             </div>
-            <div v-else-if="type === 'error'" class="h-10 w-10 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center">
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-red-600 dark:text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <div v-else-if="type === 'error'" class="h-10 w-10 rounded-full bg-red-100 flex items-center justify-center">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
               </svg>
             </div>
           </div>
           <div class="ml-3 flex-1">
-            <p class="text-sm font-medium text-foreground">{{ title }}</p>
-            <p class="mt-1 text-sm text-muted-foreground">{{ message }}</p>
+            <p class="text-sm font-medium text-gray-900">{{ title }}</p>
+            <p class="mt-1 text-sm text-gray-600">{{ message }}</p>
           </div>
         </div>
       </div>
-      <div class="flex border-l border-border">
+      <div class="flex border-l border-gray-200">
         <button
           @click="close"
-          class="w-full border border-transparent rounded-none rounded-r-lg p-4 flex items-center justify-center text-sm font-medium text-muted-foreground hover:text-foreground focus:outline-none"
+          class="w-full border border-transparent rounded-none rounded-r-lg p-4 flex items-center justify-center text-sm font-medium text-gray-500 hover:text-gray-700 focus:outline-none transition-colors"
         >
           <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
             <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
