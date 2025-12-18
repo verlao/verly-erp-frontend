@@ -231,6 +231,88 @@
           </transition>
         </div>
 
+        <!-- Accordion 4: Ganhos (Margem de Lucro) -->
+        <div class="border border-border rounded-lg overflow-hidden bg-card shadow-sm">
+          <button
+            @click="activeAccordion = activeAccordion === 'gain' ? null : 'gain'"
+            class="w-full px-4 py-3 flex items-center justify-between bg-gradient-to-r from-orange-50 to-orange-100 dark:from-orange-950/30 dark:to-orange-900/30 hover:from-orange-100 hover:to-orange-150 dark:hover:from-orange-900/40 dark:hover:to-orange-800/40 transition-colors"
+          >
+            <div class="flex items-center space-x-2">
+              <svg class="w-5 h-5 text-orange-600 dark:text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path>
+              </svg>
+              <span class="text-sm font-semibold text-foreground">Ganhos (Margem de Lucro %)</span>
+            </div>
+            <svg 
+              class="w-4 h-4 text-muted-foreground transition-transform duration-200" 
+              :class="{ 'rotate-180': activeAccordion === 'gain' }"
+              fill="none" 
+              stroke="currentColor" 
+              viewBox="0 0 24 24"
+            >
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+            </svg>
+          </button>
+          
+          <transition name="accordion">
+            <div v-show="activeAccordion === 'gain'" class="border-t border-border">
+              <div class="p-4">
+                <!-- Add New -->
+                <div class="bg-orange-50 dark:bg-orange-950/20 p-3 rounded-lg mb-3">
+                  <div class="grid grid-cols-1 md:grid-cols-5 gap-2">
+                    <select v-model="newGain.type" class="px-2 py-1.5 text-sm border border-border rounded focus:outline-none focus:ring-2 focus:ring-orange-500 bg-background">
+                      <option value="PORTA">PORTA</option>
+                      <option value="JANELA">JANELA</option>
+                      <option value="BOX">BOX</option>
+                      <option value="FIXO">FIXO</option>
+                      <option value="BASCULANTE">BASCULANTE</option>
+                      <option value="SACADA">SACADA</option>
+                    </select>
+                    <input v-model.number="newGain.sheets" type="number" min="1" placeholder="Folhas" class="px-2 py-1.5 text-sm border border-border rounded focus:outline-none focus:ring-2 focus:ring-orange-500 bg-background" />
+                    <input v-model.number="newGain.gainValue" type="number" step="0.01" placeholder="Ganho (%)" class="px-2 py-1.5 text-sm border border-border rounded focus:outline-none focus:ring-2 focus:ring-orange-500 bg-background" />
+                    <input v-model="newGain.description" type="text" placeholder="Descrição (opcional)" class="px-2 py-1.5 text-sm border border-border rounded focus:outline-none focus:ring-2 focus:ring-orange-500 bg-background" />
+                    <button @click="addGain" class="px-3 py-1.5 bg-orange-600 text-white rounded hover:bg-orange-700 transition-colors text-sm">Adicionar</button>
+                  </div>
+                </div>
+
+                <!-- Table -->
+                <div class="overflow-x-auto">
+                  <table class="w-full text-sm">
+                    <thead class="bg-muted">
+                      <tr>
+                        <th class="px-3 py-2 text-left text-xs font-medium text-muted-foreground">Tipo</th>
+                        <th class="px-3 py-2 text-left text-xs font-medium text-muted-foreground">Folhas</th>
+                        <th class="px-3 py-2 text-left text-xs font-medium text-muted-foreground">Ganho (%)</th>
+                        <th class="px-3 py-2 text-left text-xs font-medium text-muted-foreground">Descrição</th>
+                        <th class="px-3 py-2 text-center text-xs font-medium text-muted-foreground">Ativo</th>
+                        <th class="px-3 py-2 text-right text-xs font-medium text-muted-foreground">Ações</th>
+                      </tr>
+                    </thead>
+                    <tbody class="divide-y divide-border">
+                      <tr v-for="gain in gains" :key="gain.id">
+                        <td class="px-3 py-2 text-foreground">{{ gain.type }}</td>
+                        <td class="px-3 py-2 text-foreground">{{ gain.sheets }}</td>
+                        <td class="px-3 py-2">
+                          <input v-model.number="gain.gainValue" type="number" step="0.01" class="w-20 px-2 py-1 text-sm border border-border rounded focus:outline-none focus:ring-2 focus:ring-orange-500 bg-background" @change="updateGain(gain)" />
+                        </td>
+                        <td class="px-3 py-2">
+                          <input v-model="gain.description" type="text" class="w-full px-2 py-1 text-sm border border-border rounded focus:outline-none focus:ring-2 focus:ring-orange-500 bg-background" @change="updateGain(gain)" />
+                        </td>
+                        <td class="px-3 py-2 text-center">
+                          <input v-model="gain.active" type="checkbox" class="w-4 h-4 text-orange-600 border-gray-300 rounded focus:ring-orange-500" @change="updateGain(gain)" />
+                        </td>
+                        <td class="px-3 py-2 text-right">
+                          <button @click="deleteGain(gain.id!)" class="text-red-600 hover:text-red-900 dark:hover:text-red-400 transition-colors text-xs">Excluir</button>
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </transition>
+        </div>
+
       </div>
 
       <!-- Tabela de Produtos -->
@@ -502,6 +584,7 @@ import productCostService from '../services/product-cost'
 import creditCardCostService, { type CreditCardCostDTO } from '../services/credit-card-cost'
 import laborCostService, { type LaborCostDTO } from '../services/labor-cost'
 import glassCostService, { type GlassCostDTO } from '../services/glass-cost'
+import gainService, { type GainDTO } from '../services/gain'
 import type { ProductDTO } from '../services/product'
 import type { ProductCostDTO } from '../services/product-cost'
 import type { PaginatedResponse } from '../services/order'
@@ -529,10 +612,11 @@ const selectedColor = ref('')
 const searchQuery = ref('')
 
 // Accordions state
-const activeAccordion = ref<'creditCard' | 'labor' | 'glass' | null>(null)
+const activeAccordion = ref<'creditCard' | 'labor' | 'glass' | 'gain' | null>(null)
 const creditCardCost = ref<CreditCardCostDTO | null>(null)
 const laborCosts = ref<LaborCostDTO[]>([])
 const glassCosts = ref<GlassCostDTO[]>([])
+const gains = ref<GainDTO[]>([])
 const newLaborCost = ref<Omit<LaborCostDTO, 'id'>>({
   type: 'PORTA',
   sheets: 1,
@@ -542,6 +626,13 @@ const newGlassCost = ref<Omit<GlassCostDTO, 'id'>>({
   color: 'INCOLOR',
   cost: 0,
   supplier: ''
+})
+const newGain = ref<Omit<GainDTO, 'id'>>({
+  type: 'PORTA',
+  sheets: 1,
+  gainValue: 0,
+  active: true,
+  description: ''
 })
 
 // Paginação
@@ -629,7 +720,8 @@ onMounted(async () => {
     loadProductCosts(),
     loadCreditCardCost(),
     loadLaborCosts(),
-    loadGlassCosts()
+    loadGlassCosts(),
+    loadGains()
   ])
 })
 
@@ -1027,6 +1119,53 @@ async function deleteGlassCost(color: string) {
   } catch (error) {
     console.error('Erro ao excluir custo de vidro:', error)
     notification.error('Erro', 'Erro ao excluir custo de vidro')
+  }
+}
+
+// Gain Functions
+async function loadGains() {
+  try {
+    gains.value = await gainService.getAll()
+  } catch (error) {
+    console.error('Erro ao carregar ganhos:', error)
+  }
+}
+
+async function addGain() {
+  try {
+    const created = await gainService.create(newGain.value)
+    gains.value.push(created)
+    newGain.value = { type: 'PORTA', sheets: 1, gainValue: 0, active: true, description: '' }
+    notification.success('Sucesso', 'Ganho adicionado!')
+    await loadProducts()
+  } catch (error) {
+    console.error('Erro ao adicionar ganho:', error)
+    notification.error('Erro', 'Erro ao adicionar ganho')
+  }
+}
+
+async function updateGain(gain: GainDTO) {
+  try {
+    await gainService.update(gain.id!, gain)
+    notification.success('Sucesso', 'Ganho atualizado!')
+    await loadProducts()
+  } catch (error) {
+    console.error('Erro ao atualizar ganho:', error)
+    notification.error('Erro', 'Erro ao atualizar ganho')
+  }
+}
+
+async function deleteGain(id: number) {
+  if (!confirm('Tem certeza que deseja excluir este ganho?')) return
+  
+  try {
+    await gainService.delete(id)
+    gains.value = gains.value.filter(g => g.id !== id)
+    notification.success('Sucesso', 'Ganho excluído!')
+    await loadProducts()
+  } catch (error) {
+    console.error('Erro ao excluir ganho:', error)
+    notification.error('Erro', 'Erro ao excluir ganho')
   }
 }
 </script>
