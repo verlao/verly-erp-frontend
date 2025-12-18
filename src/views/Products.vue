@@ -48,7 +48,20 @@
           <transition name="accordion">
             <div v-show="activeAccordion === 'creditCard'" class="border-t border-border">
               <div class="p-4 overflow-x-auto">
-                <table v-if="creditCardCost" class="w-full text-sm border-collapse">
+                <div v-if="loadingCreditCard" class="text-center py-8">
+                  <svg class="animate-spin h-8 w-8 text-blue-600 mx-auto" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  <p class="mt-2 text-sm text-muted-foreground">Carregando taxas de cartão...</p>
+                </div>
+                <div v-else-if="!creditCardCost" class="text-center py-8">
+                  <p class="text-sm text-muted-foreground mb-3">Nenhuma taxa configurada ainda.</p>
+                  <button @click="createDefaultCreditCardCost" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors text-sm font-medium">
+                    Criar Configuração Padrão
+                  </button>
+                </div>
+                <table v-else class="w-full text-sm border-collapse">
                   <thead class="bg-blue-50 dark:bg-blue-950/30">
                     <tr>
                       <th class="px-2 py-2 text-xs font-semibold text-center border border-border text-foreground">Débito</th>
@@ -89,9 +102,6 @@
                     </tr>
                   </tbody>
                 </table>
-                <div v-else class="text-center py-4 text-muted-foreground text-sm">
-                  Carregando taxas de cartão...
-                </div>
               </div>
             </div>
           </transition>
@@ -660,6 +670,7 @@ const searchQuery = ref('')
 // Accordions state
 const activeAccordion = ref<'creditCard' | 'labor' | 'glass' | 'gain' | null>(null)
 const creditCardCost = ref<CreditCardCostDTO | null>(null)
+const loadingCreditCard = ref(false)
 const laborCosts = ref<LaborCostDTO[]>([])
 const glassCosts = ref<GlassCostDTO[]>([])
 const gains = ref<GainDTO[]>([])
@@ -1052,12 +1063,48 @@ async function handleLaborInlineEdit(field: string, value: number, product: Prod
 // Credit Card Functions
 async function loadCreditCardCost() {
   try {
+    loadingCreditCard.value = true
     const costs = await creditCardCostService.getAll()
     if (costs && costs.length > 0) {
       creditCardCost.value = costs[0]
+    } else {
+      creditCardCost.value = null
     }
   } catch (error) {
     console.error('Erro ao carregar taxas de cartão:', error)
+    notification.error('Erro', 'Erro ao carregar taxas de cartão')
+    creditCardCost.value = null
+  } finally {
+    loadingCreditCard.value = false
+  }
+}
+
+async function createDefaultCreditCardCost() {
+  try {
+    loadingCreditCard.value = true
+    const defaultCost = {
+      debit: 2.0,
+      tax1x: 3.0,
+      tax2x: 4.0,
+      tax3x: 5.0,
+      tax4x: 6.0,
+      tax5x: 7.0,
+      tax6x: 8.0,
+      tax7x: 9.0,
+      tax8x: 10.0,
+      tax9x: 11.0,
+      tax10x: 12.0,
+      tax11x: 13.0,
+      tax12x: 14.0
+    }
+    const created = await creditCardCostService.create(defaultCost)
+    creditCardCost.value = created
+    notification.success('Sucesso', 'Configuração padrão criada! Ajuste os valores conforme necessário.')
+  } catch (error) {
+    console.error('Erro ao criar taxas de cartão:', error)
+    notification.error('Erro', 'Erro ao criar configuração de taxas')
+  } finally {
+    loadingCreditCard.value = false
   }
 }
 
