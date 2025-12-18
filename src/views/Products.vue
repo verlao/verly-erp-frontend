@@ -62,7 +62,7 @@
                   <div v-for="i in 6" :key="`tax${i}x`">
                     <label class="block text-xs font-medium text-muted-foreground mb-1">{{ i }}x (%)</label>
                     <input
-                      v-model.number="creditCardCost[`tax${i}x`]"
+                      v-model.number="(creditCardCost as any)[`tax${i}x`]"
                       type="number"
                       step="0.01"
                       class="w-full px-2 py-1.5 text-sm border border-border rounded focus:outline-none focus:ring-2 focus:ring-blue-500 bg-background"
@@ -74,7 +74,7 @@
                   <div v-for="i in [7,8,9,10,11,12]" :key="`tax${i}x`">
                     <label class="block text-xs font-medium text-muted-foreground mb-1">{{ i }}x (%)</label>
                     <input
-                      v-model.number="creditCardCost[`tax${i}x`]"
+                      v-model.number="(creditCardCost as any)[`tax${i}x`]"
                       type="number"
                       step="0.01"
                       class="w-full px-2 py-1.5 text-sm border border-border rounded focus:outline-none focus:ring-2 focus:ring-blue-500 bg-background"
