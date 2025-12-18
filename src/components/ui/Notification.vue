@@ -2,7 +2,7 @@
   <Teleport to="body">
     <div
       v-if="isVisible"
-      class="fixed top-4 right-4 z-50 max-w-sm w-full bg-card shadow-lg rounded-lg pointer-events-auto flex ring-1 ring-border"
+      class="fixed top-4 right-4 z-50 max-w-sm w-full bg-white dark:bg-gray-800 shadow-xl rounded-lg pointer-events-auto flex ring-1 ring-gray-200 dark:ring-gray-700 backdrop-blur-sm"
       :class="{
         'border-l-4 border-green-500 dark:border-green-400': type === 'success',
         'border-l-4 border-blue-500 dark:border-blue-400': type === 'info',
