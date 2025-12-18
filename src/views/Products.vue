@@ -407,31 +407,31 @@
           </button>
         </div>
       <div v-else class="overflow-x-auto">
-          <table class="w-full">
-            <thead class="bg-muted">
-              <tr class="border-b border-border">
-                <th class="px-4 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Medida</th>
-                <th class="px-4 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Folhas</th>
-                <th class="px-4 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Fixo</th>
-                <th class="px-4 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Porta</th>
-                <th class="px-4 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">M²</th>
-                <th class="px-4 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Kit</th>
-                <th class="px-4 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Custo</th>
-                <th class="px-4 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">À Vista Din</th>
-                <th class="px-4 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">À Vista Cart</th>
-                <th class="px-4 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Parc 4x</th>
-                <th class="px-4 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Parc 6x</th>
-                <th class="px-4 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Parc 10x</th>
-                <th class="px-4 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Parc 12x</th>
-                <th class="px-4 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Lucro</th>
-                <th class="px-4 py-2 text-center text-xs font-medium text-muted-foreground uppercase tracking-wider">Ações</th>
+          <table class="w-full text-sm border-collapse">
+            <thead class="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30">
+              <tr>
+                <th class="px-3 py-2 text-xs font-semibold text-center border border-border text-foreground">Medida</th>
+                <th class="px-3 py-2 text-xs font-semibold text-center border border-border text-foreground">Folhas</th>
+                <th class="px-3 py-2 text-xs font-semibold text-center border border-border text-foreground">Fixo</th>
+                <th class="px-3 py-2 text-xs font-semibold text-center border border-border text-foreground">Porta</th>
+                <th class="px-3 py-2 text-xs font-semibold text-center border border-border text-foreground">M²</th>
+                <th class="px-3 py-2 text-xs font-semibold text-center border border-border text-foreground">Kit</th>
+                <th class="px-3 py-2 text-xs font-semibold text-center border border-border text-foreground">Custo</th>
+                <th class="px-3 py-2 text-xs font-semibold text-center border border-border text-foreground">À Vista Din</th>
+                <th class="px-3 py-2 text-xs font-semibold text-center border border-border text-foreground">À Vista Cart</th>
+                <th class="px-3 py-2 text-xs font-semibold text-center border border-border text-foreground">4x</th>
+                <th class="px-3 py-2 text-xs font-semibold text-center border border-border text-foreground">6x</th>
+                <th class="px-3 py-2 text-xs font-semibold text-center border border-border text-foreground">10x</th>
+                <th class="px-3 py-2 text-xs font-semibold text-center border border-border text-foreground">12x</th>
+                <th class="px-3 py-2 text-xs font-semibold text-center border border-border text-foreground">Lucro</th>
+                <th class="px-3 py-2 text-xs font-semibold text-center border border-border text-foreground w-20">Ações</th>
               </tr>
             </thead>
-            <tbody class="bg-card divide-y divide-border">
-              <tr v-for="product in filteredProducts" :key="product.id || product.key" :data-product-id="product.id" :data-product-key="product.key" class="hover:bg-accent/50 text-sm">
+            <tbody class="bg-background">
+              <tr v-for="product in filteredProducts" :key="product.id || product.key" :data-product-id="product.id" :data-product-key="product.key" class="hover:bg-accent/30 transition-colors">
               <!-- Medida (tipo + cor) -->
-              <td class="px-4 py-3 text-xs">
-                <div class="space-y-1">
+              <td class="border border-border px-2 py-2 text-center">
+                <div class="flex flex-col items-center gap-1">
                   <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium" :class="{
                     'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400': product.type === 'PORTA',
                     'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400': product.type === 'JANELA',
@@ -454,15 +454,15 @@
                 </div>
               </td>
               <!-- Folhas -->
-              <td class="px-4 py-3 text-center text-foreground">{{ product.sheets || '-' }}</td>
+              <td class="border border-border px-2 py-2 text-center text-foreground font-medium">{{ product.sheets || '-' }}</td>
               <!-- Fixo (largura) -->
-              <td class="px-4 py-3 text-center text-foreground">{{ product.width ? product.width : '-' }}</td>
+              <td class="border border-border px-2 py-2 text-center text-foreground">{{ product.width ? product.width : '-' }}</td>
               <!-- Porta (altura) -->
-              <td class="px-4 py-3 text-center text-foreground">{{ product.height ? product.height : '-' }}</td>
+              <td class="border border-border px-2 py-2 text-center text-foreground">{{ product.height ? product.height : '-' }}</td>
               <!-- M² -->
-              <td class="px-4 py-3 text-center text-muted-foreground">{{ product.measure ? product.measure.toFixed(2) : '-' }}</td>
+              <td class="border border-border px-2 py-2 text-center text-foreground font-medium">{{ product.measure ? product.measure.toFixed(2) : '-' }}</td>
               <!-- Kit -->
-              <td class="px-4 py-3">
+              <td class="border border-border px-1 py-1 text-center">
                 <EditableValue
                   :model-value="product.accessory ?? product.kit ?? 0"
                   type="currency"
@@ -470,51 +470,51 @@
                 />
               </td>
               <!-- Custo -->
-              <td class="px-4 py-3 font-mono text-foreground">{{ product.cost ? 'R$ ' + product.cost.toFixed(2) : '-' }}</td>
+              <td class="border border-border px-2 py-2 text-center font-mono text-foreground font-medium">{{ product.cost ? 'R$ ' + product.cost.toFixed(2) : '-' }}</td>
               <!-- À Vista Dinheiro -->
-              <td class="px-4 py-3 font-mono text-green-600 dark:text-green-400">
+              <td class="border border-border px-2 py-2 text-center font-mono text-green-600 dark:text-green-400 font-semibold">
                 {{ product.priceOptions?.cashMoney ? 'R$ ' + product.priceOptions.cashMoney.toFixed(2) : (product.price ? 'R$ ' + product.price.toFixed(2) : '-') }}
               </td>
               <!-- À Vista Cartão -->
-              <td class="px-4 py-3 font-mono text-green-700 dark:text-green-500">
+              <td class="border border-border px-2 py-2 text-center font-mono text-green-700 dark:text-green-500 font-semibold">
                 {{ product.priceOptions?.cashCard ? 'R$ ' + product.priceOptions.cashCard.toFixed(2) : '-' }}
               </td>
               <!-- Parc 4x -->
-              <td class="px-4 py-3 font-mono text-blue-600 dark:text-blue-400">
+              <td class="border border-border px-2 py-2 text-center font-mono text-blue-600 dark:text-blue-400">
                 {{ product.priceOptions?.installments4x ? 'R$ ' + product.priceOptions.installments4x.toFixed(2) : '-' }}
               </td>
               <!-- Parc 6x -->
-              <td class="px-4 py-3 font-mono text-blue-600 dark:text-blue-400">
+              <td class="border border-border px-2 py-2 text-center font-mono text-blue-600 dark:text-blue-400">
                 {{ product.priceOptions?.installments6x ? 'R$ ' + product.priceOptions.installments6x.toFixed(2) : '-' }}
               </td>
               <!-- Parc 10x -->
-              <td class="px-4 py-3 font-mono text-blue-700 dark:text-blue-500">
+              <td class="border border-border px-2 py-2 text-center font-mono text-blue-700 dark:text-blue-500">
                 {{ product.priceOptions?.installments10x ? 'R$ ' + product.priceOptions.installments10x.toFixed(2) : '-' }}
               </td>
               <!-- Parc 12x -->
-              <td class="px-4 py-3 font-mono text-blue-700 dark:text-blue-500">
+              <td class="border border-border px-2 py-2 text-center font-mono text-blue-700 dark:text-blue-500">
                 {{ product.priceOptions?.installments12x ? 'R$ ' + product.priceOptions.installments12x.toFixed(2) : '-' }}
               </td>
               <!-- Lucro -->
-              <td class="px-4 py-3 font-mono text-purple-600 dark:text-purple-400">{{ calculateProfit(product) }}</td>
+              <td class="border border-border px-2 py-2 text-center font-mono text-purple-600 dark:text-purple-400 font-semibold">{{ calculateProfit(product) }}</td>
               <!-- Ações -->
-              <td class="px-4 py-3 whitespace-nowrap text-center">
-                  <div class="flex justify-center space-x-1">
+              <td class="border border-border px-2 py-2 text-center">
+                  <div class="flex justify-center items-center space-x-1">
                     <button
                       @click="openModal(product)"
-                      class="text-blue-600 hover:text-blue-900 p-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 rounded"
+                      class="text-blue-600 hover:text-blue-900 dark:hover:text-blue-400 p-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 rounded transition-colors"
                       title="Editar Produto"
                       aria-label="Editar produto"
                     >
-                      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>
+                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>
                     </button>
                     <button
                       @click="confirmDelete(product)"
-                      class="text-red-600 hover:text-red-900 p-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500 rounded"
+                      class="text-red-600 hover:text-red-900 dark:hover:text-red-400 p-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500 rounded transition-colors"
                       title="Excluir Produto"
                       aria-label="Excluir produto"
                     >
-                      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c-1 0 2 1 2 2v2"/></svg>
+                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c-1 0 2 1 2 2v2"/></svg>
                     </button>
                   </div>
                 </td>
