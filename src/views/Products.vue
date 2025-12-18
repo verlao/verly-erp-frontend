@@ -1095,7 +1095,13 @@ async function createDefaultCreditCardCost() {
       tax9x: 11.0,
       tax10x: 12.0,
       tax11x: 13.0,
-      tax12x: 14.0
+      tax12x: 14.0,
+      tax13x: 15.0,
+      tax14x: 16.0,
+      tax15x: 17.0,
+      tax16x: 18.0,
+      tax17x: 19.0,
+      tax18x: 20.0
     }
     const created = await creditCardCostService.create(defaultCost)
     creditCardCost.value = created
