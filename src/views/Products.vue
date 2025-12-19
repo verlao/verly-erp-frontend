@@ -511,7 +511,7 @@
           <table class="w-full text-sm border-collapse">
             <thead class="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30">
               <tr>
-                <th class="px-3 py-2 text-xs font-semibold text-center border border-border text-foreground">Medida</th>
+                <th class="px-3 py-2 text-xs font-semibold text-center border border-border text-foreground">Tipo</th>
                 <th class="px-3 py-2 text-xs font-semibold text-center border border-border text-foreground">Folhas</th>
                 <th class="px-3 py-2 text-xs font-semibold text-center border border-border text-foreground">Fixo</th>
                 <th class="px-3 py-2 text-xs font-semibold text-center border border-border text-foreground">Porta</th>
@@ -530,17 +530,10 @@
             </thead>
             <tbody class="bg-background">
               <tr v-for="product in filteredProducts" :key="product.id || product.key" :data-product-id="product.id" :data-product-key="product.key" class="hover:bg-accent/30 transition-colors">
-              <!-- Medida (tipo + cor) -->
+              <!-- Tipo (tipo + cor) -->
               <td class="border border-border px-2 py-2 text-center">
                 <div class="flex flex-col items-center gap-1">
-                  <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium" :class="{
-                    'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400': product.type === 'PORTA',
-                    'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400': product.type === 'JANELA',
-                    'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400': product.type === 'SACADA',
-                    'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400': product.type === 'BASCULANTE',
-                    'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-400': product.type === 'FIXO',
-                    'bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-500': !product.type
-                  }">
+                  <span class="text-xs font-medium text-foreground">
                     {{ product.type || '-' }}
                   </span>
                   <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium" :class="{
@@ -550,7 +543,7 @@
                     'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400': product.color === 'BRONZE',
                     'bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-500': !product.color
                   }">
-                    {{ product.color || '-' }}
+                    {{ product.color ? product.color.toUpperCase() : '-' }}
                   </span>
                 </div>
               </td>
