@@ -107,6 +107,7 @@
                   'bg-green-100 text-green-800': product.type === 'JANELA',
                   'bg-purple-100 text-purple-800': product.type === 'SACADA',
                   'bg-orange-100 text-orange-800': product.type === 'BASCULANTE',
+                  'bg-cyan-100 text-cyan-800': product.type === 'BOX',
                   'bg-gray-100 text-gray-800': product.type === 'FIXO',
                   'bg-gray-100 text-gray-500': !product.type
                 }">
