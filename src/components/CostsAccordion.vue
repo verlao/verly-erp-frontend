@@ -55,7 +55,7 @@
                 <EditableValue
                   :model-value="glass.costPerSquareMeter"
                   type="currency"
-                  @save="(value) => handleGlassUpdate(glass.id, glass.color, value)"
+                  @save="(value) => handleGlassUpdate(glass.id!, glass.color, value)"
                   variant="default"
                   compact
                 />
@@ -394,15 +394,18 @@ const loadCreditCardCosts = async () => {
   }
 }
 
-const handleGlassUpdate = async (id: number, color: string, value: number) => {
+const handleGlassUpdate = async (id: number, color: string, value: string | number) => {
+  // Converter para número
+  const numericValue = typeof value === 'string' ? parseFloat(value) : value
+  
   // Validar que o valor não seja undefined ou null
-  if (value === undefined || value === null || isNaN(value)) {
+  if (numericValue === undefined || numericValue === null || isNaN(numericValue)) {
     showError('Erro', 'Valor inválido')
     return
   }
   
   try {
-    await glassCostService.updatePriceByColor(color, value)
+    await glassCostService.updatePriceByColor(color, numericValue)
     showSuccess('Sucesso', 'Custo de vidro atualizado')
     await loadGlassCosts()
   } catch (error: any) {
@@ -412,9 +415,12 @@ const handleGlassUpdate = async (id: number, color: string, value: number) => {
   }
 }
 
-const handleLaborUpdate = async (labor: LaborCostDTO, value: number) => {
+const handleLaborUpdate = async (labor: LaborCostDTO, value: string | number) => {
+  // Converter para número
+  const numericValue = typeof value === 'string' ? parseFloat(value) : value
+  
   // Validar que o valor não seja undefined ou null
-  if (value === undefined || value === null || isNaN(value)) {
+  if (numericValue === undefined || numericValue === null || isNaN(numericValue)) {
     showError('Erro', 'Valor inválido')
     return
   }
@@ -424,13 +430,13 @@ const handleLaborUpdate = async (labor: LaborCostDTO, value: number) => {
     return
   }
   
-  console.log('🔧 handleLaborUpdate chamado:', { labor, newValue: value, type: typeof value })
+  console.log('🔧 handleLaborUpdate chamado:', { labor, newValue: numericValue, type: typeof numericValue })
   
   try {
     // Enviar objeto completo com o valor atualizado
     const payload = {
       ...labor,
-      laborValue: value
+      laborValue: numericValue
     }
     console.log('📤 Enviando payload completo:', payload)
     
@@ -452,9 +458,12 @@ const handleLaborUpdate = async (labor: LaborCostDTO, value: number) => {
   }
 }
 
-const handleGainUpdate = async (gain: GainDTO, value: number) => {
+const handleGainUpdate = async (gain: GainDTO, value: string | number) => {
+  // Converter para número
+  const numericValue = typeof value === 'string' ? parseFloat(value) : value
+  
   // Validar que o valor não seja undefined ou null
-  if (value === undefined || value === null || isNaN(value)) {
+  if (numericValue === undefined || numericValue === null || isNaN(numericValue)) {
     showError('Erro', 'Valor inválido')
     return
   }
@@ -468,7 +477,7 @@ const handleGainUpdate = async (gain: GainDTO, value: number) => {
     // Enviar objeto completo com o valor atualizado
     const payload = {
       ...gain,
-      gainValue: value
+      gainValue: numericValue
     }
     await gainService.update(gain.id, payload)
     showSuccess('Sucesso', 'Margem atualizada')
@@ -496,11 +505,14 @@ const installments = computed(() => {
 // Contar quantas parcelas existem (para o badge)
 const installmentsCount = computed(() => installments.value.length)
 
-const handleCreditCardFieldUpdate = async (field: string, value: number) => {
+const handleCreditCardFieldUpdate = async (field: string, value: string | number) => {
   if (!creditCardCost.value) return
   
+  // Converter para número
+  const numericValue = typeof value === 'string' ? parseFloat(value) : value
+  
   // Validar que o valor não seja undefined ou null
-  if (value === undefined || value === null || isNaN(value)) {
+  if (numericValue === undefined || numericValue === null || isNaN(numericValue)) {
     showError('Erro', 'Valor inválido')
     return
   }
@@ -508,7 +520,7 @@ const handleCreditCardFieldUpdate = async (field: string, value: number) => {
   try {
     const updated = {
       ...creditCardCost.value,
-      [field]: value
+      [field]: numericValue
     }
     await creditCardCostService.update(updated)
     creditCardCost.value = updated
