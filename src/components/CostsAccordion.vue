@@ -6,76 +6,6 @@
       <p class="text-sm text-muted-foreground mt-1">Configure os custos, margens e taxas do sistema</p>
     </div>
 
-    <!-- Glass Costs -->
-    <AccordionItem 
-      value="glass" 
-      class="border border-border shadow-sm hover:shadow-md transition-all duration-300"
-    >
-      <AccordionTrigger class="bg-card hover:bg-accent/50">
-        <div class="flex items-center gap-3 flex-1">
-          <!-- Icon -->
-          <div class="w-10 h-10 rounded-lg bg-muted flex items-center justify-center">
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-muted-foreground">
-              <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/>
-              <line x1="3" x2="21" y1="6" y2="6"/>
-              <path d="M16 10a4 4 0 0 1-8 0"/>
-            </svg>
-          </div>
-          
-          <div class="flex-1 text-left">
-            <h3 class="text-base md:text-lg font-bold text-foreground">Custos de Vidro</h3>
-            <p class="text-xs md:text-sm text-muted-foreground">
-              {{ glassCosts.length > 0 ? `${glassCosts.length} cores configuradas` : 'Configure os preços por m²' }}
-            </p>
-          </div>
-          
-          <Badge variant="outline" class="ml-auto mr-2">{{ glassCosts.length }}</Badge>
-        </div>
-      </AccordionTrigger>
-      
-      <AccordionContent class="border-t border-border pt-6">
-        <div v-if="loading.glass" class="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <Skeleton v-for="i in 4" :key="i" class="h-24 rounded-lg" />
-        </div>
-        <div v-else-if="glassCosts.length > 0" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 md:gap-4">
-          <Card 
-            v-for="glass in glassCosts" 
-            :key="glass.id" 
-            class="group relative border border-border bg-card hover:border-primary/50 hover:shadow-md transition-all duration-300 transform hover:-translate-y-0.5 p-4 overflow-visible"
-          >
-            <div class="absolute top-1.5 right-1.5 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-              <div class="w-1.5 h-1.5 bg-primary rounded-full animate-pulse"></div>
-            </div>
-            <div class="flex items-center gap-2 justify-between">
-              <div class="flex items-center gap-2">
-                <label class="text-xs font-bold text-foreground flex items-center gap-2 whitespace-nowrap">
-                  <span class="w-1 h-4 bg-primary rounded-full"></span>
-                  {{ glass.color }}
-                </label>
-                <EditableValue
-                  :model-value="glass.costPerSquareMeter"
-                  type="currency"
-                  @save="(value) => handleGlassUpdate(glass.id!, glass.color, value)"
-                  variant="default"
-                  compact
-                />
-              </div>
-              <span class="text-xs font-medium text-muted-foreground">/m²</span>
-            </div>
-          </Card>
-        </div>
-        <div v-else class="text-center py-6">
-          <p class="text-muted-foreground mb-3">Nenhum custo de vidro cadastrado</p>
-          <button
-            @click="createDefaultGlassCosts"
-            class="bg-primary hover:bg-primary/90 text-primary-foreground px-4 py-2 rounded-lg transition-colors font-medium text-sm shadow-sm hover:shadow-md"
-          >
-            Criar Custos Padrão
-          </button>
-        </div>
-      </AccordionContent>
-    </AccordionItem>
-
     <!-- Labor Costs -->
     <AccordionItem 
       value="labor"
@@ -311,7 +241,6 @@ import Card from './ui/Card.vue'
 import Badge from './ui/Badge.vue'
 import Skeleton from './ui/Skeleton.vue'
 import EditableValue from './EditableValue.vue'
-import glassCostService, { type GlassCostDTO } from '../services/glass-cost'
 import laborCostService, { type LaborCostDTO } from '../services/labor-cost'
 import gainService, { type GainDTO } from '../services/gain'
 import creditCardCostService, { type CreditCardCostDTO } from '../services/credit-card-cost'
@@ -319,13 +248,11 @@ import { useNotification } from '../composables/useNotification'
 
 const { success: showSuccess, error: showError } = useNotification()
 
-const glassCosts = ref<GlassCostDTO[]>([])
 const laborCosts = ref<LaborCostDTO[]>([])
 const gains = ref<GainDTO[]>([])
 const creditCardCost = ref<CreditCardCostDTO | null>(null)
 
 const loading = ref({
-  glass: false,
   labor: false,
   gain: false,
   creditCard: false
@@ -333,24 +260,10 @@ const loading = ref({
 
 const loadAllCosts = async () => {
   await Promise.all([
-    loadGlassCosts(),
     loadLaborCosts(),
     loadGains(),
     loadCreditCardCosts()
   ])
-}
-
-const loadGlassCosts = async () => {
-  loading.value.glass = true
-  try {
-    glassCosts.value = await glassCostService.getAll()
-  } catch (error) {
-    console.error('Erro ao carregar custos de vidro:', error)
-    glassCosts.value = []
-    showError('Erro', 'Não foi possível carregar os custos de vidro')
-  } finally {
-    loading.value.glass = false
-  }
 }
 
 const loadLaborCosts = async () => {
@@ -391,27 +304,6 @@ const loadCreditCardCosts = async () => {
     showError('Erro', 'Não foi possível carregar as taxas de cartão')
   } finally {
     loading.value.creditCard = false
-  }
-}
-
-const handleGlassUpdate = async (id: number, color: string, value: string | number) => {
-  // Converter para número
-  const numericValue = typeof value === 'string' ? parseFloat(value) : value
-  
-  // Validar que o valor não seja undefined ou null
-  if (numericValue === undefined || numericValue === null || isNaN(numericValue)) {
-    showError('Erro', 'Valor inválido')
-    return
-  }
-  
-  try {
-    await glassCostService.updatePriceByColor(color, numericValue)
-    showSuccess('Sucesso', 'Custo de vidro atualizado')
-    await loadGlassCosts()
-  } catch (error: any) {
-    console.error('Erro ao atualizar custo de vidro:', error)
-    showError('Erro ao atualizar', error.response?.data?.message || error.response?.data || 'Não foi possível atualizar o custo')
-    await loadGlassCosts()
   }
 }
 
@@ -529,32 +421,6 @@ const handleCreditCardFieldUpdate = async (field: string, value: string | number
     console.error('Erro ao atualizar taxa de cartão:', error)
     showError('Erro', 'Não foi possível atualizar a taxa')
     await loadCreditCardCosts()
-  }
-}
-
-const createDefaultGlassCosts = async () => {
-  try {
-    const colors = [
-      { color: 'INCOLOR', cost: 100.00 },
-      { color: 'VERDE', cost: 120.00 },
-      { color: 'FUME', cost: 130.00 },
-      { color: 'BRONZE', cost: 140.00 }
-    ]
-    
-    for (const { color, cost } of colors) {
-      await glassCostService.create({
-        color,
-        costPerSquareMeter: cost,
-        effectiveDate: new Date().toISOString(),
-        isActive: true
-      })
-    }
-    
-    showSuccess('Sucesso', 'Custos de vidro criados')
-    await loadGlassCosts()
-  } catch (error) {
-    console.error('Erro ao criar custos de vidro:', error)
-    showError('Erro', 'Não foi possível criar os custos')
   }
 }
 

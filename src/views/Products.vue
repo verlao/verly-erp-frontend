@@ -33,9 +33,21 @@
 
       <!-- Tabela de Produtos -->
       <div class="bg-card rounded-lg shadow-sm border border-border overflow-hidden">
-        <div class="px-6 py-4 border-b border-border">
-          <h2 class="text-lg font-medium text-foreground">Lista de Produtos</h2>
-          <p class="text-sm text-muted-foreground mt-1">{{ totalItems }} produtos encontrados</p>
+        <div class="px-4 sm:px-6 py-4 border-b border-border">
+          <!-- Header com título e custos de vidro -->
+          <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
+            <!-- Título e contagem -->
+            <div>
+              <h2 class="text-lg font-medium text-foreground">Lista de Produtos</h2>
+              <p class="text-sm text-muted-foreground mt-1">{{ totalItems }} produtos encontrados</p>
+            </div>
+            
+            <!-- Custos de Vidro - Quick View -->
+            <div class="flex items-center gap-2">
+              <span class="text-xs font-medium text-muted-foreground uppercase tracking-wide hidden sm:inline">Custos de Vidro:</span>
+              <GlassCostQuickView />
+            </div>
+          </div>
         </div>
 
         <div v-if="loading" class="flex items-center justify-center h-64">
@@ -272,6 +284,7 @@ import FilterBar from '../components/FilterBar.vue'
 import PageSizeSelector from '../components/PageSizeSelector.vue'
 import ProductModal from '../components/ProductModal.vue'
 import DeleteConfirmDialog from '../components/DeleteConfirmDialog.vue'
+import GlassCostQuickView from '../components/GlassCostQuickView.vue'
 import EditableValue from '../components/EditableValue.vue'
 import CostsAccordion from '../components/CostsAccordion.vue'
 import { useNotification } from '../composables/useNotification'
