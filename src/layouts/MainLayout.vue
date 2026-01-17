@@ -39,19 +39,6 @@
           </Button>
         </router-link>
         
-        <router-link to="dashboard" custom v-slot="{ navigate, isActive }">
-          <Button
-            @click="navigate"
-            :variant="isActive ? 'secondary' : 'ghost'"
-            class="w-full justify-start transition-all duration-200 hover:scale-105 hover:shadow-md"
-          >
-            <span class="mr-2">
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-layout-dashboard"><rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/></svg>
-            </span>
-            <span :class="{ 'sr-only': isSidebarCollapsed }">Dashboard</span>
-          </Button>
-        </router-link>
-        
         <router-link to="customers" custom v-slot="{ navigate, isActive }">
           <Button
             @click="navigate"
@@ -75,6 +62,22 @@
               <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-package"><path d="m7.5 4.27 9 5.15"/><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/></svg>
             </span>
             <span :class="{ 'sr-only': isSidebarCollapsed }">Produtos</span>
+          </Button>
+        </router-link>
+        
+        <router-link to="quotes" custom v-slot="{ navigate, isActive }">
+          <Button
+            @click="navigate"
+            :variant="isActive ? 'secondary' : 'ghost'"
+            class="w-full justify-start transition-all duration-200 hover:scale-105 hover:shadow-md"
+          >
+            <span class="mr-2">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 20 20" fill="currentColor">
+                <path d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z" />
+                <path fill-rule="evenodd" d="M4 5a2 2 0 012-2 3 3 0 003 3h2a3 3 0 003-3 2 2 0 012 2v11a2 2 0 01-2 2H6a2 2 0 01-2-2V5zm3 4a1 1 0 000 2h.01a1 1 0 100-2H7zm3 0a1 1 0 000 2h3a1 1 0 100-2h-3zm-3 4a1 1 0 100 2h.01a1 1 0 100-2H7zm3 0a1 1 0 100 2h3a1 1 0 100-2h-3z" clip-rule="evenodd" />
+              </svg>
+            </span>
+            <span :class="{ 'sr-only': isSidebarCollapsed }">Orçamentos</span>
           </Button>
         </router-link>
         
@@ -229,6 +232,8 @@ const pageTitle = computed(() => {
     return 'Clientes'
   } else if (route.path.endsWith('products')) {
     return 'Produtos'
+  } else if (route.path.endsWith('quotes')) {
+    return 'Orçamentos'
   } else if (route.path.endsWith('orders')) {
     return 'Pedidos'
   } else if (route.path.endsWith('ledger')) {

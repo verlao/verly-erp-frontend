@@ -55,6 +55,59 @@
               class="w-full pl-10 pr-4 py-2 border border-border rounded-lg bg-background text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
             />
           </div>
+
+          <!-- Banner de Seleção -->
+          <Transition name="slide-down">
+            <div
+              v-if="hasSelection"
+              class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-3 bg-blue-50 border border-blue-200 rounded-lg"
+            >
+              <div class="flex items-center gap-2">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  class="h-5 w-5 text-blue-600"
+                  viewBox="0 0 20 20"
+                  fill="currentColor"
+                >
+                  <path
+                    fill-rule="evenodd"
+                    d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                    clip-rule="evenodd"
+                  />
+                </svg>
+                <span class="text-sm font-medium text-blue-900">
+                  {{ selectedProductIds.size }} produto{{ selectedProductIds.size > 1 ? 's' : '' }} selecionado{{ selectedProductIds.size > 1 ? 's' : '' }}
+                </span>
+              </div>
+              <div class="flex gap-2">
+                <button
+                  @click="clearSelection"
+                  class="px-3 py-1.5 text-sm text-blue-700 hover:text-blue-900 hover:bg-blue-100 rounded transition-colors"
+                >
+                  Limpar Seleção
+                </button>
+                <button
+                  @click="openQuoteModal"
+                  class="px-4 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors flex items-center gap-2 shadow-sm"
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    class="h-4 w-4"
+                    viewBox="0 0 20 20"
+                    fill="currentColor"
+                  >
+                    <path d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z" />
+                    <path
+                      fill-rule="evenodd"
+                      d="M4 5a2 2 0 012-2 3 3 0 003 3h2a3 3 0 003-3 2 2 0 012 2v11a2 2 0 01-2 2H6a2 2 0 01-2-2V5zm3 4a1 1 0 000 2h.01a1 1 0 100-2H7zm3 0a1 1 0 000 2h3a1 1 0 100-2h-3zm-3 4a1 1 0 100 2h.01a1 1 0 100-2H7zm3 0a1 1 0 100 2h3a1 1 0 100-2h-3z"
+                      clip-rule="evenodd"
+                    />
+                  </svg>
+                  Criar Orçamento
+                </button>
+              </div>
+            </div>
+          </Transition>
         </div>
 
         <div v-if="loading" class="flex items-center justify-center h-64">
@@ -85,6 +138,15 @@
           <table class="w-full">
             <thead class="bg-muted">
               <tr class="border-b border-border">
+                <th class="px-3 py-2 text-center text-[10px] sm:text-xs w-12">
+                  <input
+                    type="checkbox"
+                    :checked="isAllSelected"
+                    @change="toggleSelectAll"
+                    class="w-4 h-4 text-blue-600 bg-background border-border rounded focus:ring-2 focus:ring-blue-500 cursor-pointer"
+                    :disabled="products.length === 0"
+                  />
+                </th>
                 <th class="px-3 py-2 text-left text-[10px] sm:text-xs font-medium text-muted-foreground uppercase tracking-wider">Tipo</th>
                 <th class="px-3 py-2 text-left text-[10px] sm:text-xs font-medium text-muted-foreground uppercase tracking-wider">Folhas</th>
                 <th class="px-3 py-2 text-left text-[10px] sm:text-xs font-medium text-muted-foreground uppercase tracking-wider">Dimensões</th>
@@ -101,6 +163,14 @@
             </thead>
             <tbody class="bg-card divide-y divide-border">
               <tr v-for="product in filteredProducts" :key="product.id || product.key" :data-product-id="product.id" :data-product-key="product.key" class="hover:bg-accent/50">
+              <td class="px-3 py-3 text-center">
+                <input
+                  type="checkbox"
+                  :checked="!!(product.id && selectedProductIds.has(product.id))"
+                  @change="toggleProduct(product.id)"
+                  class="w-4 h-4 text-blue-600 bg-background border-border rounded focus:ring-2 focus:ring-blue-500 cursor-pointer"
+                />
+              </td>
               <td class="px-3 py-3 font-medium text-foreground text-xs sm:text-sm">
                 <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium whitespace-nowrap" :class="{
                   'bg-blue-100 text-blue-800': product.type === 'PORTA',
@@ -298,6 +368,14 @@
         @update:open="showDeleteModal = $event"
         @confirm="deleteProduct"
       />
+
+      <!-- Modal de Quote -->
+      <QuoteModal
+        :is-open="showQuoteModal"
+        :products="selectedProducts"
+        @close="showQuoteModal = false"
+        @success="handleQuoteSuccess"
+      />
     </div>
   </div>
 </template>
@@ -316,6 +394,7 @@ import DeleteConfirmDialog from '../components/DeleteConfirmDialog.vue'
 import GlassCostQuickView from '../components/GlassCostQuickView.vue'
 import EditableValue from '../components/EditableValue.vue'
 import CostsAccordion from '../components/CostsAccordion.vue'
+import QuoteModal from '../components/QuoteModal.vue'
 import { useNotification } from '../composables/useNotification'
 import { useCurrency } from '../composables/useCurrency'
 
@@ -329,6 +408,10 @@ const showDeleteModal = ref(false)
 const isEditing = ref(false)
 const saving = ref(false)
 const searchQuery = ref('')
+
+// Seleção em massa para orçamento
+const selectedProductIds = ref<Set<number>>(new Set())
+const showQuoteModal = ref(false)
 
 // Paginação
 const currentPage = ref(1)
@@ -362,6 +445,21 @@ const productToDelete = ref<ProductDTO | null>(null)
 // Computed property para produtos filtrados (agora a filtragem é feita no backend)
 const filteredProducts = computed(() => {
   return products.value
+})
+
+// Computed para seleção em massa
+const hasSelection = computed(() => selectedProductIds.value.size > 0)
+
+const selectedProducts = computed(() => {
+  return products.value.filter(p => p.id && selectedProductIds.value.has(p.id))
+})
+
+const isAllSelected = computed(() => {
+  const currentPageIds = products.value
+    .filter(p => p.id)
+    .map(p => p.id!)
+  return currentPageIds.length > 0 && 
+         currentPageIds.every(id => selectedProductIds.value.has(id))
 })
 
 // Watcher para recarregar automaticamente quando a busca mudar
@@ -528,6 +626,40 @@ async function saveProduct(product: ProductDTO) {
   }
 }
 
+// Funções de seleção em massa
+function toggleProduct(productId: number | undefined) {
+  if (!productId) return
+  if (selectedProductIds.value.has(productId)) {
+    selectedProductIds.value.delete(productId)
+  } else {
+    selectedProductIds.value.add(productId)
+  }
+}
+
+function toggleSelectAll() {
+  const allIds = products.value.filter(p => p.id).map(p => p.id!)
+  if (isAllSelected.value) {
+    allIds.forEach(id => selectedProductIds.value.delete(id))
+  } else {
+    allIds.forEach(id => selectedProductIds.value.add(id))
+  }
+}
+
+function clearSelection() {
+  selectedProductIds.value.clear()
+}
+
+function openQuoteModal() {
+  if (selectedProducts.value.length === 0) return
+  showQuoteModal.value = true
+}
+
+function handleQuoteSuccess() {
+  showQuoteModal.value = false
+  clearSelection()
+  notification.success('Sucesso', 'Orçamento criado com sucesso')
+}
+
 function confirmDelete(product: ProductDTO) {
   productToDelete.value = product
   showDeleteModal.value = true
@@ -658,3 +790,29 @@ async function handleGainSave(product: ProductDTO, value: number | string) {
 }
 
 </script>
+
+<style scoped>
+.slide-down-enter-active,
+.slide-down-leave-active {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.slide-down-enter-from {
+  opacity: 0;
+  transform: translateY(-12px);
+  max-height: 0;
+}
+
+.slide-down-leave-to {
+  opacity: 0;
+  transform: translateY(-8px);
+  max-height: 0;
+}
+
+.slide-down-enter-to,
+.slide-down-leave-from {
+  opacity: 1;
+  transform: translateY(0);
+  max-height: 200px;
+}
+</style>
