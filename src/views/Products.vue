@@ -123,10 +123,10 @@
               </td>
               <td class="px-3 py-3 text-foreground text-xs sm:text-sm">
                 <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium whitespace-nowrap" :class="{
-                  'bg-blue-100 text-blue-800': product.color === 'INCOLOR',
-                  'bg-green-100 text-green-800': product.color === 'VERDE',
-                  'bg-gray-100 text-gray-800': product.color === 'FUME',
-                  'bg-amber-100 text-amber-800': product.color === 'BRONZE',
+                  'bg-indigo-100 text-indigo-800': product.color === 'INCOLOR',
+                  'bg-emerald-100 text-emerald-800': product.color === 'VERDE',
+                  'bg-slate-100 text-slate-800': product.color === 'FUME',
+                  'bg-yellow-100 text-yellow-800': product.color === 'BRONZE',
                   'bg-gray-100 text-gray-500': !product.color
                 }">
                   {{ product.color || '-' }}
