@@ -24,22 +24,14 @@
         <CostsAccordion />
       </div>
 
-      <!-- Filter Bar -->
-      <FilterBar
-        v-model:search="searchQuery"
-        v-model:type="selectedType"
-        v-model:color="selectedColor"
-      />
-
       <!-- Tabela de Produtos -->
       <div class="bg-card rounded-lg shadow-sm border border-border overflow-hidden">
-        <div class="px-4 sm:px-6 py-4 border-b border-border">
+        <div class="px-4 sm:px-6 py-4 border-b border-border space-y-4">
           <!-- Header com título e custos de vidro -->
           <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
-            <!-- Título e contagem -->
+            <!-- Título -->
             <div>
               <h2 class="text-lg font-medium text-foreground">Lista de Produtos</h2>
-              <p class="text-sm text-muted-foreground mt-1">{{ totalItems }} produtos encontrados</p>
             </div>
             
             <!-- Custos de Vidro - Quick View -->
@@ -47,6 +39,21 @@
               <span class="text-xs font-medium text-muted-foreground uppercase tracking-wide hidden sm:inline">Custos de Vidro:</span>
               <GlassCostQuickView />
             </div>
+          </div>
+
+          <!-- Barra de Busca -->
+          <div class="relative">
+            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-muted-foreground" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd" />
+              </svg>
+            </div>
+            <input
+              v-model="searchQuery"
+              type="text"
+              placeholder="Buscar produtos..."
+              class="w-full pl-10 pr-4 py-2 border border-border rounded-lg bg-background text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
+            />
           </div>
         </div>
 
@@ -320,8 +327,6 @@ const showModal = ref(false)
 const showDeleteModal = ref(false)
 const isEditing = ref(false)
 const saving = ref(false)
-const selectedType = ref('')
-const selectedColor = ref('')
 const searchQuery = ref('')
 
 // Paginação
@@ -358,11 +363,11 @@ const filteredProducts = computed(() => {
   return products.value
 })
 
-// Watchers para recarregar automaticamente quando os filtros mudarem
-watch([selectedType, selectedColor, searchQuery], () => {
-  currentPage.value = 1 // Reset para primeira página quando filtros mudarem
+// Watcher para recarregar automaticamente quando a busca mudar
+watch(searchQuery, () => {
+  currentPage.value = 1 // Reset para primeira página quando a busca mudar
   loadProducts()
-}, { deep: true })
+})
 
 function handlePageChange(page: number) {
   currentPage.value = page
@@ -405,14 +410,6 @@ async function loadProducts() {
     const params: any = {
       page: currentPage.value - 1, // API usa índice baseado em 0
       size: pageSize.value
-    }
-    
-    // Só adicionar filtros se tiverem valores selecionados
-    if (selectedType.value) {
-      params.type = selectedType.value
-    }
-    if (selectedColor.value) {
-      params.color = selectedColor.value
     }
     
     let response
