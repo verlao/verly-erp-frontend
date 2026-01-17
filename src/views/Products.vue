@@ -152,9 +152,18 @@
               <td class="px-3 py-3 font-mono font-semibold text-foreground text-xs sm:text-sm whitespace-nowrap">{{ product.cost ? 'R$ ' + product.cost.toFixed(2) : '-' }}</td>
               <td class="px-3 py-3 font-mono font-semibold text-green-600 text-xs sm:text-sm whitespace-nowrap">{{ product.price ? 'R$ ' + product.price.toFixed(2) : '-' }}</td>
               <td class="px-3 py-3 text-xs sm:text-sm">
-                <div v-if="product.installments && product.installments.length > 0" class="space-y-0.5">
-                  <div v-for="(installment, index) in product.installments" :key="index" class="whitespace-nowrap text-[10px] sm:text-xs text-muted-foreground">
-                    {{ installment.quantity }}x de R$ {{ installment.valuePerInstallment?.toFixed(2) }}
+                <div v-if="product.priceOptions" class="space-y-0.5">
+                  <div v-if="product.priceOptions.installments4x" class="whitespace-nowrap text-[10px] sm:text-xs text-muted-foreground">
+                    4x de R$ {{ (product.priceOptions.installments4x / 4).toFixed(2) }}
+                  </div>
+                  <div v-if="product.priceOptions.installments6x" class="whitespace-nowrap text-[10px] sm:text-xs text-muted-foreground">
+                    6x de R$ {{ (product.priceOptions.installments6x / 6).toFixed(2) }}
+                  </div>
+                  <div v-if="product.priceOptions.installments10x" class="whitespace-nowrap text-[10px] sm:text-xs text-muted-foreground">
+                    10x de R$ {{ (product.priceOptions.installments10x / 10).toFixed(2) }}
+                  </div>
+                  <div v-if="product.priceOptions.installments12x" class="whitespace-nowrap text-[10px] sm:text-xs text-muted-foreground">
+                    12x de R$ {{ (product.priceOptions.installments12x / 12).toFixed(2) }}
                   </div>
                 </div>
                 <span v-else class="text-muted-foreground">-</span>
