@@ -43,21 +43,6 @@ const routes = [
         component: () => import('../views/Leads.vue'),
       },
       {
-        path: 'cost-selection',
-        name: 'CostSelection',
-        component: () => import('../views/CostSelection.vue'),
-      },
-      {
-        path: 'costs',
-        name: 'Costs',
-        component: () => import('../views/Costs.vue'),
-      },
-      {
-        path: 'credit-card-costs',
-        name: 'CreditCardCosts',
-        component: () => import('../views/CreditCardCosts.vue'),
-      },
-      {
         path: 'users',
         name: 'Users',
         component: () => import('../views/Users.vue'),

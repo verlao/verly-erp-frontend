@@ -2,7 +2,7 @@
   <Teleport to="body">
     <div
       v-if="isVisible"
-      class="fixed top-4 right-4 z-50 max-w-sm w-full shadow-2xl rounded-lg pointer-events-auto flex ring-2 ring-black/10"
+      class="fixed top-4 right-4 z-50 max-w-sm w-full bg-white shadow-lg rounded-lg pointer-events-auto flex ring-1 ring-gray-200"
       :class="{
         'bg-white border-l-4 border-green-500': type === 'success',
         'bg-white border-l-4 border-blue-500': type === 'info',
@@ -44,7 +44,7 @@
       <div class="flex border-l border-gray-200">
         <button
           @click="close"
-          class="w-full border border-transparent rounded-none rounded-r-lg p-4 flex items-center justify-center text-sm font-medium text-gray-500 hover:text-gray-700 focus:outline-none transition-colors"
+          class="w-full border border-transparent rounded-none rounded-r-lg p-4 flex items-center justify-center text-sm font-medium text-gray-500 hover:text-gray-900 focus:outline-none"
         >
           <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
             <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />

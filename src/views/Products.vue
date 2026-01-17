@@ -19,468 +19,23 @@
         </button>
       </div>
 
-      <!-- Configurações (Accordions) -->
-      <div class="space-y-3 mb-6">
-        
-        <!-- Accordion 1: Taxas de Cartão -->
-        <div class="border border-border rounded-lg overflow-hidden bg-card shadow-sm">
-          <button
-            @click="activeAccordion = activeAccordion === 'creditCard' ? null : 'creditCard'"
-            class="w-full px-4 py-3 flex items-center justify-between bg-gradient-to-r from-blue-50 to-blue-100 dark:from-blue-950/30 dark:to-blue-900/30 hover:from-blue-100 hover:to-blue-150 dark:hover:from-blue-900/40 dark:hover:to-blue-800/40 transition-colors"
-          >
-            <div class="flex items-center space-x-2">
-              <svg class="w-5 h-5 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"></path>
-              </svg>
-              <span class="text-sm font-semibold text-foreground">Taxas de Cartão</span>
-            </div>
-            <svg 
-              class="w-4 h-4 text-muted-foreground transition-transform duration-200" 
-              :class="{ 'rotate-180': activeAccordion === 'creditCard' }"
-              fill="none" 
-              stroke="currentColor" 
-              viewBox="0 0 24 24"
-            >
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
-            </svg>
-          </button>
-          
-          <transition name="accordion">
-            <div v-show="activeAccordion === 'creditCard'" class="border-t border-border">
-              <div class="p-4 overflow-x-auto">
-                <div v-if="loadingCreditCard" class="text-center py-8">
-                  <svg class="animate-spin h-8 w-8 text-blue-600 mx-auto" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                  </svg>
-                  <p class="mt-2 text-sm text-muted-foreground">Carregando taxas de cartão...</p>
-                </div>
-                <div v-else-if="!creditCardCost" class="text-center py-8">
-                  <p class="text-sm text-muted-foreground mb-3">Nenhuma taxa configurada ainda.</p>
-                  <button @click="createDefaultCreditCardCost" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors text-sm font-medium">
-                    Criar Configuração Padrão
-                  </button>
-                </div>
-                <table v-else class="w-full text-sm border-collapse">
-                  <thead class="bg-blue-50 dark:bg-blue-950/30">
-                    <tr>
-                      <th class="px-2 py-2 text-xs font-semibold text-center border border-border text-foreground">Débito</th>
-                      <th class="px-2 py-2 text-xs font-semibold text-center border border-border text-foreground">1x</th>
-                      <th class="px-2 py-2 text-xs font-semibold text-center border border-border text-foreground">2x</th>
-                      <th class="px-2 py-2 text-xs font-semibold text-center border border-border text-foreground">3x</th>
-                      <th class="px-2 py-2 text-xs font-semibold text-center border border-border text-foreground">4x</th>
-                      <th class="px-2 py-2 text-xs font-semibold text-center border border-border text-foreground">5x</th>
-                      <th class="px-2 py-2 text-xs font-semibold text-center border border-border text-foreground">6x</th>
-                      <th class="px-2 py-2 text-xs font-semibold text-center border border-border text-foreground">7x</th>
-                      <th class="px-2 py-2 text-xs font-semibold text-center border border-border text-foreground">8x</th>
-                      <th class="px-2 py-2 text-xs font-semibold text-center border border-border text-foreground">9x</th>
-                      <th class="px-2 py-2 text-xs font-semibold text-center border border-border text-foreground">10x</th>
-                      <th class="px-2 py-2 text-xs font-semibold text-center border border-border text-foreground">11x</th>
-                      <th class="px-2 py-2 text-xs font-semibold text-center border border-border text-foreground">12x</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr class="bg-background hover:bg-accent/30 transition-colors">
-                      <td class="border border-border px-1 py-1">
-                        <div class="flex items-center justify-center gap-1">
-                          <input
-                            v-model.number="creditCardCost.debit"
-                            type="number"
-                            step="0.01"
-                            class="w-16 px-2 py-1 text-sm text-center border-0 focus:outline-none focus:ring-1 focus:ring-blue-500 bg-transparent"
-                            @change="saveCreditCardCost"
-                          />
-                          <span class="text-xs text-muted-foreground">%</span>
-                        </div>
-                      </td>
-                      <td v-for="i in 12" :key="`tax${i}x`" class="border border-border px-1 py-1">
-                        <div class="flex items-center justify-center gap-1">
-                          <input
-                            v-model.number="(creditCardCost as any)[`tax${i}x`]"
-                            type="number"
-                            step="0.01"
-                            class="w-16 px-2 py-1 text-sm text-center border-0 focus:outline-none focus:ring-1 focus:ring-blue-500 bg-transparent"
-                            @change="saveCreditCardCost"
-                          />
-                          <span class="text-xs text-muted-foreground">%</span>
-                        </div>
-                      </td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          </transition>
-        </div>
-
-        <!-- Accordion 2: Mão de Obra -->
-        <div class="border border-border rounded-lg overflow-hidden bg-card shadow-sm">
-          <button
-            @click="activeAccordion = activeAccordion === 'labor' ? null : 'labor'"
-            class="w-full px-4 py-3 flex items-center justify-between bg-gradient-to-r from-green-50 to-green-100 dark:from-green-950/30 dark:to-green-900/30 hover:from-green-100 hover:to-green-150 dark:hover:from-green-900/40 dark:hover:to-green-800/40 transition-colors"
-          >
-            <div class="flex items-center space-x-2">
-              <svg class="w-5 h-5 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
-              </svg>
-              <span class="text-sm font-semibold text-foreground">Mão de Obra</span>
-            </div>
-            <svg 
-              class="w-4 h-4 text-muted-foreground transition-transform duration-200" 
-              :class="{ 'rotate-180': activeAccordion === 'labor' }"
-              fill="none" 
-              stroke="currentColor" 
-              viewBox="0 0 24 24"
-            >
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
-            </svg>
-          </button>
-          
-          <transition name="accordion">
-            <div v-show="activeAccordion === 'labor'" class="border-t border-border">
-              <div class="p-4">
-                <!-- Tabela Estilo Excel -->
-                <div class="overflow-x-auto">
-                  <table class="w-full text-sm border-collapse">
-                    <thead class="bg-green-50 dark:bg-green-950/30">
-                      <tr>
-                        <th class="px-3 py-2 text-xs font-semibold text-center border border-border text-foreground">Tipo</th>
-                        <th class="px-3 py-2 text-xs font-semibold text-center border border-border text-foreground">Folhas</th>
-                        <th class="px-3 py-2 text-xs font-semibold text-center border border-border text-foreground">Valor (R$)</th>
-                        <th class="px-3 py-2 text-xs font-semibold text-center border border-border text-foreground w-20">Ações</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      <tr v-for="labor in laborCosts" :key="labor.id" class="bg-background hover:bg-accent/30 transition-colors">
-                        <td class="border border-border px-3 py-2 text-center text-foreground">{{ labor.type }}</td>
-                        <td class="border border-border px-3 py-2 text-center text-foreground">{{ labor.sheets }}</td>
-                        <td class="border border-border px-1 py-1">
-                          <div class="flex items-center justify-center gap-1">
-                            <span class="text-xs text-muted-foreground">R$</span>
-                            <input v-model.number="labor.laborValue" type="number" step="0.01" class="w-20 px-2 py-1 text-sm text-center border-0 focus:outline-none focus:ring-1 focus:ring-green-500 bg-transparent" @change="updateLaborCost(labor)" />
-                          </div>
-                        </td>
-                        <td class="border border-border px-2 py-2 text-center">
-                          <button @click="deleteLaborCost(labor.id!)" class="text-red-600 hover:text-red-900 dark:hover:text-red-400 transition-colors text-xs font-medium">
-                            <svg class="w-4 h-4 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
-                            </svg>
-                          </button>
-                        </td>
-                      </tr>
-                      <!-- Add New Row -->
-                      <tr class="bg-green-50/50 dark:bg-green-950/20">
-                        <td class="border border-border px-1 py-1">
-                          <select v-model="newLaborCost.type" class="w-full px-2 py-1.5 text-sm text-center border-0 focus:outline-none focus:ring-1 focus:ring-green-500 bg-transparent">
-                            <option value="PORTA">PORTA</option>
-                            <option value="JANELA">JANELA</option>
-                            <option value="BOX">BOX</option>
-                            <option value="FIXO">FIXO</option>
-                            <option value="BASCULANTE">BASCULANTE</option>
-                            <option value="SACADA">SACADA</option>
-                          </select>
-                        </td>
-                        <td class="border border-border px-1 py-1">
-                          <input v-model.number="newLaborCost.sheets" type="number" min="1" placeholder="Folhas" class="w-full px-2 py-1.5 text-sm text-center border-0 focus:outline-none focus:ring-1 focus:ring-green-500 bg-transparent" />
-                        </td>
-                        <td class="border border-border px-1 py-1">
-                          <div class="flex items-center justify-center gap-1">
-                            <span class="text-xs text-muted-foreground">R$</span>
-                            <input v-model.number="newLaborCost.laborValue" type="number" step="0.01" placeholder="Valor" class="w-20 px-2 py-1.5 text-sm text-center border-0 focus:outline-none focus:ring-1 focus:ring-green-500 bg-transparent" />
-                          </div>
-                        </td>
-                        <td class="border border-border px-2 py-2 text-center">
-                          <button @click="addLaborCost" class="px-2 py-1 bg-green-600 text-white rounded hover:bg-green-700 transition-colors text-xs font-medium">+</button>
-                        </td>
-                      </tr>
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            </div>
-          </transition>
-        </div>
-
-        <!-- Accordion 3: Valor do Vidro -->
-        <div class="border border-border rounded-lg overflow-hidden bg-card shadow-sm">
-          <button
-            @click="activeAccordion = activeAccordion === 'glass' ? null : 'glass'"
-            class="w-full px-4 py-3 flex items-center justify-between bg-gradient-to-r from-purple-50 to-purple-100 dark:from-purple-950/30 dark:to-purple-900/30 hover:from-purple-100 hover:to-purple-150 dark:hover:from-purple-900/40 dark:hover:to-purple-800/40 transition-colors"
-          >
-            <div class="flex items-center space-x-2">
-              <svg class="w-5 h-5 text-purple-600 dark:text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
-              </svg>
-              <span class="text-sm font-semibold text-foreground">Valor do Vidro (R$/m²)</span>
-            </div>
-            <svg 
-              class="w-4 h-4 text-muted-foreground transition-transform duration-200" 
-              :class="{ 'rotate-180': activeAccordion === 'glass' }"
-              fill="none" 
-              stroke="currentColor" 
-              viewBox="0 0 24 24"
-            >
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
-            </svg>
-          </button>
-          
-          <transition name="accordion">
-            <div v-show="activeAccordion === 'glass'" class="border-t border-border">
-              <div class="p-4">
-                <!-- Tabela Estilo Excel -->
-                <div class="overflow-x-auto">
-                  <table class="w-full text-sm border-collapse">
-                    <thead class="bg-purple-50 dark:bg-purple-950/30">
-                      <tr>
-                        <th class="px-3 py-2 text-xs font-semibold text-center border border-border text-foreground">Cor</th>
-                        <th class="px-3 py-2 text-xs font-semibold text-center border border-border text-foreground">Custo (R$/m²)</th>
-                        <th class="px-3 py-2 text-xs font-semibold text-center border border-border text-foreground">Fornecedor</th>
-                        <th class="px-3 py-2 text-xs font-semibold text-center border border-border text-foreground w-20">Ações</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      <tr v-for="glass in glassCosts" :key="glass.id" class="bg-background hover:bg-accent/30 transition-colors">
-                        <td class="border border-border px-3 py-2 text-center text-foreground font-medium">{{ glass.color }}</td>
-                        <td class="border border-border px-1 py-1">
-                          <div class="flex items-center justify-center gap-1">
-                            <span class="text-xs text-muted-foreground">R$</span>
-                            <input v-model.number="glass.cost" type="number" step="0.01" class="w-20 px-2 py-1 text-sm text-center border-0 focus:outline-none focus:ring-1 focus:ring-purple-500 bg-transparent" @change="updateGlassCost(glass)" />
-                          </div>
-                        </td>
-                        <td class="border border-border px-1 py-1">
-                          <select v-model="glass.supplier" class="w-full px-2 py-1 text-sm text-center border-0 focus:outline-none focus:ring-1 focus:ring-purple-500 bg-transparent" @change="updateGlassCost(glass)">
-                            <option value="">Selecione</option>
-                            <option value="Fornecedor A">Fornecedor A</option>
-                            <option value="Fornecedor B">Fornecedor B</option>
-                            <option value="Fornecedor C">Fornecedor C</option>
-                            <option value="Fornecedor D">Fornecedor D</option>
-                            <option value="Outro">Outro</option>
-                          </select>
-                        </td>
-                        <td class="border border-border px-2 py-2 text-center">
-                          <button @click="deleteGlassCost(glass.color)" class="text-red-600 hover:text-red-900 dark:hover:text-red-400 transition-colors text-xs font-medium">
-                            <svg class="w-4 h-4 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
-                            </svg>
-                          </button>
-                        </td>
-                      </tr>
-                      <!-- Add New Row -->
-                      <tr class="bg-purple-50/50 dark:bg-purple-950/20">
-                        <td class="border border-border px-1 py-1">
-                          <select v-model="newGlassCost.color" class="w-full px-2 py-1.5 text-sm text-center border-0 focus:outline-none focus:ring-1 focus:ring-purple-500 bg-transparent">
-                            <option value="INCOLOR">Incolor</option>
-                            <option value="FUME">Fumê</option>
-                            <option value="VERDE">Verde</option>
-                            <option value="BRONZE">Bronze</option>
-                            <option value="AZUL">Azul</option>
-                            <option value="CINZA">Cinza</option>
-                          </select>
-                        </td>
-                        <td class="border border-border px-1 py-1">
-                          <div class="flex items-center justify-center gap-1">
-                            <span class="text-xs text-muted-foreground">R$</span>
-                            <input v-model.number="newGlassCost.cost" type="number" step="0.01" placeholder="Custo" class="w-20 px-2 py-1.5 text-sm text-center border-0 focus:outline-none focus:ring-1 focus:ring-purple-500 bg-transparent" />
-                          </div>
-                        </td>
-                        <td class="border border-border px-1 py-1">
-                          <select v-model="newGlassCost.supplier" class="w-full px-2 py-1.5 text-sm text-center border-0 focus:outline-none focus:ring-1 focus:ring-purple-500 bg-transparent">
-                            <option value="">Selecione</option>
-                            <option value="Fornecedor A">Fornecedor A</option>
-                            <option value="Fornecedor B">Fornecedor B</option>
-                            <option value="Fornecedor C">Fornecedor C</option>
-                            <option value="Fornecedor D">Fornecedor D</option>
-                            <option value="Outro">Outro</option>
-                          </select>
-                        </td>
-                        <td class="border border-border px-2 py-2 text-center">
-                          <button @click="addGlassCost" class="px-2 py-1 bg-purple-600 text-white rounded hover:bg-purple-700 transition-colors text-xs font-medium">+</button>
-                        </td>
-                      </tr>
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            </div>
-          </transition>
-        </div>
-
-        <!-- Accordion 4: Ganhos (Margem de Lucro) -->
-        <div class="border border-border rounded-lg overflow-hidden bg-card shadow-sm">
-          <button
-            @click="activeAccordion = activeAccordion === 'gain' ? null : 'gain'"
-            class="w-full px-4 py-3 flex items-center justify-between bg-gradient-to-r from-orange-50 to-orange-100 dark:from-orange-950/30 dark:to-orange-900/30 hover:from-orange-100 hover:to-orange-150 dark:hover:from-orange-900/40 dark:hover:to-orange-800/40 transition-colors"
-          >
-            <div class="flex items-center space-x-2">
-              <svg class="w-5 h-5 text-orange-600 dark:text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path>
-              </svg>
-              <span class="text-sm font-semibold text-foreground">Ganhos (Margem de Lucro %)</span>
-            </div>
-            <svg 
-              class="w-4 h-4 text-muted-foreground transition-transform duration-200" 
-              :class="{ 'rotate-180': activeAccordion === 'gain' }"
-              fill="none" 
-              stroke="currentColor" 
-              viewBox="0 0 24 24"
-            >
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
-            </svg>
-          </button>
-          
-          <transition name="accordion">
-            <div v-show="activeAccordion === 'gain'" class="border-t border-border">
-              <div class="p-4">
-                <!-- Tabela Estilo Excel -->
-                <div class="overflow-x-auto">
-                  <table class="w-full text-sm border-collapse">
-                    <thead class="bg-orange-50 dark:bg-orange-950/30">
-                      <tr>
-                        <th class="px-3 py-2 text-xs font-semibold text-center border border-border text-foreground">Tipo</th>
-                        <th class="px-3 py-2 text-xs font-semibold text-center border border-border text-foreground">Folhas</th>
-                        <th class="px-3 py-2 text-xs font-semibold text-center border border-border text-foreground">Ganho (%)</th>
-                        <th class="px-3 py-2 text-xs font-semibold text-center border border-border text-foreground w-20">Ações</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      <tr v-for="gain in gains" :key="gain.id" class="bg-background hover:bg-accent/30 transition-colors">
-                        <td class="border border-border px-3 py-2 text-center text-foreground">{{ gain.type }}</td>
-                        <td class="border border-border px-3 py-2 text-center text-foreground">{{ gain.sheets }}</td>
-                        <td class="border border-border px-1 py-1">
-                          <div class="flex items-center justify-center gap-1">
-                            <input v-model.number="gain.gainValue" type="number" step="0.01" class="w-16 px-2 py-1 text-sm text-center border-0 focus:outline-none focus:ring-1 focus:ring-orange-500 bg-transparent" @change="updateGain(gain)" />
-                            <span class="text-xs text-muted-foreground">%</span>
-                          </div>
-                        </td>
-                        <td class="border border-border px-2 py-2 text-center">
-                          <button @click="deleteGain(gain.id!)" class="text-red-600 hover:text-red-900 dark:hover:text-red-400 transition-colors text-xs font-medium">
-                            <svg class="w-4 h-4 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
-                            </svg>
-                          </button>
-                        </td>
-                      </tr>
-                      <!-- Add New Row -->
-                      <tr class="bg-orange-50/50 dark:bg-orange-950/20">
-                        <td class="border border-border px-1 py-1">
-                          <select v-model="newGain.type" class="w-full px-2 py-1.5 text-sm text-center border-0 focus:outline-none focus:ring-1 focus:ring-orange-500 bg-transparent">
-                            <option value="PORTA">PORTA</option>
-                            <option value="JANELA">JANELA</option>
-                            <option value="BOX">BOX</option>
-                            <option value="FIXO">FIXO</option>
-                            <option value="BASCULANTE">BASCULANTE</option>
-                            <option value="SACADA">SACADA</option>
-                          </select>
-                        </td>
-                        <td class="border border-border px-1 py-1">
-                          <input v-model.number="newGain.sheets" type="number" min="1" placeholder="Folhas" class="w-full px-2 py-1.5 text-sm text-center border-0 focus:outline-none focus:ring-1 focus:ring-orange-500 bg-transparent" />
-                        </td>
-                        <td class="border border-border px-1 py-1">
-                          <div class="flex items-center justify-center gap-1">
-                            <input v-model.number="newGain.gainValue" type="number" step="0.01" placeholder="Ganho" class="w-16 px-2 py-1.5 text-sm text-center border-0 focus:outline-none focus:ring-1 focus:ring-orange-500 bg-transparent" />
-                            <span class="text-xs text-muted-foreground">%</span>
-                          </div>
-                        </td>
-                        <td class="border border-border px-2 py-2 text-center">
-                          <button @click="addGain" class="px-2 py-1 bg-orange-600 text-white rounded hover:bg-orange-700 transition-colors text-xs font-medium">+</button>
-                        </td>
-                      </tr>
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            </div>
-          </transition>
-        </div>
-
-        <!-- Accordion 5: Custo de Kits - Matriz Completa -->
-        <div class="border border-border rounded-lg overflow-hidden bg-card shadow-sm">
-          <button
-            @click="activeAccordion = activeAccordion === 'kit' ? null : 'kit'"
-            class="w-full px-4 py-3 flex items-center justify-between bg-gradient-to-r from-cyan-50 to-cyan-100 dark:from-cyan-950/30 dark:to-cyan-900/30 hover:from-cyan-100 hover:to-cyan-150 dark:hover:from-cyan-900/40 dark:hover:to-cyan-800/40 transition-colors"
-          >
-            <div class="flex items-center space-x-2">
-              <svg class="w-5 h-5 text-cyan-600 dark:text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
-              </svg>
-              <span class="text-sm font-semibold text-foreground">Custo de Kits/Acessórios (R$) - Todas Combinações</span>
-            </div>
-            <svg 
-              class="w-4 h-4 text-muted-foreground transition-transform duration-200" 
-              :class="{ 'rotate-180': activeAccordion === 'kit' }"
-              fill="none" 
-              stroke="currentColor" 
-              viewBox="0 0 24 24"
-            >
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
-            </svg>
-          </button>
-          
-          <transition name="accordion">
-            <div v-show="activeAccordion === 'kit'" class="border-t border-border">
-              <div class="p-4">
-                <!-- Tabela Matriz Completa Estilo Excel -->
-                <div class="overflow-x-auto">
-                  <table class="w-full text-sm border-collapse">
-                    <thead class="bg-cyan-50 dark:bg-cyan-950/30">
-                      <tr>
-                        <th class="px-3 py-2 text-xs font-semibold text-center border border-border text-foreground sticky left-0 bg-cyan-50 dark:bg-cyan-950/30">Tipo</th>
-                        <th v-for="sheets in [1, 2, 3, 4]" :key="sheets" class="px-3 py-2 text-xs font-semibold text-center border border-border text-foreground">
-                          {{ sheets }} {{ sheets === 1 ? 'Folha' : 'Folhas' }}
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      <tr v-for="type in kitProductTypes" :key="type" class="bg-background hover:bg-accent/30 transition-colors">
-                        <td class="border border-border px-3 py-2 text-center text-foreground font-medium sticky left-0 bg-background">{{ type }}</td>
-                        <td v-for="sheets in [1, 2, 3, 4]" :key="`${type}-${sheets}`" class="border border-border px-1 py-1">
-                          <div class="flex items-center justify-center gap-1">
-                            <span class="text-xs text-muted-foreground">R$</span>
-                            <input 
-                              :value="getKitValue(type, sheets)" 
-                              @input="(e) => updateKitMatrix(type, sheets, parseFloat((e.target as HTMLInputElement).value) || 0)"
-                              @blur="(e) => saveKitValue(type, sheets, parseFloat((e.target as HTMLInputElement).value) || 0)"
-                              type="number" 
-                              step="0.01" 
-                              min="0"
-                              placeholder="0"
-                              class="w-20 px-2 py-1 text-sm text-center border-0 focus:outline-none focus:ring-2 focus:ring-cyan-500 bg-transparent rounded"
-                            />
-                          </div>
-                        </td>
-                      </tr>
-                    </tbody>
-                  </table>
-                </div>
-                <div class="mt-2 text-xs text-muted-foreground">
-                  💡 Dica: Digite o valor e pressione Enter ou clique fora para salvar. Valores vazios = R$ 0 (sem kit aplicado).
-                </div>
-              </div>
-            </div>
-          </transition>
-        </div>
-
+      <!-- Gerenciamento de Custos -->
+      <div class="mb-6">
+        <CostsAccordion />
       </div>
+
+      <!-- Filter Bar -->
+      <FilterBar
+        v-model:search="searchQuery"
+        v-model:type="selectedType"
+        v-model:color="selectedColor"
+      />
 
       <!-- Tabela de Produtos -->
       <div class="bg-card rounded-lg shadow-sm border border-border overflow-hidden">
         <div class="px-6 py-4 border-b border-border">
-          <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-            <!-- Título -->
-            <div class="flex-shrink-0">
-              <h2 class="text-lg font-medium text-foreground">Lista de Produtos</h2>
-              <p class="text-sm text-muted-foreground mt-1">{{ totalItems }} produtos encontrados</p>
-            </div>
-            
-            <!-- Filter Bar Inline -->
-            <div class="flex-1 max-w-4xl">
-              <FilterBar
-                v-model:search="searchQuery"
-                v-model:type="selectedType"
-                v-model:color="selectedColor"
-              />
-            </div>
-          </div>
+          <h2 class="text-lg font-medium text-foreground">Lista de Produtos</h2>
+          <p class="text-sm text-muted-foreground mt-1">{{ totalItems }} produtos encontrados</p>
         </div>
 
         <div v-if="loading" class="flex items-center justify-center h-64">
@@ -508,95 +63,85 @@
           </button>
         </div>
       <div v-else class="overflow-x-auto">
-          <table class="w-full text-sm border-collapse">
-            <thead class="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30">
-              <tr>
-                <th class="px-3 py-2 text-xs font-semibold text-center border border-border text-foreground">Tipo</th>
-                <th class="px-3 py-2 text-xs font-semibold text-center border border-border text-foreground">Folhas</th>
-                <th class="px-3 py-2 text-xs font-semibold text-center border border-border text-foreground">Fixo</th>
-                <th class="px-3 py-2 text-xs font-semibold text-center border border-border text-foreground">Porta</th>
-                <th class="px-3 py-2 text-xs font-semibold text-center border border-border text-foreground">M²</th>
-                <th class="px-3 py-2 text-xs font-semibold text-center border border-border text-foreground">Kit</th>
-                <th class="px-3 py-2 text-xs font-semibold text-center border border-border text-foreground">Custo</th>
-                <th class="px-3 py-2 text-xs font-semibold text-center border border-border text-foreground">À Vista Din</th>
-                <th class="px-3 py-2 text-xs font-semibold text-center border border-border text-foreground">À Vista Cart</th>
-                <th class="px-3 py-2 text-xs font-semibold text-center border border-border text-foreground">4x</th>
-                <th class="px-3 py-2 text-xs font-semibold text-center border border-border text-foreground">6x</th>
-                <th class="px-3 py-2 text-xs font-semibold text-center border border-border text-foreground">10x</th>
-                <th class="px-3 py-2 text-xs font-semibold text-center border border-border text-foreground">12x</th>
-                <th class="px-3 py-2 text-xs font-semibold text-center border border-border text-foreground">Lucro</th>
-                <th class="px-3 py-2 text-xs font-semibold text-center border border-border text-foreground w-20">Ações</th>
+          <table class="w-full">
+            <thead class="bg-muted">
+              <tr class="border-b border-border">
+                <th class="px-3 py-2 text-left text-[10px] sm:text-xs font-medium text-muted-foreground uppercase tracking-wider">Tipo</th>
+                <th class="px-3 py-2 text-left text-[10px] sm:text-xs font-medium text-muted-foreground uppercase tracking-wider">Folhas</th>
+                <th class="px-3 py-2 text-left text-[10px] sm:text-xs font-medium text-muted-foreground uppercase tracking-wider">Dimensões</th>
+                <th class="px-3 py-2 text-left text-[10px] sm:text-xs font-medium text-muted-foreground uppercase tracking-wider">Cor</th>
+                <th class="px-3 py-2 text-left text-[10px] sm:text-xs font-medium text-muted-foreground uppercase tracking-wider">Kit</th>
+                <th class="px-3 py-2 text-left text-[10px] sm:text-xs font-medium text-muted-foreground uppercase tracking-wider">Mão de Obra</th>
+                <th class="px-3 py-2 text-left text-[10px] sm:text-xs font-medium text-muted-foreground uppercase tracking-wider">Custo</th>
+                <th class="px-3 py-2 text-left text-[10px] sm:text-xs font-medium text-muted-foreground uppercase tracking-wider">Preço à Vista</th>
+                <th class="px-3 py-2 text-left text-[10px] sm:text-xs font-medium text-muted-foreground uppercase tracking-wider">Preço 12x</th>
+                <th class="px-3 py-2 text-left text-[10px] sm:text-xs font-medium text-muted-foreground uppercase tracking-wider">Lucro</th>
+                <th class="px-3 py-2 text-center text-[10px] sm:text-xs font-medium text-muted-foreground uppercase tracking-wider">Ações</th>
               </tr>
             </thead>
-            <tbody class="bg-background">
-              <tr v-for="product in filteredProducts" :key="product.id || product.key" :data-product-id="product.id" :data-product-key="product.key" class="hover:bg-accent/30 transition-colors">
-              <!-- Tipo (tipo + cor) -->
-              <td class="border border-border px-2 py-2 text-center">
-                <div class="flex flex-col items-center gap-1">
-                  <span class="text-xs font-medium text-foreground">
-                    {{ product.type || '-' }}
-                  </span>
-                  <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium" :class="{
-                    'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400': product.color === 'INCOLOR',
-                    'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400': product.color === 'VERDE',
-                    'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-400': product.color === 'FUME',
-                    'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400': product.color === 'BRONZE',
-                    'bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-500': !product.color
-                  }">
-                    {{ product.color ? product.color.toUpperCase() : '-' }}
-                  </span>
+            <tbody class="bg-card divide-y divide-border">
+              <tr v-for="product in filteredProducts" :key="product.id || product.key" :data-product-id="product.id" :data-product-key="product.key" class="hover:bg-accent/50">
+              <td class="px-3 py-3 font-medium text-foreground text-xs sm:text-sm">
+                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium whitespace-nowrap" :class="{
+                  'bg-blue-100 text-blue-800': product.type === 'PORTA',
+                  'bg-green-100 text-green-800': product.type === 'JANELA',
+                  'bg-purple-100 text-purple-800': product.type === 'SACADA',
+                  'bg-orange-100 text-orange-800': product.type === 'BASCULANTE',
+                  'bg-gray-100 text-gray-800': product.type === 'FIXO',
+                  'bg-gray-100 text-gray-500': !product.type
+                }">
+                  {{ product.type || '-' }}
+                </span>
+              </td>
+              <td class="px-3 py-3 text-foreground text-xs sm:text-sm">{{ product.sheets || '-' }}</td>
+              <td class="px-3 py-3 text-foreground text-xs">
+                <div class="whitespace-nowrap">
+                  <div>{{ product.width ? product.width + 'cm' : '-' }} × {{ product.height ? product.height + 'cm' : '-' }}</div>
+                  <div class="text-muted-foreground">{{ product.measure ? product.measure.toFixed(2) + 'm²' : '-' }}</div>
                 </div>
               </td>
-              <!-- Folhas -->
-              <td class="border border-border px-2 py-2 text-center text-foreground font-medium">{{ product.sheets || '-' }}</td>
-              <!-- Fixo (largura) -->
-              <td class="border border-border px-2 py-2 text-center text-foreground">{{ product.width ? product.width : '-' }}</td>
-              <!-- Porta (altura) -->
-              <td class="border border-border px-2 py-2 text-center text-foreground">{{ product.height ? product.height : '-' }}</td>
-              <!-- M² -->
-              <td class="border border-border px-2 py-2 text-center text-foreground font-medium">{{ product.measure ? product.measure.toFixed(2) : '-' }}</td>
-              <!-- Kit -->
-              <td class="border border-border px-1 py-1 text-center">
+              <td class="px-3 py-3 text-foreground text-xs sm:text-sm">
+                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium whitespace-nowrap" :class="{
+                  'bg-blue-100 text-blue-800': product.color === 'INCOLOR',
+                  'bg-green-100 text-green-800': product.color === 'VERDE',
+                  'bg-gray-100 text-gray-800': product.color === 'FUME',
+                  'bg-amber-100 text-amber-800': product.color === 'BRONZE',
+                  'bg-gray-100 text-gray-500': !product.color
+                }">
+                  {{ product.color || '-' }}
+                </span>
+              </td>
+              <td class="px-3 py-3 text-gray-700 text-xs sm:text-sm whitespace-nowrap">
                 <EditableValue
                   :model-value="product.accessory ?? product.kit ?? 0"
                   type="currency"
                   @save="(value) => handleKitSave(product, value)"
+                  compact
                 />
               </td>
-              <!-- Custo -->
-              <td class="border border-border px-2 py-2 text-center font-mono text-foreground font-medium">{{ product.cost ? 'R$ ' + product.cost.toFixed(2) : '-' }}</td>
-              <!-- À Vista Dinheiro -->
-              <td class="border border-border px-2 py-2 text-center font-mono text-green-600 dark:text-green-400 font-semibold">
-                {{ product.priceOptions?.cashMoney ? 'R$ ' + product.priceOptions.cashMoney.toFixed(2) : (product.price ? 'R$ ' + product.price.toFixed(2) : '-') }}
+              <td class="px-3 py-3 text-gray-700 text-xs sm:text-sm whitespace-nowrap">
+                <EditableValue
+                  :model-value="product.laborValue ?? 0"
+                  type="currency"
+                  @save="(value) => handleLaborSave(product, value)"
+                  compact
+                />
               </td>
-              <!-- À Vista Cartão -->
-              <td class="border border-border px-2 py-2 text-center font-mono text-green-700 dark:text-green-500 font-semibold">
-                {{ product.priceOptions?.cashCard ? 'R$ ' + product.priceOptions.cashCard.toFixed(2) : '-' }}
+              <td class="px-3 py-3 font-mono font-semibold text-foreground text-xs sm:text-sm whitespace-nowrap">{{ product.cost ? 'R$ ' + product.cost.toFixed(2) : '-' }}</td>
+              <td class="px-3 py-3 font-mono font-semibold text-green-600 text-xs sm:text-sm whitespace-nowrap">{{ product.price ? 'R$ ' + product.price.toFixed(2) : '-' }}</td>
+              <td class="px-3 py-3 text-xs sm:text-sm">
+                <div v-if="product.price" class="space-y-0.5 whitespace-nowrap">
+                  <div class="font-mono font-semibold text-blue-600">R$ {{ (product.price * 1.2).toFixed(2) }}</div>
+                  <div class="text-[10px] sm:text-xs text-muted-foreground">12x de R$ {{ ((product.price * 1.2) / 12).toFixed(2) }}</div>
+                </div>
+                <span v-else class="text-muted-foreground">-</span>
               </td>
-              <!-- Parc 4x -->
-              <td class="border border-border px-2 py-2 text-center font-mono text-blue-600 dark:text-blue-400">
-                {{ product.priceOptions?.installments4x ? 'R$ ' + product.priceOptions.installments4x.toFixed(2) : '-' }}
-              </td>
-              <!-- Parc 6x -->
-              <td class="border border-border px-2 py-2 text-center font-mono text-blue-600 dark:text-blue-400">
-                {{ product.priceOptions?.installments6x ? 'R$ ' + product.priceOptions.installments6x.toFixed(2) : '-' }}
-              </td>
-              <!-- Parc 10x -->
-              <td class="border border-border px-2 py-2 text-center font-mono text-blue-700 dark:text-blue-500">
-                {{ product.priceOptions?.installments10x ? 'R$ ' + product.priceOptions.installments10x.toFixed(2) : '-' }}
-              </td>
-              <!-- Parc 12x -->
-              <td class="border border-border px-2 py-2 text-center font-mono text-blue-700 dark:text-blue-500">
-                {{ product.priceOptions?.installments12x ? 'R$ ' + product.priceOptions.installments12x.toFixed(2) : '-' }}
-              </td>
-              <!-- Lucro -->
-              <td class="border border-border px-2 py-2 text-center font-mono text-purple-600 dark:text-purple-400 font-semibold">{{ calculateProfit(product) }}</td>
-              <!-- Ações -->
-              <td class="border border-border px-2 py-2 text-center">
-                  <div class="flex justify-center items-center space-x-1">
+              <td class="px-3 py-3 font-mono text-purple-600 font-semibold text-xs sm:text-sm whitespace-nowrap">{{ calculateProfit(product) }}</td>
+              <td class="px-3 py-3 whitespace-nowrap text-right text-xs sm:text-sm font-medium">
+                  <div class="flex justify-end space-x-1 sm:space-x-2">
                     <button
                       @click="openModal(product)"
-                      class="text-blue-600 hover:text-blue-900 dark:hover:text-blue-400 p-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 rounded transition-colors"
+                      class="text-blue-600 hover:text-blue-900 p-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 rounded"
                       title="Editar Produto"
                       aria-label="Editar produto"
                     >
@@ -604,7 +149,7 @@
                     </button>
                     <button
                       @click="confirmDelete(product)"
-                      class="text-red-600 hover:text-red-900 dark:hover:text-red-400 p-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500 rounded transition-colors"
+                      class="text-red-600 hover:text-red-900 p-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500 rounded"
                       title="Excluir Produto"
                       aria-label="Excluir produto"
                     >
@@ -672,7 +217,7 @@
                   @click="handlePageChange(page)"
                   :class="[
                     page === currentPage
-                      ? 'z-10 bg-blue-50 border-blue-500 text-blue-600 dark:bg-blue-900/30 dark:border-blue-500 dark:text-blue-400'
+                      ? 'z-10 bg-blue-50 border-blue-500 text-blue-600'
                       : 'bg-card border-border text-muted-foreground hover:bg-accent',
                     'relative inline-flex items-center px-4 py-2 border text-sm font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500'
                   ]"
@@ -720,21 +265,15 @@
 <script setup lang="ts">
 import { ref, onMounted, computed, watch } from 'vue'
 import productService from '../services/product'
-import productCostService from '../services/product-cost'
-import creditCardCostService, { type CreditCardCostDTO } from '../services/credit-card-cost'
-import laborCostService, { type LaborCostDTO } from '../services/labor-cost'
-import glassCostService, { type GlassCostDTO } from '../services/glass-cost'
-import gainService, { type GainDTO } from '../services/gain'
-import kitCostService, { type KitCostDTO } from '../services/kit-cost'
 import type { ProductDTO } from '../services/product'
-import type { ProductCostDTO } from '../services/product-cost'
 import type { PaginatedResponse } from '../services/order'
-import EditableCell from '../components/EditableCell.vue'
+import laborCostService from '../services/labor-cost'
 import FilterBar from '../components/FilterBar.vue'
 import PageSizeSelector from '../components/PageSizeSelector.vue'
 import ProductModal from '../components/ProductModal.vue'
 import DeleteConfirmDialog from '../components/DeleteConfirmDialog.vue'
 import EditableValue from '../components/EditableValue.vue'
+import CostsAccordion from '../components/CostsAccordion.vue'
 import { useNotification } from '../composables/useNotification'
 import { useCurrency } from '../composables/useCurrency'
 
@@ -742,7 +281,6 @@ const notification = useNotification()
 const { formatCurrency } = useCurrency()
 
 const products = ref<ProductDTO[]>([])
-const productCosts = ref<ProductCostDTO | null>(null)
 const loading = ref(true)
 const showModal = ref(false)
 const showDeleteModal = ref(false)
@@ -751,39 +289,6 @@ const saving = ref(false)
 const selectedType = ref('')
 const selectedColor = ref('')
 const searchQuery = ref('')
-
-// Accordions state
-const activeAccordion = ref<'creditCard' | 'labor' | 'glass' | 'gain' | 'kit' | null>(null)
-const creditCardCost = ref<CreditCardCostDTO | null>(null)
-const loadingCreditCard = ref(false)
-const laborCosts = ref<LaborCostDTO[]>([])
-const glassCosts = ref<GlassCostDTO[]>([])
-const gains = ref<GainDTO[]>([])
-const kitCosts = ref<KitCostDTO[]>([])
-const kitProductTypes = ['PORTA', 'JANELA', 'BOX', 'FIXO', 'BASCULANTE', 'SACADA']
-const kitMatrix = ref<Record<string, number>>({})
-const newLaborCost = ref<Omit<LaborCostDTO, 'id'>>({
-  type: 'PORTA',
-  sheets: 1,
-  laborValue: 0
-})
-const newGlassCost = ref<Omit<GlassCostDTO, 'id'>>({
-  color: 'INCOLOR',
-  cost: 0,
-  supplier: ''
-})
-const newGain = ref<Omit<GainDTO, 'id'>>({
-  type: 'PORTA',
-  sheets: 1,
-  gainValue: 0,
-  active: true,
-  description: ''
-})
-const newKitCost = ref<Omit<KitCostDTO, 'id'>>({
-  type: 'PORTA',
-  sheets: 1,
-  kitValue: 0
-})
 
 // Paginação
 const currentPage = ref(1)
@@ -809,15 +314,7 @@ const currentProduct = ref<ProductDTO>({
   profit: 0,
   laborValue: 0,
   createdDate: '',
-  installments: [],
-  priceOptions: {
-    cashMoney: 0,
-    cashCard: 0,
-    installments4x: 0,
-    installments6x: 0,
-    installments10x: 0,
-    installments12x: 0
-  }
+  installments: []
 })
 
 const productToDelete = ref<ProductDTO | null>(null)
@@ -865,27 +362,8 @@ function getVisiblePages() {
 }
 
 onMounted(async () => {
-  await Promise.all([
-    loadProducts(), 
-    loadProductCosts(),
-    loadCreditCardCost(),
-    loadLaborCosts(),
-    loadGlassCosts(),
-    loadGains(),
-    loadKitCosts()
-  ])
+  await loadProducts()
 })
-
-async function loadProductCosts() {
-  try {
-    const costs = await productCostService.getAll()
-    if (costs && costs.length > 0) {
-      productCosts.value = costs[0]
-    }
-  } catch (error) {
-    console.error('Erro ao carregar custos:', error)
-  }
-}
 
 async function loadProducts() {
   try {
@@ -976,15 +454,7 @@ function openModal(product?: ProductDTO) {
       profit: 0,
       laborValue: 0,
       createdDate: '',
-      installments: [],
-      priceOptions: {
-        cashMoney: 0,
-        cashCard: 0,
-        installments4x: 0,
-        installments6x: 0,
-        installments10x: 0,
-        installments12x: 0
-      }
+      installments: []
     }
     isEditing.value = false
   }
@@ -1052,6 +522,12 @@ async function deleteProduct() {
 async function handleKitSave(product: ProductDTO, value: number | string) {
   try {
     const numericValue = typeof value === 'string' ? parseFloat(value) : value
+    
+    // Validar que o valor não seja undefined ou null ou NaN
+    if (numericValue === undefined || numericValue === null || isNaN(numericValue)) {
+      notification.error('Erro', 'Valor inválido')
+      return
+    }
 
     // Update both kit and accessory
     product.accessory = numericValue
@@ -1059,17 +535,12 @@ async function handleKitSave(product: ProductDTO, value: number | string) {
 
     // Call the service to update in backend
     const identifier = product.id?.toString() || product.key
-    const updatedProduct = await productService.update(identifier!, product)
-
-    // Update the product in local list with data returned from backend
-    const productIndex = products.value.findIndex(p =>
-      (p.id === product.id) || (p.key === product.key)
-    )
-    if (productIndex !== -1) {
-      products.value[productIndex] = updatedProduct
-    }
+    await productService.update(identifier!, product)
 
     notification.success('Sucesso', 'Kit atualizado com sucesso')
+    
+    // Reload products to get all updated values (cost, price, profit, etc)
+    await loadProducts()
   } catch (error) {
     console.error('Erro ao salvar kit:', error)
     notification.error('Erro', 'Erro ao salvar o valor do kit. Tente novamente.')
@@ -1078,426 +549,37 @@ async function handleKitSave(product: ProductDTO, value: number | string) {
   }
 }
 
-// Função para lidar com edição inline dos valores dos vidros
-async function handleGlassInlineEdit(field: string, value: number) {
-  if (!productCosts.value) return
-
+// Handler for labor (mão de obra) inline editing
+async function handleLaborSave(product: ProductDTO, value: number | string) {
   try {
-    // Atualizar o valor localmente
-    (productCosts.value as any)[field] = value
-
-    // Salvar no backend
-    await productCostService.update(productCosts.value)
-
-    notification.success('Sucesso', 'Custo do vidro atualizado com sucesso')
-
-    // Recarregar produtos para refletir os novos custos
-    await loadProducts()
-  } catch (error) {
-    console.error('Erro ao salvar custo do vidro:', error)
-    notification.error('Erro', 'Erro ao salvar o valor do vidro. Tente novamente.')
-
-    // Recarregar custos para reverter a mudança local
-    await loadProductCosts()
-  }
-}
-
-// Função para lidar com edição inline do valor da mão de obra
-async function handleLaborInlineEdit(field: string, value: number, product: ProductDTO) {
-  if (!product || !product.key || !productCosts.value) return
-
-  try {
-    // Determinar o campo correto baseado no tipo do produto, seguindo a lógica do backend
-    let laborField = ''
-    const productType = product.type
-
-    if (productType === 'JANELA') {
-      laborField = 'laborWindow'
-    } else if (productType === 'SACADA') {
-      laborField = 'laborBalcony'
-    } else if (productType === 'BASCULANTE') {
-      laborField = 'laborTilting'
-    } else if (productType === 'FIXO') {
-      laborField = 'laborFixed'
-    } else if (productType === 'BOX') {
-      laborField = 'laborBox'
-    } else {
-      laborField = 'laborDoor' // Default para PORTA
+    const numericValue = typeof value === 'string' ? parseFloat(value) : value
+    
+    // Validar que o valor não seja undefined ou null ou NaN
+    if (numericValue === undefined || numericValue === null || isNaN(numericValue)) {
+      notification.error('Erro', 'Valor inválido')
+      return
     }
 
-    // Buscar o custo atual do TemperedGlassCost
-    const currentCost = Array.isArray(productCosts.value) ? productCosts.value[0] : productCosts.value
-
-    // Atualizar o campo correto no TemperedGlassCost
-    const updatedCost = {
-      ...currentCost,
-      [laborField]: typeof value === 'string' ? parseFloat(value) : value
+    // Validar que o produto tem type e sheets
+    if (!product.type || product.sheets === undefined) {
+      notification.error('Erro', 'Produto precisa ter tipo e número de folhas definidos')
+      return
     }
 
-    // Salvar via productCostService (endpoint /product-costs)
-    await productCostService.update(updatedCost)
+    // Usar o endpoint inline que atualiza por type e sheets
+    await laborCostService.updateInline(product.type, product.sheets, numericValue)
 
     notification.success('Sucesso', 'Mão de obra atualizada com sucesso')
-
-    // Recarregar custos e produtos para refletir as mudanças
-    await loadProductCosts()
-    await loadProducts()
-
-  } catch (error) {
-    console.error('Erro ao atualizar mão de obra:', error)
-    notification.error('Erro', 'Erro ao salvar mão de obra. Tente novamente.')
-    // Recarregar em caso de erro
-    await loadProductCosts()
-    await loadProducts()
-  }
-}
-
-// ========== ACCORDION FUNCTIONS ==========
-
-// Credit Card Functions
-async function loadCreditCardCost() {
-  try {
-    loadingCreditCard.value = true
-    const costs = await creditCardCostService.getAll()
-    if (costs && costs.length > 0) {
-      creditCardCost.value = costs[0]
-    } else {
-      creditCardCost.value = null
-    }
-  } catch (error) {
-    console.error('Erro ao carregar taxas de cartão:', error)
-    notification.error('Erro', 'Erro ao carregar taxas de cartão')
-    creditCardCost.value = null
-  } finally {
-    loadingCreditCard.value = false
-  }
-}
-
-async function createDefaultCreditCardCost() {
-  try {
-    loadingCreditCard.value = true
-    const defaultCost = {
-      debit: 2.0,
-      tax1x: 3.0,
-      tax2x: 4.0,
-      tax3x: 5.0,
-      tax4x: 6.0,
-      tax5x: 7.0,
-      tax6x: 8.0,
-      tax7x: 9.0,
-      tax8x: 10.0,
-      tax9x: 11.0,
-      tax10x: 12.0,
-      tax11x: 13.0,
-      tax12x: 14.0,
-      tax13x: 15.0,
-      tax14x: 16.0,
-      tax15x: 17.0,
-      tax16x: 18.0,
-      tax17x: 19.0,
-      tax18x: 20.0
-    }
-    const created = await creditCardCostService.create(defaultCost)
-    creditCardCost.value = created
-    notification.success('Sucesso', 'Configuração padrão criada! Ajuste os valores conforme necessário.')
-  } catch (error) {
-    console.error('Erro ao criar taxas de cartão:', error)
-    notification.error('Erro', 'Erro ao criar configuração de taxas')
-  } finally {
-    loadingCreditCard.value = false
-  }
-}
-
-async function saveCreditCardCost() {
-  if (!creditCardCost.value) return
-  
-  try {
-    await creditCardCostService.update(creditCardCost.value)
-    notification.success('Sucesso', 'Taxas de cartão atualizadas!')
-    await loadProducts() // Recarregar produtos para atualizar preços
-  } catch (error) {
-    console.error('Erro ao salvar taxas de cartão:', error)
-    notification.error('Erro', 'Erro ao salvar taxas de cartão')
-  }
-}
-
-// Labor Cost Functions
-async function loadLaborCosts() {
-  try {
-    laborCosts.value = await laborCostService.getAll()
-  } catch (error) {
-    console.error('Erro ao carregar custos de mão de obra:', error)
-  }
-}
-
-async function addLaborCost() {
-  try {
-    const created = await laborCostService.create(newLaborCost.value)
-    laborCosts.value.push(created)
-    newLaborCost.value = { type: 'PORTA', sheets: 1, laborValue: 0 }
-    notification.success('Sucesso', 'Custo de mão de obra adicionado!')
-    await loadProducts()
-  } catch (error) {
-    console.error('Erro ao adicionar custo de mão de obra:', error)
-    notification.error('Erro', 'Erro ao adicionar custo de mão de obra')
-  }
-}
-
-async function updateLaborCost(labor: LaborCostDTO) {
-  try {
-    await laborCostService.update(labor.id!, labor)
-    notification.success('Sucesso', 'Custo de mão de obra atualizado!')
-    await loadProducts()
-  } catch (error) {
-    console.error('Erro ao atualizar custo de mão de obra:', error)
-    notification.error('Erro', 'Erro ao atualizar custo de mão de obra')
-  }
-}
-
-async function deleteLaborCost(id: number) {
-  if (!confirm('Tem certeza que deseja excluir este custo de mão de obra?')) return
-  
-  try {
-    await laborCostService.delete(id)
-    laborCosts.value = laborCosts.value.filter(l => l.id !== id)
-    notification.success('Sucesso', 'Custo de mão de obra excluído!')
-    await loadProducts()
-  } catch (error) {
-    console.error('Erro ao excluir custo de mão de obra:', error)
-    notification.error('Erro', 'Erro ao excluir custo de mão de obra')
-  }
-}
-
-// Glass Cost Functions
-async function loadGlassCosts() {
-  try {
-    glassCosts.value = await glassCostService.getAll()
-  } catch (error) {
-    console.error('Erro ao carregar custos de vidro:', error)
-  }
-}
-
-async function addGlassCost() {
-  try {
-    const created = await glassCostService.create(newGlassCost.value)
-    glassCosts.value.push(created)
-    newGlassCost.value = { color: 'INCOLOR', cost: 0, supplier: '' }
-    notification.success('Sucesso', 'Custo de vidro adicionado!')
-    await loadProducts()
-  } catch (error) {
-    console.error('Erro ao adicionar custo de vidro:', error)
-    notification.error('Erro', 'Erro ao adicionar custo de vidro')
-  }
-}
-
-async function updateGlassCost(glass: GlassCostDTO) {
-  try {
-    await glassCostService.update(glass.id!, glass)
-    notification.success('Sucesso', 'Custo de vidro atualizado!')
-    await loadProducts()
-  } catch (error) {
-    console.error('Erro ao atualizar custo de vidro:', error)
-    notification.error('Erro', 'Erro ao atualizar custo de vidro')
-  }
-}
-
-async function deleteGlassCost(color: string) {
-  if (!confirm(`Tem certeza que deseja excluir o custo do vidro ${color}?`)) return
-  
-  try {
-    await glassCostService.delete(color)
-    glassCosts.value = glassCosts.value.filter(g => g.color !== color)
-    notification.success('Sucesso', 'Custo de vidro excluído!')
-    await loadProducts()
-  } catch (error) {
-    console.error('Erro ao excluir custo de vidro:', error)
-    notification.error('Erro', 'Erro ao excluir custo de vidro')
-  }
-}
-
-// Gain Functions
-async function loadGains() {
-  try {
-    gains.value = await gainService.getAll()
-  } catch (error) {
-    console.error('Erro ao carregar ganhos:', error)
-  }
-}
-
-async function addGain() {
-  try {
-    // Sempre criar ganho como ativo
-    const gainToCreate = { 
-      ...newGain.value, 
-      active: true, 
-      description: newGain.value.description || '' 
-    }
-    const created = await gainService.create(gainToCreate)
-    gains.value.push(created)
-    newGain.value = { type: 'PORTA', sheets: 1, gainValue: 0, active: true, description: '' }
-    notification.success('Sucesso', 'Ganho adicionado!')
-    await loadProducts()
-  } catch (error) {
-    console.error('Erro ao adicionar ganho:', error)
-    notification.error('Erro', 'Erro ao adicionar ganho')
-  }
-}
-
-async function updateGain(gain: GainDTO) {
-  try {
-    // Sempre manter ganho como ativo ao atualizar
-    const gainToUpdate = { ...gain, active: true }
-    await gainService.update(gain.id!, gainToUpdate)
-    notification.success('Sucesso', 'Ganho atualizado!')
-    await loadProducts()
-  } catch (error) {
-    console.error('Erro ao atualizar ganho:', error)
-    notification.error('Erro', 'Erro ao atualizar ganho')
-  }
-}
-
-async function deleteGain(id: number) {
-  if (!confirm('Tem certeza que deseja excluir este ganho?')) return
-  
-  try {
-    await gainService.delete(id)
-    gains.value = gains.value.filter(g => g.id !== id)
-    notification.success('Sucesso', 'Ganho excluído!')
-    await loadProducts()
-  } catch (error) {
-    console.error('Erro ao excluir ganho:', error)
-    notification.error('Erro', 'Erro ao excluir ganho')
-  }
-}
-
-// Kit Cost Functions
-async function loadKitCosts() {
-  try {
-    kitCosts.value = await kitCostService.getAll()
     
-    // Popula a matriz com os valores existentes
-    kitMatrix.value = {}
-    kitCosts.value.forEach(kit => {
-      const key = `${kit.type}_${kit.sheets}`
-      kitMatrix.value[key] = kit.kitValue
-    })
-  } catch (error) {
-    console.error('Erro ao carregar custos de kit:', error)
-  }
-}
-
-function getKitValue(type: string, sheets: number): number {
-  const key = `${type}_${sheets}`
-  return kitMatrix.value[key] || 0
-}
-
-function updateKitMatrix(type: string, sheets: number, value: number) {
-  const key = `${type}_${sheets}`
-  kitMatrix.value[key] = value
-}
-
-async function saveKitValue(type: string, sheets: number, value: number) {
-  try {
-    // Verifica se já existe um kit cadastrado
-    const existing = kitCosts.value.find(k => k.type === type && k.sheets === sheets)
-    
-    if (existing) {
-      // Atualiza kit existente
-      existing.kitValue = value
-      await kitCostService.update(existing.id!, existing)
-      notification.success('Atualizado', `Kit ${type} ${sheets} folha(s): R$ ${value.toFixed(2)}`)
-    } else {
-      // Cria novo kit
-      const newKit = await kitCostService.create({
-        type,
-        sheets,
-        kitValue: value,
-        active: true
-      })
-      kitCosts.value.push(newKit)
-      notification.success('Criado', `Kit ${type} ${sheets} folha(s): R$ ${value.toFixed(2)}`)
-    }
-    
-    // Recalcula produtos após alteração
+    // Reload products to get all updated values (cost, price, profit, etc)
     await loadProducts()
-  } catch (error) {
-    console.error('Erro ao salvar custo de kit:', error)
-    notification.error('Erro', 'Erro ao salvar custo de kit')
+  } catch (error: any) {
+    console.error('Erro ao salvar mão de obra:', error)
+    const errorMessage = error.response?.data?.message || 'Erro ao atualizar mão de obra. Tente novamente.'
+    notification.error('Erro', errorMessage)
+    // Reload products to revert changes
+    await loadProducts()
   }
 }
 
-async function addKitCost() {
-  try {
-    const created = await kitCostService.create(newKitCost.value)
-    kitCosts.value.push(created)
-    
-    // Atualiza matriz
-    const key = `${created.type}_${created.sheets}`
-    kitMatrix.value[key] = created.kitValue
-    
-    newKitCost.value = { type: 'PORTA', sheets: 1, kitValue: 0 }
-    notification.success('Sucesso', 'Custo de kit adicionado!')
-    await loadProducts()
-  } catch (error) {
-    console.error('Erro ao adicionar custo de kit:', error)
-    notification.error('Erro', 'Erro ao adicionar custo de kit')
-  }
-}
-
-async function updateKitCost(kit: KitCostDTO) {
-  try {
-    await kitCostService.update(kit.id!, kit)
-    
-    // Atualiza matriz
-    const key = `${kit.type}_${kit.sheets}`
-    kitMatrix.value[key] = kit.kitValue
-    
-    notification.success('Sucesso', 'Custo de kit atualizado!')
-    await loadProducts()
-  } catch (error) {
-    console.error('Erro ao atualizar custo de kit:', error)
-    notification.error('Erro', 'Erro ao atualizar custo de kit')
-  }
-}
-
-async function deleteKitCost(id: number) {
-  if (!confirm('Tem certeza que deseja excluir este custo de kit?')) return
-  
-  try {
-    const kit = kitCosts.value.find(k => k.id === id)
-    if (kit) {
-      // Remove da matriz
-      const key = `${kit.type}_${kit.sheets}`
-      delete kitMatrix.value[key]
-    }
-    
-    await kitCostService.delete(id)
-    kitCosts.value = kitCosts.value.filter(k => k.id !== id)
-    notification.success('Sucesso', 'Custo de kit excluído!')
-    await loadProducts()
-  } catch (error) {
-    console.error('Erro ao excluir custo de kit:', error)
-    notification.error('Erro', 'Erro ao excluir custo de kit')
-  }
-}
 </script>
-
-<style scoped>
-.accordion-enter-active,
-.accordion-leave-active {
-  transition: all 0.3s ease;
-}
-
-.accordion-enter-from,
-.accordion-leave-to {
-  max-height: 0;
-  opacity: 0;
-  overflow: hidden;
-}
-
-.accordion-enter-to,
-.accordion-leave-from {
-  max-height: 500px;
-  opacity: 1;
-}
-</style>

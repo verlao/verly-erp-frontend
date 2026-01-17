@@ -18,24 +18,12 @@ export const useAuthStore = defineStore('auth', {
   state: (): AuthState => {
     let user = null;
     try {
-      // Verificar se há um item 'user' no localStorage e se é uma string válida
       const userStr = localStorage.getItem('user');
-      console.log('=== STORE INITIALIZATION ===')
-      console.log('userStr from localStorage:', userStr)
-
       if (userStr && userStr !== 'undefined' && userStr !== 'null') {
         user = JSON.parse(userStr);
-        console.log('Parsed user:', user)
-        console.log('User roles:', user?.roles)
-        console.log('User roles type:', typeof user?.roles)
-        console.log('User roles isArray:', Array.isArray(user?.roles))
-      } else {
-        console.log('No valid user in localStorage')
       }
-      console.log('============================')
     } catch (e) {
       console.error('Erro ao fazer parse do usuário:', e);
-      // Limpar o item inválido do localStorage
       localStorage.removeItem('user');
     }
 
@@ -57,69 +45,44 @@ export const useAuthStore = defineStore('auth', {
       this.error = null
 
       try {
-        // Importar a instância api configurada
         const api = (await import('../services/api')).default
         const response = await api.post('/login-v2', { username, password })
 
-        // Logs detalhados para debug
-        console.log('=== LOGIN DEBUG ===')
-        console.log('Response completo:', response)
-        console.log('Response.data:', response.data)
-        console.log('Response.data type:', typeof response.data)
-        console.log('Response.data.roles:', response.data?.roles)
-        console.log('Response.data.roles type:', typeof response.data?.roles)
-        console.log('Response.data.roles isArray:', Array.isArray(response.data?.roles))
-        console.log('===================')
-
-        // Verificar se a resposta contém os dados necessários
         if (!response.data || !response.data.accessToken) {
           throw new Error('Resposta de autenticação inválida')
         }
 
-        const responseData = response.data
-        const accessToken = responseData.accessToken
-        const responseUsername = responseData.username
-        const responseRoles = responseData.roles || [] // Pegar roles do backend
+        const { accessToken, username: responseUsername, roles = [] } = response.data
+        const user = { 
+          username: responseUsername, 
+          id: 0, 
+          roles: Array.isArray(roles) ? roles : [] 
+        }
 
-        console.log('Roles extraídos:', responseRoles)
-        console.log('Roles extraídos length:', responseRoles.length)
-
-        const token = accessToken
-        const user = { username: responseUsername, id: 0, roles: responseRoles }
-
-        console.log('User object criado:', user)
-        console.log('User.roles:', user.roles)
-
-        this.token = token
+        this.token = accessToken
         this.user = user
 
-        // Limpar localStorage antes de adicionar novos valores
-        localStorage.removeItem('token')
-        localStorage.removeItem('user')
+        localStorage.setItem('token', accessToken)
+        localStorage.setItem('user', JSON.stringify(user))
 
-        // Salvar novos valores
-        localStorage.setItem('token', token)
-        const userJson = JSON.stringify(user)
-        console.log('Salvando user no localStorage:', userJson)
-        localStorage.setItem('user', userJson)
-
-        // Verificar o que foi salvo
-        const savedUser = localStorage.getItem('user')
-        console.log('User salvo no localStorage:', savedUser)
-        console.log('User parsed do localStorage:', JSON.parse(savedUser!))
-
-        // Não precisa configurar axios.defaults aqui
-        // O interceptor em api.ts já pega o token do localStorage automaticamente
-        // axios.defaults.headers.common['Authorization'] = `Bearer ${token}` // REMOVIDO
+        axios.defaults.headers.common['Authorization'] = `Bearer ${accessToken}`
 
         return true
       } catch (error: any) {
-        // Limpar localStorage em caso de erro
+        this.token = null
+        this.user = null
         localStorage.removeItem('token')
         localStorage.removeItem('user')
 
-        this.error = error.response?.data?.message || 'Credenciais inválidas. Por favor, verifique seu usuário e senha.'
-        console.error('Erro de login:', error)
+        // Definir mensagem de erro amigável
+        if (error.response?.status === 401) {
+          this.error = 'Usuário ou senha incorreta'
+        } else if (error.code === 'ERR_NETWORK') {
+          this.error = 'Erro de conexão. Verifique sua internet ou tente novamente mais tarde.'
+        } else {
+          this.error = error.response?.data?.message || 'Erro ao fazer login. Tente novamente.'
+        }
+        
         return false
       } finally {
         this.loading = false
@@ -133,18 +96,14 @@ export const useAuthStore = defineStore('auth', {
       localStorage.removeItem('token')
       localStorage.removeItem('user')
       
-      // Não precisa deletar axios.defaults, o interceptor cuida disso
-      // delete axios.defaults.headers.common['Authorization'] // REMOVIDO
+      delete axios.defaults.headers.common['Authorization']
     },
     
     initializeAuth() {
-      // O interceptor em api.ts já pega o token automaticamente
-      // Não precisa configurar axios.defaults aqui
       const token = localStorage.getItem('token')
-      console.log('initializeAuth: token encontrado =', !!token)
-      // if (token) {
-      //   axios.defaults.headers.common['Authorization'] = `Bearer ${token}`
-      // }
+      if (token) {
+        axios.defaults.headers.common['Authorization'] = `Bearer ${token}`
+      }
     }
   }
 })

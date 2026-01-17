@@ -5,8 +5,23 @@ export interface LaborCostDTO {
   type: string
   sheets: number
   laborValue: number
-  createdAt?: string
-  updatedAt?: string
+  active?: boolean
+  description?: string
+  createdDate?: string
+  updatedDate?: string
+  createdBy?: string
+  updatedBy?: string
+}
+
+export interface LaborCostInlineUpdateResponse {
+  success: boolean
+  id: number
+  type: string
+  sheets: number
+  oldValue: number
+  newValue: number
+  message: string
+  error?: string
 }
 
 const laborCostService = {
@@ -20,23 +35,8 @@ const laborCostService = {
     return response.data
   },
   
-  getByType: async (type: string): Promise<LaborCostDTO[]> => {
-    const response = await api.get(`/api/labor-costs/by-type/${type}`)
-    return response.data
-  },
-  
-  getBySheets: async (sheets: number): Promise<LaborCostDTO[]> => {
-    const response = await api.get(`/api/labor-costs/by-sheets/${sheets}`)
-    return response.data
-  },
-  
-  getAvailableTypes: async (): Promise<string[]> => {
-    const response = await api.get('/api/labor-costs/types')
-    return response.data
-  },
-  
-  getAvailableSheets: async (): Promise<number[]> => {
-    const response = await api.get('/api/labor-costs/sheets')
+  getByTypeAndSheets: async (type: string, sheets: number): Promise<LaborCostDTO> => {
+    const response = await api.get(`/api/labor-costs/search?type=${type}&sheets=${sheets}`)
     return response.data
   },
   
@@ -50,9 +50,20 @@ const laborCostService = {
     return response.data
   },
   
+  // Atualiza mão de obra inline usando path variables + body
+  // PATCH /api/labor-costs/inline/{type}/{sheets}
+  // Body: { "laborValue": 175.50 }
+  updateInline: async (type: string, sheets: number, laborValue: number): Promise<LaborCostInlineUpdateResponse> => {
+    const response = await api.patch(`/api/labor-costs/inline/${type}/${sheets}`, {
+      laborValue
+    })
+    return response.data
+  },
+  
   delete: async (id: number): Promise<void> => {
     await api.delete(`/api/labor-costs/${id}`)
   }
 }
 
 export default laborCostService
+

@@ -9,6 +9,8 @@ export interface GainDTO {
   description?: string
   createdDate?: string
   updatedDate?: string
+  createdBy?: string
+  updatedBy?: string
 }
 
 const gainService = {
@@ -22,23 +24,8 @@ const gainService = {
     return response.data
   },
   
-  getByType: async (type: string): Promise<GainDTO[]> => {
-    const response = await api.get(`/api/gains/by-type/${type}`)
-    return response.data
-  },
-  
-  getBySheets: async (sheets: number): Promise<GainDTO[]> => {
-    const response = await api.get(`/api/gains/by-sheets/${sheets}`)
-    return response.data
-  },
-  
-  getAvailableTypes: async (): Promise<string[]> => {
-    const response = await api.get('/api/gains/types')
-    return response.data
-  },
-  
-  getAvailableSheets: async (): Promise<number[]> => {
-    const response = await api.get('/api/gains/sheets')
+  getByTypeAndSheets: async (type: string, sheets: number): Promise<GainDTO> => {
+    const response = await api.get(`/api/gains/search?type=${type}&sheets=${sheets}`)
     return response.data
   },
   
@@ -58,3 +45,4 @@ const gainService = {
 }
 
 export default gainService
+

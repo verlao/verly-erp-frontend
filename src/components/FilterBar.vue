@@ -1,14 +1,14 @@
 <template>
-  <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4 mb-4">
-    <div class="flex flex-col lg:flex-row gap-4">
+  <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-3 mb-4">
+    <div class="flex flex-col sm:flex-row gap-2 sm:gap-3">
       <!-- Search Input -->
-      <div class="flex-1">
+      <div class="flex-1 min-w-0">
         <div class="relative">
-          <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+          <div class="absolute inset-y-0 left-0 pl-2 sm:pl-3 flex items-center pointer-events-none">
             <svg
               xmlns="http://www.w3.org/2000/svg"
-              width="16"
-              height="16"
+              width="14"
+              height="14"
               viewBox="0 0 24 24"
               fill="none"
               stroke="currentColor"
@@ -25,18 +25,19 @@
             v-model="localSearch"
             type="text"
             placeholder="Buscar produtos..."
-            class="pl-10"
+            class="pl-8 sm:pl-10 text-xs sm:text-sm h-9"
             @input="handleSearchInput"
           />
         </div>
       </div>
 
       <!-- Type Filter -->
-      <div class="w-full lg:w-48">
+      <div class="w-full sm:w-40 lg:w-48">
         <Select
           v-model="localType"
           @update:model-value="handleTypeChange"
           placeholder="Todos os tipos"
+          class="text-xs sm:text-sm h-9"
         >
           <SelectItem value="">Todos os tipos</SelectItem>
           <SelectItem value="PORTA">Porta</SelectItem>
@@ -49,11 +50,12 @@
       </div>
 
       <!-- Color Filter -->
-      <div class="w-full lg:w-48">
+      <div class="w-full sm:w-40 lg:w-48">
         <Select
           v-model="localColor"
           @update:model-value="handleColorChange"
           placeholder="Todas as cores"
+          class="text-xs sm:text-sm h-9"
         >
           <SelectItem value="">Todas as cores</SelectItem>
           <SelectItem value="INCOLOR">Incolor</SelectItem>
@@ -68,46 +70,47 @@
         v-if="hasActiveFilters"
         variant="outline"
         @click="clearFilters"
-        class="whitespace-nowrap"
+        class="whitespace-nowrap text-xs sm:text-sm h-9 px-3"
         aria-label="Limpar filtros"
       >
         <svg
           xmlns="http://www.w3.org/2000/svg"
-          width="16"
-          height="16"
+          width="14"
+          height="14"
           viewBox="0 0 24 24"
           fill="none"
           stroke="currentColor"
           stroke-width="2"
           stroke-linecap="round"
           stroke-linejoin="round"
-          class="mr-2"
+          class="mr-1 sm:mr-2"
         >
           <path d="M3 6h18"/>
           <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/>
           <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/>
         </svg>
-        Limpar
+        <span class="hidden sm:inline">Limpar</span>
+        <span class="sm:hidden">✕</span>
       </Button>
     </div>
 
     <!-- Active Filters Display -->
-    <div v-if="hasActiveFilters" class="mt-4 flex flex-wrap gap-2">
+    <div v-if="hasActiveFilters" class="mt-2 sm:mt-3 flex flex-wrap gap-1.5 sm:gap-2">
       <Badge
         v-if="localSearch"
         variant="secondary"
-        class="flex items-center gap-1"
+        class="flex items-center gap-1 text-[10px] sm:text-xs"
       >
-        <span class="text-xs">Busca: {{ localSearch }}</span>
+        <span class="truncate max-w-[120px] sm:max-w-none">Busca: {{ localSearch }}</span>
         <button
           @click="localSearch = ''; handleSearchInput()"
-          class="ml-1 hover:bg-gray-300 rounded-full p-0.5"
+          class="ml-0.5 sm:ml-1 hover:bg-gray-300 rounded-full p-0.5"
           aria-label="Remover filtro de busca"
         >
           <svg
             xmlns="http://www.w3.org/2000/svg"
-            width="12"
-            height="12"
+            width="10"
+            height="10"
             viewBox="0 0 24 24"
             fill="none"
             stroke="currentColor"
@@ -124,18 +127,18 @@
       <Badge
         v-if="localType"
         variant="secondary"
-        class="flex items-center gap-1"
+        class="flex items-center gap-1 text-[10px] sm:text-xs"
       >
-        <span class="text-xs">Tipo: {{ localType }}</span>
+        <span>Tipo: {{ localType }}</span>
         <button
           @click="handleTypeChange('')"
-          class="ml-1 hover:bg-gray-300 rounded-full p-0.5"
+          class="ml-0.5 sm:ml-1 hover:bg-gray-300 rounded-full p-0.5"
           aria-label="Remover filtro de tipo"
         >
           <svg
             xmlns="http://www.w3.org/2000/svg"
-            width="12"
-            height="12"
+            width="10"
+            height="10"
             viewBox="0 0 24 24"
             fill="none"
             stroke="currentColor"
@@ -152,18 +155,18 @@
       <Badge
         v-if="localColor"
         variant="secondary"
-        class="flex items-center gap-1"
+        class="flex items-center gap-1 text-[10px] sm:text-xs"
       >
-        <span class="text-xs">Cor: {{ localColor }}</span>
+        <span>Cor: {{ localColor }}</span>
         <button
           @click="handleColorChange('')"
-          class="ml-1 hover:bg-gray-300 rounded-full p-0.5"
+          class="ml-0.5 sm:ml-1 hover:bg-gray-300 rounded-full p-0.5"
           aria-label="Remover filtro de cor"
         >
           <svg
             xmlns="http://www.w3.org/2000/svg"
-            width="12"
-            height="12"
+            width="10"
+            height="10"
             viewBox="0 0 24 24"
             fill="none"
             stroke="currentColor"

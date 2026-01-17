@@ -92,19 +92,6 @@
                 placeholder="R$ 0,00"
               />
             </div>
-
-            <!-- Weight -->
-            <div>
-              <Label for="weight" class="mb-2">Peso (kg)</Label>
-              <Input
-                id="weight"
-                v-model.number="formData.weight"
-                type="number"
-                step="0.01"
-                min="0"
-                placeholder="0.00"
-              />
-            </div>
           </div>
 
           <!-- Auto-calculation Info -->
@@ -306,7 +293,6 @@ const formData = ref<ProductDTO>({
   kit: 0,
   width: 0,
   height: 0,
-  weight: 0,
   measure: 0,
   color: '',
   cost: 0,
@@ -345,7 +331,6 @@ watch(() => props.product, (newProduct) => {
       kit: 0,
       width: 0,
       height: 0,
-      weight: 0,
       measure: 0,
       color: '',
       cost: 0,

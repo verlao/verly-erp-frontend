@@ -11,41 +11,7 @@
 
     <!-- SEO and PWA -->
     <meta name="description" content="Sistema de Gestão ERP - Verly Vidraçaria" />
-    <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)" />
-    <meta name="theme-color" content="#0a0a0a" media="(prefers-color-scheme: dark)" />
-
-    <!-- GitHub Pages SPA redirect fix -->
-    <script>
-      // Restaura a URL correta após redirecionamento do 404.html
-      (function() {
-        const redirect = sessionStorage.redirect;
-        delete sessionStorage.redirect;
-        if (redirect && redirect != location.href) {
-          history.replaceState(null, null, redirect);
-        }
-      })();
-    </script>
-
-    <!-- Prevent FOUC (Flash of Unstyled Content) -->
-    <script>
-      (function() {
-        const themeMode = localStorage.getItem('theme-mode') || 'system';
-        const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-
-        let isDark = false;
-        if (themeMode === 'dark') {
-          isDark = true;
-        } else if (themeMode === 'system') {
-          isDark = prefersDark;
-        }
-
-        if (isDark) {
-          document.documentElement.classList.add('dark');
-        } else {
-          document.documentElement.classList.add('light');
-        }
-      })();
-    </script>
+    <meta name="theme-color" content="#ffffff" />
 
     <title>Verly ERP - Sistema de Gestão</title>
   </head>

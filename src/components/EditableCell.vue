@@ -5,18 +5,21 @@
       <span v-else-if="isPercent">{{ displayValue }}%</span>
       <span v-else>{{ displayValue }}</span>
     </div>
-    <input 
-      v-else
-      ref="inputRef"
-      v-model="inputValue"
-      type="number"
-      step="0.01"
-      min="0"
-      class="w-full px-2 py-1 border border-input bg-background text-foreground rounded focus:outline-none focus:ring-2 focus:ring-ring text-sm"
-      @blur="handleBlur"
-      @keydown.enter="handleEnter"
-      @keydown.escape="cancelEdit"
-    />
+    <div v-else class="flex items-center gap-2">
+      <input 
+        ref="inputRef"
+        v-model="inputValue"
+        type="number"
+        step="0.01"
+        min="0"
+        class="flex-1 px-2 py-1 border border-input bg-background text-foreground rounded focus:outline-none focus:ring-2 focus:ring-ring text-sm font-semibold"
+        @blur="handleBlur"
+        @keydown.enter="handleEnter"
+        @keydown.escape="cancelEdit"
+      />
+      <span v-if="isMoney" class="text-sm font-semibold text-green-600 whitespace-nowrap">R$</span>
+      <span v-else-if="isPercent" class="text-sm font-semibold text-blue-600 whitespace-nowrap">%</span>
+    </div>
   </div>
 </template>
 

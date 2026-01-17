@@ -6,7 +6,11 @@ defineProps<{
 </script>
 
 <template>
-  <option :value="value" :disabled="disabled">
+  <option 
+    :value="value" 
+    :disabled="disabled"
+    class="py-2 text-base sm:text-sm"
+  >
     <slot />
   </option>
 </template>

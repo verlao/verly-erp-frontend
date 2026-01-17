@@ -76,6 +76,7 @@ export function useInlineEdit<T = any>(options: InlineEditOptions<T>) {
       isEditing.value = false
     } catch (err) {
       error.value = err instanceof Error ? err.message : 'Failed to save'
+      console.error('Erro ao salvar:', err)
     } finally {
       isSaving.value = false
     }

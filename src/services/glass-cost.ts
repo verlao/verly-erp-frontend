@@ -3,9 +3,11 @@ import api from './api'
 export interface GlassCostDTO {
   id?: number
   color: string
-  cost: number
+  costPerSquareMeter: number
   supplier?: string
-  active?: boolean
+  effectiveDate?: string
+  expiryDate?: string
+  isActive?: boolean
   createdAt?: string
   updatedAt?: string
 }
@@ -13,6 +15,11 @@ export interface GlassCostDTO {
 const glassCostService = {
   getAll: async (): Promise<GlassCostDTO[]> => {
     const response = await api.get('/api/glass-cost')
+    return response.data
+  },
+  
+  getById: async (id: number): Promise<GlassCostDTO> => {
+    const response = await api.get(`/api/glass-cost/${id}`)
     return response.data
   },
   
@@ -26,16 +33,6 @@ const glassCostService = {
     return response.data
   },
   
-  getHistory: async (color: string): Promise<GlassCostDTO[]> => {
-    const response = await api.get(`/api/glass-cost/history/${color}`)
-    return response.data
-  },
-  
-  existsByColor: async (color: string): Promise<boolean> => {
-    const response = await api.get(`/api/glass-cost/exists/${color}`)
-    return response.data
-  },
-  
   create: async (glassCost: Omit<GlassCostDTO, 'id'>): Promise<GlassCostDTO> => {
     const response = await api.post('/api/glass-cost', glassCost)
     return response.data
@@ -45,17 +42,34 @@ const glassCostService = {
     const response = await api.put(`/api/glass-cost/${id}`, glassCost)
     return response.data
   },
-  
-  updatePriceByColor: async (color: string, newPrice: number, supplier?: string): Promise<GlassCostDTO> => {
-    const params: any = { newPrice }
-    if (supplier) params.supplier = supplier
-    const response = await api.put(`/api/glass-cost/color/${color}/price`, null, { params })
+
+  updatePriceByColor: async (color: string, newPrice: number): Promise<void> => {
+    // Backend espera BigDecimal, então enviamos como string com 2 casas decimais
+    const formattedPrice = newPrice.toFixed(2)
+    
+    console.log('📡 glass-cost.updatePriceByColor:', {
+      color,
+      newPrice,
+      formattedPrice,
+      supplier: 'DEFAULT',
+      url: `/api/glass-cost/color/${color}/price`
+    })
+    
+    const response = await api.put(`/api/glass-cost/color/${color}/price`, null, {
+      params: { 
+        newPrice: formattedPrice,
+        supplier: 'DEFAULT'
+      }
+    })
+    
+    console.log('✅ Response:', response.status, response.data)
     return response.data
   },
   
-  delete: async (color: string): Promise<void> => {
-    await api.delete(`/api/glass-cost/color/${color}`)
+  delete: async (id: number): Promise<void> => {
+    await api.delete(`/api/glass-cost/${id}`)
   }
 }
 
 export default glassCostService
+

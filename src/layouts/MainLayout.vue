@@ -1,9 +1,29 @@
 <template>
   <div class="min-h-screen">
     <!-- Sidebar -->
-    <aside @click="handleSidebarClick" :class="['bg-sidebar border-r border-border transition-all duration-300 ease-in-out cursor-pointer fixed top-0 left-0 h-screen z-50', isSidebarCollapsed ? 'w-16' : 'w-64']">
+    <aside :class="['bg-sidebar border-r border-border transition-all duration-300 ease-in-out fixed top-0 left-0 h-screen z-50', isSidebarCollapsed ? 'w-16' : 'w-64']">
       <div class="p-4 border-b border-border flex items-center justify-between">
-        <h1 :class="['font-bold text-foreground transition-opacity duration-300', isSidebarCollapsed ? 'opacity-0' : 'opacity-100 text-xl']">Verly ERP</h1>
+        <h1 :class="['font-bold text-foreground transition-opacity duration-300', isSidebarCollapsed ? 'opacity-0 w-0' : 'opacity-100 text-xl']">Verly ERP</h1>
+        <button
+          @click="toggleSidebar"
+          class="p-1.5 rounded-md hover:bg-accent transition-colors flex-shrink-0"
+          :title="isSidebarCollapsed ? 'Expandir sidebar' : 'Recolher sidebar'"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="18"
+            height="18"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            :class="['transition-transform duration-300', isSidebarCollapsed ? 'rotate-180' : '']"
+          >
+            <path d="m15 18-6-6 6-6"/>
+          </svg>
+        </button>
       </div>
       <nav class="mt-4 space-y-1 px-2">
         <router-link to="leads" custom v-slot="{ navigate, isActive }">
@@ -83,19 +103,6 @@
             <span :class="{ 'sr-only': isSidebarCollapsed }">Lançamentos</span>
           </Button>
         </router-link>
-        
-        <router-link to="cost-selection" custom v-slot="{ navigate, isActive }">
-          <Button
-            @click="navigate"
-            :variant="isActive ? 'secondary' : 'ghost'"
-            class="w-full justify-start transition-all duration-200 hover:scale-105 hover:shadow-md"
-          >
-            <span class="mr-2">
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-calculator"><rect width="16" height="20" x="4" y="2" rx="2"/><line x1="8" x2="16" y1="6" y2="6"/><line x1="16" x2="16" y1="14" y2="18"/><path d="M16 10h.01"/><path d="M12 10h.01"/><path d="M8 10h.01"/><path d="M12 14h.01"/><path d="M8 14h.01"/><path d="M12 18h.01"/><path d="M8 18h.01"/></svg>
-            </span>
-            <span :class="{ 'sr-only': isSidebarCollapsed }">Custos</span>
-          </Button>
-        </router-link>
 
         <router-link v-if="authStore.isAdmin" to="users" custom v-slot="{ navigate, isActive }">
           <Button
@@ -163,7 +170,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 
@@ -179,19 +186,39 @@ const authStore = useAuthStore()
 
 const user = computed(() => authStore.getUser)
 const isSidebarCollapsed = ref(false)
+const isManuallyToggled = ref(false) // Track if user manually toggled
 
 const toggleSidebar = () => {
   isSidebarCollapsed.value = !isSidebarCollapsed.value
+  isManuallyToggled.value = true // User manually toggled
 }
 
-const handleSidebarClick = (event: Event) => {
-  // Verifica se o clique foi em um botão ou elemento interativo
-  const target = event.target as HTMLElement
-  if (target.closest('button') || target.closest('a') || target.closest('[role="button"]')) {
-    return // Não colapsa se clicou em um botão
+// Auto-collapse sidebar based on screen size
+const updateSidebarBasedOnScreenSize = () => {
+  const width = window.innerWidth
+  
+  // Se o usuário nunca toggleou manualmente, controla automaticamente
+  if (!isManuallyToggled.value) {
+    if (width < 1024) { // lg breakpoint (1024px)
+      isSidebarCollapsed.value = true
+    } else {
+      isSidebarCollapsed.value = false
+    }
   }
-  toggleSidebar()
+  // Se o usuário toggleou manualmente, respeita a escolha dele
 }
+
+onMounted(() => {
+  // Set initial state based on screen size
+  updateSidebarBasedOnScreenSize()
+  
+  // Listen for window resize
+  window.addEventListener('resize', updateSidebarBasedOnScreenSize)
+})
+
+onUnmounted(() => {
+  window.removeEventListener('resize', updateSidebarBasedOnScreenSize)
+})
 
 
 
@@ -208,12 +235,6 @@ const pageTitle = computed(() => {
     return 'Lançamentos Contábeis'
   } else if (route.path.endsWith('leads')) {
     return 'Leads'
-  } else if (route.path.endsWith('cost-selection')) {
-    return 'Gerenciar Custos'
-  } else if (route.path.endsWith('costs')) {
-    return 'Custos de Vidro'
-  } else if (route.path.endsWith('credit-card-costs')) {
-    return 'Taxas de Cartão'
   } else if (route.path.endsWith('users')) {
     return 'Usuários'
   } else {
