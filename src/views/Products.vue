@@ -84,9 +84,10 @@
                 <th class="px-3 py-2 text-left text-[10px] sm:text-xs font-medium text-muted-foreground uppercase tracking-wider">Cor</th>
                 <th class="px-3 py-2 text-left text-[10px] sm:text-xs font-medium text-muted-foreground uppercase tracking-wider">Kit</th>
                 <th class="px-3 py-2 text-left text-[10px] sm:text-xs font-medium text-muted-foreground uppercase tracking-wider">Mão de Obra</th>
+                <th class="px-3 py-2 text-left text-[10px] sm:text-xs font-medium text-muted-foreground uppercase tracking-wider">Ganho %</th>
                 <th class="px-3 py-2 text-left text-[10px] sm:text-xs font-medium text-muted-foreground uppercase tracking-wider">Custo</th>
                 <th class="px-3 py-2 text-left text-[10px] sm:text-xs font-medium text-muted-foreground uppercase tracking-wider">Preço à Vista</th>
-                <th class="px-3 py-2 text-left text-[10px] sm:text-xs font-medium text-muted-foreground uppercase tracking-wider">Preço 12x</th>
+                <th class="px-3 py-2 text-left text-[10px] sm:text-xs font-medium text-muted-foreground uppercase tracking-wider">Preço Parcelado</th>
                 <th class="px-3 py-2 text-left text-[10px] sm:text-xs font-medium text-muted-foreground uppercase tracking-wider">Lucro</th>
                 <th class="px-3 py-2 text-center text-[10px] sm:text-xs font-medium text-muted-foreground uppercase tracking-wider">Ações</th>
               </tr>
@@ -139,12 +140,22 @@
                   compact
                 />
               </td>
+              <td class="px-3 py-3 text-gray-700 text-xs sm:text-sm whitespace-nowrap">
+                <EditableValue
+                  :model-value="product.gainValue ?? 0"
+                  type="number"
+                  @save="(value) => handleGainSave(product, value)"
+                  compact
+                  suffix="%"
+                />
+              </td>
               <td class="px-3 py-3 font-mono font-semibold text-foreground text-xs sm:text-sm whitespace-nowrap">{{ product.cost ? 'R$ ' + product.cost.toFixed(2) : '-' }}</td>
               <td class="px-3 py-3 font-mono font-semibold text-green-600 text-xs sm:text-sm whitespace-nowrap">{{ product.price ? 'R$ ' + product.price.toFixed(2) : '-' }}</td>
               <td class="px-3 py-3 text-xs sm:text-sm">
-                <div v-if="product.price" class="space-y-0.5 whitespace-nowrap">
-                  <div class="font-mono font-semibold text-blue-600">R$ {{ (product.price * 1.2).toFixed(2) }}</div>
-                  <div class="text-[10px] sm:text-xs text-muted-foreground">12x de R$ {{ ((product.price * 1.2) / 12).toFixed(2) }}</div>
+                <div v-if="product.installments && product.installments.length > 0" class="space-y-0.5">
+                  <div v-for="(installment, index) in product.installments" :key="index" class="whitespace-nowrap text-[10px] sm:text-xs text-muted-foreground">
+                    {{ installment.quantity }}x de R$ {{ installment.valuePerInstallment?.toFixed(2) }}
+                  </div>
                 </div>
                 <span v-else class="text-muted-foreground">-</span>
               </td>
@@ -280,6 +291,7 @@ import productService from '../services/product'
 import type { ProductDTO } from '../services/product'
 import type { PaginatedResponse } from '../services/order'
 import laborCostService from '../services/labor-cost'
+import gainService from '../services/gain'
 import FilterBar from '../components/FilterBar.vue'
 import PageSizeSelector from '../components/PageSizeSelector.vue'
 import ProductModal from '../components/ProductModal.vue'
@@ -427,8 +439,7 @@ async function loadProducts() {
 function calculateProfit(product: ProductDTO): string {
   if (!product.price || !product.cost) return '-'
   const profit = product.price - product.cost
-  const margin = ((profit) / product.price) * 100
-  return `R$ ${profit.toFixed(2)} (${margin.toFixed(1)}%)`
+  return `R$ ${profit.toFixed(2)}`
 }
 
 function applyFilters() {
@@ -589,6 +600,50 @@ async function handleLaborSave(product: ProductDTO, value: number | string) {
   } catch (error: any) {
     console.error('Erro ao salvar mão de obra:', error)
     const errorMessage = error.response?.data?.message || 'Erro ao atualizar mão de obra. Tente novamente.'
+    notification.error('Erro', errorMessage)
+    // Reload products to revert changes
+    await loadProducts()
+  }
+}
+
+async function handleGainSave(product: ProductDTO, value: number | string) {
+  try {
+    const numericValue = typeof value === 'string' ? parseFloat(value) : value
+    
+    // Validar que o valor não seja undefined ou null ou NaN
+    if (numericValue === undefined || numericValue === null || isNaN(numericValue)) {
+      notification.error('Erro', 'Valor inválido')
+      return
+    }
+
+    // Validar que o produto tem type e sheets
+    if (!product.type || product.sheets === undefined) {
+      notification.error('Erro', 'Produto precisa ter tipo e número de folhas definidos')
+      return
+    }
+
+    // Buscar o ganho existente por type e sheets
+    const gains = await gainService.getAll()
+    const existingGain = gains.find(g => g.type === product.type && g.sheets === product.sheets)
+    
+    if (!existingGain || !existingGain.id) {
+      notification.error('Erro', 'Ganho não encontrado para esse tipo e número de folhas')
+      return
+    }
+
+    // Atualizar o ganho
+    await gainService.update(existingGain.id, {
+      ...existingGain,
+      gainValue: numericValue
+    })
+
+    notification.success('Sucesso', 'Ganho atualizado com sucesso')
+    
+    // Reload products to get all updated values (cost, price, profit, etc)
+    await loadProducts()
+  } catch (error: any) {
+    console.error('Erro ao salvar ganho:', error)
+    const errorMessage = error.response?.data?.message || 'Erro ao atualizar ganho. Tente novamente.'
     notification.error('Erro', errorMessage)
     // Reload products to revert changes
     await loadProducts()

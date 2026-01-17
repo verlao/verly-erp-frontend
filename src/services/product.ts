@@ -19,6 +19,7 @@ export interface ProductDTO {
   price?: number // Calculated field from backend (À vista dinheiro)
   profit?: number // Calculated field from backend
   laborValue?: number // Calculated field from backend
+  gainValue?: number // Calculated field from backend
   createdDate?: string
   installments?: any[] // Calculated field from backend
   
