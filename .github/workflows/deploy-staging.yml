@@ -45,9 +45,9 @@ jobs:
       - name: Log in to Container Registry
         uses: docker/login-action@v3
         with:
-          registry: \${{ env.REGISTRY }}
-          username: \${{ github.actor }}
-          password: \${{ secrets.GITHUB_TOKEN }}
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
@@ -56,8 +56,8 @@ jobs:
           file: ./Dockerfile.ci
           push: true
           tags: |
-            \${{ env.REGISTRY }}/\${{ env.IMAGE_NAME }}:staging
-            \${{ env.REGISTRY }}/\${{ env.IMAGE_NAME }}:dev-\${{ github.sha }}
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:staging
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:dev-${{ github.sha }}
           platforms: linux/arm64
 
   deploy:
@@ -69,8 +69,8 @@ jobs:
     steps:
       - name: Deploy staging stack
         run: |
-          echo "\${{ secrets.GITHUB_TOKEN }}" | docker login \${{ env.REGISTRY }} -u \${{ github.actor }} --password-stdin
-          docker pull \${{ env.REGISTRY }}/\${{ env.IMAGE_NAME }}:staging
+          echo "${{ secrets.GITHUB_TOKEN }}" | docker login ${{ env.REGISTRY }} -u ${{ github.actor }} --password-stdin
+          docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:staging
 
           echo "Updating staging stack..."
           docker stack deploy \
@@ -84,15 +84,15 @@ jobs:
       - name: Verify deployment
         run: |
           SERVICE_NAME="verly-staging_verly-frontend"
-          for i in \$(seq 1 20); do
-            HEALTH=\$(docker service ps "\$SERVICE_NAME" --filter "desired-state=running" --format "{{.CurrentState}}" | head -1)
-            echo "[\$i/20] \$SERVICE_NAME: \$HEALTH"
-            if echo "\$HEALTH" | grep -q "Running"; then
+          for i in $(seq 1 20); do
+            HEALTH=$(docker service ps "$SERVICE_NAME" --filter "desired-state=running" --format "{{.CurrentState}}" | head -1)
+            echo "[$i/20] $SERVICE_NAME: $HEALTH"
+            if echo "$HEALTH" | grep -q "Running"; then
               echo "Staging frontend deployed!"
               exit 0
             fi
             sleep 5
           done
           echo "Staging frontend deploy timeout"
-          docker service logs --tail 30 "\$SERVICE_NAME"
+          docker service logs --tail 30 "$SERVICE_NAME"
           exit 1
