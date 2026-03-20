@@ -1,14 +1,15 @@
 <template>
   <Teleport to="body">
-    <div 
-      v-if="isVisible" 
-      class="fixed top-4 right-4 z-50 max-w-sm w-full bg-white dark:bg-gray-800 shadow-lg rounded-lg pointer-events-auto flex ring-1 ring-black ring-opacity-5"
+    <div
+      v-if="isVisible"
+      class="fixed top-4 right-4 z-50 max-w-sm w-full bg-white shadow-lg rounded-lg pointer-events-auto flex ring-1 ring-gray-200"
       :class="{
-        'border-l-4 border-green-500': type === 'success',
-        'border-l-4 border-blue-500': type === 'info',
-        'border-l-4 border-yellow-500': type === 'warning',
-        'border-l-4 border-red-500': type === 'error'
+        'bg-white border-l-4 border-green-500': type === 'success',
+        'bg-white border-l-4 border-blue-500': type === 'info',
+        'bg-white border-l-4 border-yellow-500': type === 'warning',
+        'bg-white border-l-4 border-red-500': type === 'error'
       }"
+      style="background-color: #ffffff !important;"
     >
       <div class="flex-1 w-0 p-4">
         <div class="flex items-start">
@@ -35,15 +36,15 @@
             </div>
           </div>
           <div class="ml-3 flex-1">
-            <p class="text-sm font-medium text-gray-900 dark:text-gray-100">{{ title }}</p>
-            <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">{{ message }}</p>
+            <p class="text-sm font-medium text-gray-900">{{ title }}</p>
+            <p class="mt-1 text-sm text-gray-600">{{ message }}</p>
           </div>
         </div>
       </div>
-      <div class="flex border-l border-gray-200 dark:border-gray-700">
+      <div class="flex border-l border-gray-200">
         <button
           @click="close"
-          class="w-full border border-transparent rounded-none rounded-r-lg p-4 flex items-center justify-center text-sm font-medium text-gray-600 dark:text-gray-400 hover:text-gray-500 dark:hover:text-gray-300 focus:outline-none"
+          class="w-full border border-transparent rounded-none rounded-r-lg p-4 flex items-center justify-center text-sm font-medium text-gray-500 hover:text-gray-900 focus:outline-none"
         >
           <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
             <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />

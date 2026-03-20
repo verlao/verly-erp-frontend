@@ -3,24 +3,7 @@ import api from './api'
 export interface CreditCardCostDTO {
   id?: number
   debit: number
-  tax1x: number
-  tax2x: number
-  tax3x: number
-  tax4x: number
-  tax5x: number
-  tax6x: number
-  tax7x: number
-  tax8x: number
-  tax9x: number
-  tax10x: number
-  tax11x: number
-  tax12x: number
-  tax13x: number
-  tax14x: number
-  tax15x: number
-  tax16x: number
-  tax17x: number
-  tax18x: number
+  [key: string]: number | undefined  // Permite taxNx dinâmico (tax1x, tax4x, tax6x, etc)
 }
 
 const creditCardCostService = {

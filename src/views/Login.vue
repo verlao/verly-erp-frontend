@@ -7,8 +7,13 @@
       </div>
       
       <form @submit.prevent="handleLogin" class="space-y-6">
-        <div v-if="authStore.error" class="p-4 mb-4 text-sm text-destructive-foreground bg-destructive/10 border border-destructive/20 rounded-lg">
-          {{ authStore.error }}
+        <div v-if="errorMessage" class="p-4 mb-4 text-sm text-red-800 bg-red-50 border border-red-200 rounded-lg flex items-center gap-2">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"/>
+            <line x1="12" x2="12" y1="8" y2="12"/>
+            <line x1="12" x2="12.01" y1="16" y2="16"/>
+          </svg>
+          {{ errorMessage }}
         </div>
         
         <div>
@@ -60,29 +65,26 @@ const authStore = useAuthStore()
 const username = ref('')
 const password = ref('')
 const redirectPath = ref('/dashboard')
+const errorMessage = ref('')
 
 // Capturar o caminho de redirecionamento se existir
 onMounted(() => {
   if (route.query.redirect) {
     redirectPath.value = route.query.redirect as string
-    // Se houver um redirecionamento, significa que o usuário tentou acessar uma página protegida
-    // Só mostrar mensagem se não houver token (usuário não está autenticado)
-    if (!authStore.token && !authStore.error) {
-      authStore.error = 'Por favor, faça login para acessar o sistema'
+    if (!authStore.token) {
+      errorMessage.value = 'Por favor, faça login para acessar o sistema'
     }
   }
 })
 
 const handleLogin = async () => {
-  // Limpar mensagens de erro anteriores
-  authStore.error = null
+  errorMessage.value = ''
   
   const success = await authStore.login(username.value, password.value)
   if (success) {
-    // Redirecionar para a página que o usuário tentou acessar ou para o dashboard
     router.push(redirectPath.value)
   } else {
-    // Se o login falhar, limpar a senha para facilitar nova tentativa
+    errorMessage.value = authStore.error || 'Usuário ou senha incorreta'
     password.value = ''
   }
 }

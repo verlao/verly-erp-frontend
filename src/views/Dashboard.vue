@@ -64,8 +64,8 @@
             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-banknote"><rect width="20" height="12" x="2" y="6" rx="2"/><circle cx="12" cy="12" r="2"/><path d="M6 12h.01M18 12h.01"/></svg>
           </div>
           <div class="ml-4">
-            <h2 class="text-muted-foreground text-sm font-medium">Saldo Atual</h2>
-            <p v-if="!loading" class="text-3xl font-bold text-foreground">R$ {{ cashFlowBalance.toFixed(2) }}</p>
+            <h2 class="text-muted-foreground text-sm font-medium">Total de Lançamentos</h2>
+            <p v-if="!loading" class="text-3xl font-bold text-foreground">{{ ledgerBalance }}</p>
             <Skeleton v-else class="h-8 w-20" />
           </div>
         </div>
@@ -257,7 +257,7 @@ const customerCount = computed(() => dashboardData.value?.metrics?.totalCustomer
 const productCount = computed(() => dashboardData.value?.metrics?.totalProducts || 0)
 const orderCount = computed(() => dashboardData.value?.metrics?.totalOrders || 0)
 const leadCount = computed(() => dashboardData.value?.metrics?.totalLeads || 0)
-const cashFlowBalance = computed(() => dashboardData.value?.metrics?.totalCashFlows || 0)
+const ledgerBalance = computed(() => dashboardData.value?.metrics?.totalLedgers || 0)
 const recentOrders = computed(() => dashboardData.value?.activities?.recentOrders || [])
 const recentLeads = computed(() => dashboardData.value?.activities?.recentLeads || [])
 const monthlyRevenue = computed(() => dashboardData.value?.revenue?.monthlyRevenue || 0)
@@ -285,32 +285,32 @@ onMounted(async () => {
 const getStatusClass = (status: string) => {
   switch (status) {
     case 'PENDENTE':
-      return 'bg-yellow-100 text-yellow-800'
+      return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400'
     case 'CONCLUIDO':
-      return 'bg-green-100 text-green-800'
+      return 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400'
     case 'CANCELADO':
-      return 'bg-red-100 text-red-800'
+      return 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400'
     default:
-      return 'bg-gray-100 text-gray-800'
+      return 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-400'
   }
 }
 
 const getLeadStatusClass = (status: string) => {
   switch (status) {
     case 'NOVO':
-      return 'bg-blue-100 text-blue-800'
+      return 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400'
     case 'CONTATO':
-      return 'bg-yellow-100 text-yellow-800'
+      return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400'
     case 'QUALIFICADO':
-      return 'bg-purple-100 text-purple-800'
+      return 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400'
     case 'PROPOSTA':
-      return 'bg-orange-100 text-orange-800'
+      return 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400'
     case 'FECHADO':
-      return 'bg-green-100 text-green-800'
+      return 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400'
     case 'PERDIDO':
-      return 'bg-red-100 text-red-800'
+      return 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400'
     default:
-      return 'bg-gray-100 text-gray-800'
+      return 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-400'
   }
 }
 

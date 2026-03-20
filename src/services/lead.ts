@@ -11,6 +11,9 @@ export interface PaginatedResponse<T> {
   last: boolean
 }
 
+export type LeadStatus = 'NEW' | 'CONTACTED' | 'QUALIFIED' | 'CONVERTED' | 'LOST'
+export type LeadPriority = 'HIGH' | 'MEDIUM' | 'LOW'
+
 export interface LeadDTO {
   id: number
   name: string
@@ -33,6 +36,13 @@ export interface LeadDTO {
   submissionDate?: string
   deviceType?: string
   consent?: boolean
+  status?: LeadStatus
+  isRead?: boolean
+  priority?: LeadPriority
+  tags?: string[]
+  lastContactDate?: string
+  assignedTo?: string
+  notes?: string[]
 }
 
 const leadService = {
@@ -83,6 +93,37 @@ const leadService = {
   
   delete: async (id: number) => {
     const response = await api.delete(`/leads/${id}`)
+    return response.data
+  },
+
+  // Novos métodos para inbox-style
+  updateStatus: async (id: number, status: LeadStatus) => {
+    const response = await api.patch(`/leads/${id}/status`, { status })
+    return response.data
+  },
+
+  markAsRead: async (id: number) => {
+    const response = await api.patch(`/leads/${id}/read`, { isRead: true })
+    return response.data
+  },
+
+  markAsUnread: async (id: number) => {
+    const response = await api.patch(`/leads/${id}/read`, { isRead: false })
+    return response.data
+  },
+
+  convertToCustomer: async (id: number) => {
+    const response = await api.post(`/leads/${id}/convert`)
+    return response.data
+  },
+
+  bulkAction: async (ids: number[], action: string, data?: any) => {
+    const response = await api.post('/leads/bulk', { ids, action, data })
+    return response.data
+  },
+
+  getCounts: async () => {
+    const response = await api.get('/leads/counts')
     return response.data
   }
 }

@@ -1,9 +1,29 @@
 <template>
   <div class="min-h-screen">
     <!-- Sidebar -->
-    <aside @click="handleSidebarClick" :class="['bg-sidebar border-r border-border transition-all duration-300 ease-in-out cursor-pointer fixed top-0 left-0 h-screen z-50', isSidebarCollapsed ? 'w-16' : 'w-64']">
+    <aside :class="['bg-sidebar border-r border-border transition-all duration-300 ease-in-out fixed top-0 left-0 h-screen z-50', isSidebarCollapsed ? 'w-16' : 'w-64']">
       <div class="p-4 border-b border-border flex items-center justify-between">
-        <h1 :class="['font-bold text-foreground transition-opacity duration-300', isSidebarCollapsed ? 'opacity-0' : 'opacity-100 text-xl']">Verly ERP</h1>
+        <h1 :class="['font-bold text-foreground transition-opacity duration-300', isSidebarCollapsed ? 'opacity-0 w-0' : 'opacity-100 text-xl']">Verly ERP</h1>
+        <button
+          @click="toggleSidebar"
+          class="p-1.5 rounded-md hover:bg-accent transition-colors flex-shrink-0"
+          :title="isSidebarCollapsed ? 'Expandir sidebar' : 'Recolher sidebar'"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="18"
+            height="18"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            :class="['transition-transform duration-300', isSidebarCollapsed ? 'rotate-180' : '']"
+          >
+            <path d="m15 18-6-6 6-6"/>
+          </svg>
+        </button>
       </div>
       <nav class="mt-4 space-y-1 px-2">
         <router-link to="leads" custom v-slot="{ navigate, isActive }">
@@ -16,19 +36,6 @@
               <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-users"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
             </span>
             <span :class="{ 'sr-only': isSidebarCollapsed }">Leads</span>
-          </Button>
-        </router-link>
-        
-        <router-link to="dashboard" custom v-slot="{ navigate, isActive }">
-          <Button
-            @click="navigate"
-            :variant="isActive ? 'secondary' : 'ghost'"
-            class="w-full justify-start transition-all duration-200 hover:scale-105 hover:shadow-md"
-          >
-            <span class="mr-2">
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-layout-dashboard"><rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/></svg>
-            </span>
-            <span :class="{ 'sr-only': isSidebarCollapsed }">Dashboard</span>
           </Button>
         </router-link>
         
@@ -58,6 +65,22 @@
           </Button>
         </router-link>
         
+        <router-link to="quotes" custom v-slot="{ navigate, isActive }">
+          <Button
+            @click="navigate"
+            :variant="isActive ? 'secondary' : 'ghost'"
+            class="w-full justify-start transition-all duration-200 hover:scale-105 hover:shadow-md"
+          >
+            <span class="mr-2">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 20 20" fill="currentColor">
+                <path d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z" />
+                <path fill-rule="evenodd" d="M4 5a2 2 0 012-2 3 3 0 003 3h2a3 3 0 003-3 2 2 0 012 2v11a2 2 0 01-2 2H6a2 2 0 01-2-2V5zm3 4a1 1 0 000 2h.01a1 1 0 100-2H7zm3 0a1 1 0 000 2h3a1 1 0 100-2h-3zm-3 4a1 1 0 100 2h.01a1 1 0 100-2H7zm3 0a1 1 0 100 2h3a1 1 0 100-2h-3z" clip-rule="evenodd" />
+              </svg>
+            </span>
+            <span :class="{ 'sr-only': isSidebarCollapsed }">Orçamentos</span>
+          </Button>
+        </router-link>
+        
         <router-link to="orders" custom v-slot="{ navigate, isActive }">
           <Button
             @click="navigate"
@@ -71,42 +94,29 @@
           </Button>
         </router-link>
         
-        <router-link to="cash-flow" custom v-slot="{ navigate, isActive }">
+        <router-link to="ledger" custom v-slot="{ navigate, isActive }">
           <Button
             @click="navigate"
             :variant="isActive ? 'secondary' : 'ghost'"
             class="w-full justify-start transition-all duration-200 hover:scale-105 hover:shadow-md"
           >
             <span class="mr-2">
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-banknote"><rect width="20" height="12" x="2" y="6" rx="2"/><circle cx="12" cy="12" r="2"/><path d="M6 12h.01M18 12h.01"/></svg>
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-book-text"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/><path d="M8 7h6"/><path d="M8 11h8"/></svg>
             </span>
-            <span :class="{ 'sr-only': isSidebarCollapsed }">Fluxo de Caixa</span>
+            <span :class="{ 'sr-only': isSidebarCollapsed }">Lançamentos</span>
           </Button>
         </router-link>
-        
-        <router-link to="cost-selection" custom v-slot="{ navigate, isActive }">
+
+        <router-link v-if="authStore.isAdmin" to="users" custom v-slot="{ navigate, isActive }">
           <Button
             @click="navigate"
             :variant="isActive ? 'secondary' : 'ghost'"
             class="w-full justify-start transition-all duration-200 hover:scale-105 hover:shadow-md"
           >
             <span class="mr-2">
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-calculator"><rect width="16" height="20" x="4" y="2" rx="2"/><line x1="8" x2="16" y1="6" y2="6"/><line x1="16" x2="16" y1="14" y2="18"/><path d="M16 10h.01"/><path d="M12 10h.01"/><path d="M8 10h.01"/><path d="M12 14h.01"/><path d="M8 14h.01"/><path d="M12 18h.01"/><path d="M8 18h.01"/></svg>
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-shield-check"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/><path d="m9 12 2 2 4-4"/></svg>
             </span>
-            <span :class="{ 'sr-only': isSidebarCollapsed }">Custos</span>
-          </Button>
-        </router-link>
-        
-        <router-link to="cart" custom v-slot="{ navigate, isActive }">
-          <Button
-            @click="navigate"
-            :variant="isActive ? 'secondary' : 'ghost'"
-            class="w-full justify-start transition-all duration-200 hover:scale-105 hover:shadow-md"
-          >
-            <span class="mr-2">
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-shopping-cart"><circle cx="8" cy="21" r="1"/><circle cx="19" cy="21" r="1"/><path d="m2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57L23 6H6"/></svg>
-            </span>
-            <span :class="{ 'sr-only': isSidebarCollapsed }">Carrinho</span>
+            <span :class="{ 'sr-only': isSidebarCollapsed }">Usuários</span>
           </Button>
         </router-link>
       </nav>
@@ -126,8 +136,7 @@
         <div class="px-6 py-4 flex justify-between items-center">
           <h2 class="text-2xl font-bold text-foreground">{{ pageTitle }}</h2>
           <div class="flex items-center space-x-4">
-            <CartIcon />
-
+            <ThemeToggle />
             <DropdownMenu>
               <template #trigger>
                 <Button variant="ghost" class="flex items-center space-x-2">
@@ -156,7 +165,7 @@
       </header>
 
       <!-- Content -->
-      <main class="flex-1 overflow-x-hidden overflow-y-auto bg-gray-100 p-6 h-[calc(100vh-80px)]">
+      <main class="flex-1 overflow-x-hidden overflow-y-auto bg-muted/30 p-6 h-[calc(100vh-80px)]">
         <router-view />
       </main>
     </div>
@@ -164,13 +173,13 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 
 import Button from '../components/ui/Button.vue'
 import DropdownMenu from '../components/ui/DropdownMenu.vue'
-import CartIcon from '../components/CartIcon.vue'
+import ThemeToggle from '../components/ui/ThemeToggle.vue'
 
 
 const router = useRouter()
@@ -180,19 +189,39 @@ const authStore = useAuthStore()
 
 const user = computed(() => authStore.getUser)
 const isSidebarCollapsed = ref(false)
+const isManuallyToggled = ref(false) // Track if user manually toggled
 
 const toggleSidebar = () => {
   isSidebarCollapsed.value = !isSidebarCollapsed.value
+  isManuallyToggled.value = true // User manually toggled
 }
 
-const handleSidebarClick = (event: Event) => {
-  // Verifica se o clique foi em um botão ou elemento interativo
-  const target = event.target as HTMLElement
-  if (target.closest('button') || target.closest('a') || target.closest('[role="button"]')) {
-    return // Não colapsa se clicou em um botão
+// Auto-collapse sidebar based on screen size
+const updateSidebarBasedOnScreenSize = () => {
+  const width = window.innerWidth
+  
+  // Se o usuário nunca toggleou manualmente, controla automaticamente
+  if (!isManuallyToggled.value) {
+    if (width < 1024) { // lg breakpoint (1024px)
+      isSidebarCollapsed.value = true
+    } else {
+      isSidebarCollapsed.value = false
+    }
   }
-  toggleSidebar()
+  // Se o usuário toggleou manualmente, respeita a escolha dele
 }
+
+onMounted(() => {
+  // Set initial state based on screen size
+  updateSidebarBasedOnScreenSize()
+  
+  // Listen for window resize
+  window.addEventListener('resize', updateSidebarBasedOnScreenSize)
+})
+
+onUnmounted(() => {
+  window.removeEventListener('resize', updateSidebarBasedOnScreenSize)
+})
 
 
 
@@ -203,20 +232,16 @@ const pageTitle = computed(() => {
     return 'Clientes'
   } else if (route.path.endsWith('products')) {
     return 'Produtos'
+  } else if (route.path.endsWith('quotes')) {
+    return 'Orçamentos'
   } else if (route.path.endsWith('orders')) {
     return 'Pedidos'
-  } else if (route.path.endsWith('cash-flow')) {
-    return 'Fluxo de Caixa'
+  } else if (route.path.endsWith('ledger')) {
+    return 'Lançamentos Contábeis'
   } else if (route.path.endsWith('leads')) {
     return 'Leads'
-  } else if (route.path.endsWith('cost-selection')) {
-    return 'Gerenciar Custos'
-  } else if (route.path.endsWith('costs')) {
-    return 'Custos de Vidro'
-  } else if (route.path.endsWith('credit-card-costs')) {
-    return 'Taxas de Cartão'
-  } else if (route.path.endsWith('cart')) {
-    return 'Carrinho'
+  } else if (route.path.endsWith('users')) {
+    return 'Usuários'
   } else {
     return 'Verly ERP'
   }
