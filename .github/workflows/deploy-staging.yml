@@ -1,0 +1,98 @@
+name: Deploy Staging
+
+on:
+  push:
+    branches: [ dev ]
+  workflow_dispatch:
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: verlao/verly-erp-frontend
+
+jobs:
+  build-and-deploy:
+    name: Build and Deploy Staging
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build staging application
+        env:
+          NODE_ENV: production
+          VITE_API_URL: https://staging-api.verlyvidracaria.com/verly-service
+        run: npm run build
+
+      - name: Copy index.html to 404.html (SPA routing)
+        run: cp dist/index.html dist/404.html
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./Dockerfile.ci
+          push: true
+          tags: |
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:staging
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:dev-${{ github.sha }}
+          platforms: linux/arm64
+
+  deploy:
+    name: Deploy to Swarm
+    runs-on: self-hosted
+    needs: build-and-deploy
+    environment: staging
+
+    steps:
+      - name: Deploy staging stack
+        run: |
+          echo "${{ secrets.GITHUB_TOKEN }}" | docker login ${{ env.REGISTRY }} -u ${{ github.actor }} --password-stdin
+          docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:staging
+
+          echo "Updating staging stack..."
+          docker stack deploy \
+            --compose-file /home/matt/orange-juice-box/stacks/verly-staging/docker-compose.yml \
+            --resolve-image always \
+            --with-registry-auth \
+            verly-staging
+
+          sleep 5
+
+      - name: Verify deployment
+        run: |
+          SERVICE_NAME="verly-staging_verly-frontend"
+          for i in $(seq 1 20); do
+            HEALTH=$(docker service ps "$SERVICE_NAME" --filter "desired-state=running" --format "{{.CurrentState}}" | head -1)
+            echo "[$i/20] $SERVICE_NAME: $HEALTH"
+            if echo "$HEALTH" | grep -q "Running"; then
+              echo "Staging frontend deployed!"
+              exit 0
+            fi
+            sleep 5
+          done
+          echo "Staging frontend deploy timeout"
+          docker service logs --tail 30 "$SERVICE_NAME"
+          exit 1
