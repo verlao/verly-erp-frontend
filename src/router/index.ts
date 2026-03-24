@@ -87,24 +87,24 @@ router.beforeEach((to, _from, next) => {
 
         if (!isAdmin) {
           // Usuário não tem permissão ADMIN, redirecionar para dashboard
-          next({ path: '/dashboard' })
+          next({ path: '/ledger' })
           return
         }
       } catch (error) {
         console.error('Erro ao parsear dados do usuário:', error)
-        next({ path: '/dashboard' })
+        next({ path: '/ledger' })
         return
       }
     } else {
       // Sem dados do usuário, redirecionar para dashboard
-      next({ path: '/dashboard' })
+      next({ path: '/ledger' })
       return
     }
   }
 
   if (to.path === '/' && isValidToken) {
     // Redirecionar para dashboard se já estiver autenticado e tentar acessar login
-    next('/dashboard')
+    next('/ledger')
   } else {
     next()
   }

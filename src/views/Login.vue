@@ -64,7 +64,7 @@ const authStore = useAuthStore()
 
 const username = ref('')
 const password = ref('')
-const redirectPath = ref('/dashboard')
+const redirectPath = ref('/ledger')
 const errorMessage = ref('')
 
 // Capturar o caminho de redirecionamento se existir
