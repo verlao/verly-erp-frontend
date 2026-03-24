@@ -32,6 +32,11 @@ const userService = {
   create: async (user: CreateUserRequest): Promise<UserDTO> => {
     const response = await api.post('/users', user)
     return response.data
+  },
+
+  // Deletar usuário
+  delete: async (id: string): Promise<void> => {
+    await api.delete(`/users/${id}`)
   }
 }
 

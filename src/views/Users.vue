@@ -46,7 +46,7 @@
               </span>
             </td>
             <td class="px-6 py-4 text-right text-sm font-medium">
-              <Button variant="ghost" size="sm" class="text-red-600 hover:text-red-800">
+              <Button variant="ghost" size="sm" class="text-red-600 hover:text-red-800" @click="confirmDelete(user)">
                 <Trash2 class="w-4 h-4" />
               </Button>
             </td>
@@ -166,6 +166,30 @@
         </form>
       </div>
     </div>
+    <!-- Modal de confirmação de delete -->
+    <div
+      v-if="showDeleteModal"
+      class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+      @click.self="showDeleteModal = false"
+    >
+      <div class="bg-white rounded-xl shadow-2xl w-full max-w-md mx-4">
+        <div class="p-6">
+          <h3 class="text-lg font-bold text-gray-900 mb-4">Confirmar Exclusão</h3>
+          <p class="text-sm text-gray-600">
+            Tem certeza que deseja deletar o usuário <strong>{{ userToDelete?.username }}</strong>?
+          </p>
+          <div class="flex justify-end gap-3 mt-6">
+            <Button variant="outline" @click="showDeleteModal = false" :disabled="deleting">
+              Cancelar
+            </Button>
+            <Button variant="destructive" @click="deleteUser" :disabled="deleting" class="gap-2">
+              <Loader2 v-if="deleting" class="w-4 h-4 animate-spin" />
+              {{ deleting ? 'Deletando...' : 'Deletar' }}
+            </Button>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -187,9 +211,14 @@ const saving = ref(false)
 const showCreateModal = ref(false)
 
 // Pagination
-const currentPage = ref(0)
+const currentPage = ref(1)
 const pageSize = ref(10)
 const totalElements = ref(0)
+
+// Delete
+const showDeleteModal = ref(false)
+const userToDelete = ref<UserDTO | null>(null)
+const deleting = ref(false)
 
 // Form
 const newUser = ref<CreateUserRequest>({
@@ -203,7 +232,7 @@ const loadUsers = async () => {
   loading.value = true
   try {
     const response = await userService.getAll({
-      page: currentPage.value,
+      page: currentPage.value - 1,
       size: pageSize.value,
       sort: 'username'
     })
@@ -255,8 +284,30 @@ const handlePageChange = (page: number) => {
 
 const handlePageSizeChange = (size: number) => {
   pageSize.value = size
-  currentPage.value = 0
+  currentPage.value = 1
   loadUsers()
+}
+
+const confirmDelete = (user: UserDTO) => {
+  userToDelete.value = user
+  showDeleteModal.value = true
+}
+
+const deleteUser = async () => {
+  if (!userToDelete.value?.id) return
+  deleting.value = true
+  try {
+    await userService.delete(userToDelete.value.id)
+    notificationStore.success('Sucesso', `Usuário ${userToDelete.value.username} deletado`)
+    showDeleteModal.value = false
+    userToDelete.value = null
+    loadUsers()
+  } catch (error: any) {
+    const message = error.response?.data?.message || 'Erro ao deletar usuário'
+    notificationStore.error('Erro', message)
+  } finally {
+    deleting.value = false
+  }
 }
 
 const formatRole = (role: string) => {
