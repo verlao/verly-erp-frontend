@@ -54,6 +54,23 @@ export interface ReverseEntryDTO {
   createdBy: string
 }
 
+export interface LedgerSummaryDTO {
+  totalRevenue: number
+  totalExpenses: number
+  balance: number
+  count: number
+}
+
+export interface PaginatedResponse<T> {
+  content: T[]
+  totalElements: number
+  totalPages: number
+  size: number
+  number: number
+  first: boolean
+  last: boolean
+}
+
 const ledgerService = {
   getAll: async (): Promise<LedgerResponseDTO[]> => {
     const response = await api.get('/ledgers')
@@ -109,17 +126,26 @@ const ledgerService = {
     await api.post(`/ledgers/${id}/cancel`)
   },
 
-  recordPayment: async (orderId: number, customerId: number, amount: number, paymentMethod: string, receivedBy: string): Promise<LedgerResponseDTO> => {
-    const response = await api.post('/ledgers/payment', null, {
-      params: { orderId, customerId, amount, paymentMethod, receivedBy }
-    })
+  getSummary: async (startDate: string, endDate: string): Promise<LedgerSummaryDTO> => {
+    const response = await api.get(`/ledgers/summary?startDate=${startDate}&endDate=${endDate}`)
+    return response.data
+  },
+
+  getByDateRangePaginated: async (startDate: string, endDate: string, page: number, size: number): Promise<PaginatedResponse<LedgerResponseDTO>> => {
+    const response = await api.get(`/ledgers/period/paginated?startDate=${startDate}&endDate=${endDate}&page=${page}&size=${size}&sort=entryDate,desc`)
+    return response.data
+  },
+
+  recordPayment: async (orderId: number | null, customerId: number | null, amount: number, paymentMethod: string, receivedBy: string): Promise<LedgerResponseDTO> => {
+    const body: Record<string, any> = { amount, paymentMethod, receivedBy }
+    if (orderId) body.orderId = orderId
+    if (customerId) body.customerId = customerId
+    const response = await api.post('/ledgers/payment', body)
     return response.data
   },
 
   recordExpense: async (description: string, amount: number, expenseAccount: string, paymentAccount: string, createdBy: string): Promise<LedgerResponseDTO> => {
-    const response = await api.post('/ledgers/expense', null, {
-      params: { description, amount, expenseAccount, paymentAccount, createdBy }
-    })
+    const response = await api.post('/ledgers/expense', { description, amount, expenseAccount, paymentAccount, createdBy })
     return response.data
   }
 }
