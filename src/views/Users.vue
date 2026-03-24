@@ -46,7 +46,13 @@
               </span>
             </td>
             <td class="px-6 py-4 text-right text-sm font-medium">
-              <Button variant="ghost" size="sm" class="text-red-600 hover:text-red-800" @click="confirmDelete(user)">
+              <Button
+                v-if="user.username !== currentUsername"
+                variant="ghost"
+                size="sm"
+                class="text-red-600 hover:text-red-800"
+                @click="confirmDelete(user)"
+              >
                 <Trash2 class="w-4 h-4" />
               </Button>
             </td>
@@ -194,7 +200,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import Button from '@/components/ui/Button.vue'
 import Card from '@/components/ui/Card.vue'
 import Pagination from '@/components/ui/Pagination.vue'
@@ -203,6 +209,14 @@ import userService, { type UserDTO, type CreateUserRequest } from '@/services/us
 import { useNotificationStore } from '@/stores/notification'
 
 const notificationStore = useNotificationStore()
+
+const currentUsername = computed(() => {
+  try {
+    const userStr = localStorage.getItem('user')
+    if (userStr) return JSON.parse(userStr).username || ''
+  } catch { /* ignore */ }
+  return ''
+})
 
 // State
 const users = ref<UserDTO[]>([])
