@@ -10,7 +10,7 @@
         leave-from-class="opacity-100"
         leave-to-class="opacity-0"
       >
-        <div v-if="isMobileMenuOpen" class="fixed inset-0 z-50 bg-background flex flex-col">
+        <div v-if="isMobileMenuOpen" class="fixed inset-0 z-50 bg-white flex flex-col">
           <!-- Modal header -->
           <div class="px-4 py-4 border-b border-border flex items-center justify-between">
             <h1 class="text-xl font-bold text-foreground">Verly ERP</h1>
