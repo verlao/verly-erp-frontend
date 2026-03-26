@@ -146,11 +146,10 @@
             >
               <!-- Left: description + metadata -->
               <div class="flex-1 min-w-0 mr-4">
-                <p class="text-sm md:text-base font-medium truncate">{{ ledger.description }}</p>
+                <p class="text-sm md:text-base font-medium truncate">{{ ledger.customerName || '-' }}</p>
                 <p class="text-xs md:text-sm text-muted-foreground mt-0.5">
                   {{ formatDate(ledger.entryDate) }} · {{ formatDocType(ledger.documentType) }}
                   <span v-if="ledger.orderReference || ledger.orderId"> · {{ ledger.orderReference || `#${ledger.orderId}` }}</span>
-                  <span v-if="ledger.customerName"> · {{ ledger.customerName }}</span>
                 </p>
                 <!-- Actions: mobile = expanded on tap, desktop = always visible -->
                 <div v-if="(ledger.status === 'PENDING' || ledger.status === 'POSTED') && (expandedMobileId === ledger.id || !isMobile)" class="flex gap-2 mt-2">
