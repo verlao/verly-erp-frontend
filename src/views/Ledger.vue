@@ -136,86 +136,39 @@
         </div>
 
         <template v-else>
-          <!-- Mobile: Transaction list (Nubank style) -->
-          <div class="md:hidden divide-y divide-border">
+          <!-- Unified transaction list -->
+          <div class="divide-y divide-border">
             <div
               v-for="ledger in ledgers"
-              :key="'m-' + ledger.id"
-              class="flex items-center justify-between px-4 py-3 active:bg-accent/50"
-              @click="ledger.status === 'PENDING' || ledger.status === 'POSTED' ? (expandedMobileId = expandedMobileId === ledger.id ? null : ledger.id) : null"
+              :key="ledger.id"
+              class="flex items-start justify-between px-4 py-3 md:py-4 hover:bg-accent/50 transition-colors cursor-pointer"
+              @click="(ledger.status === 'PENDING' || ledger.status === 'POSTED') ? (expandedMobileId = expandedMobileId === ledger.id ? null : ledger.id) : null"
             >
-              <div class="flex-1 min-w-0 mr-3">
-                <p class="text-sm font-medium truncate">{{ ledger.description }}</p>
-                <p class="text-xs text-muted-foreground">{{ formatDate(ledger.entryDate) }} · {{ formatDocType(ledger.documentType) }}</p>
-                <!-- Mobile actions (expanded) -->
-                <div v-if="expandedMobileId === ledger.id" class="flex gap-2 mt-2">
-                  <button v-if="ledger.status === 'PENDING'" @click.stop="postLedger(ledger)" :disabled="actionLoading === ledger.id" class="px-3 py-1 text-xs bg-green-100 text-green-800 rounded-full disabled:opacity-50">Postar</button>
-                  <button v-if="ledger.status === 'PENDING'" @click.stop="cancelLedger(ledger)" :disabled="actionLoading === ledger.id" class="px-3 py-1 text-xs bg-red-100 text-red-800 rounded-full disabled:opacity-50">Cancelar</button>
-                  <button v-if="ledger.status === 'POSTED'" @click.stop="openReverseDialog(ledger)" :disabled="actionLoading === ledger.id" class="px-3 py-1 text-xs bg-orange-100 text-orange-800 rounded-full disabled:opacity-50">Estornar</button>
+              <!-- Left: description + metadata -->
+              <div class="flex-1 min-w-0 mr-4">
+                <p class="text-sm md:text-base font-medium truncate">{{ ledger.description }}</p>
+                <p class="text-xs md:text-sm text-muted-foreground mt-0.5">
+                  {{ formatDate(ledger.entryDate) }} · {{ formatDocType(ledger.documentType) }}
+                  <span v-if="ledger.orderReference || ledger.orderId"> · {{ ledger.orderReference || `#${ledger.orderId}` }}</span>
+                  <span v-if="ledger.customerName"> · {{ ledger.customerName }}</span>
+                </p>
+                <!-- Actions: mobile = expanded on tap, desktop = always visible -->
+                <div v-if="(ledger.status === 'PENDING' || ledger.status === 'POSTED') && (expandedMobileId === ledger.id || !isMobile)" class="flex gap-2 mt-2">
+                  <button v-if="ledger.status === 'PENDING'" @click.stop="postLedger(ledger)" :disabled="actionLoading === ledger.id" class="px-3 py-1 text-xs bg-green-100 text-green-800 rounded-full hover:bg-green-200 disabled:opacity-50 transition-colors">Postar</button>
+                  <button v-if="ledger.status === 'PENDING'" @click.stop="cancelLedger(ledger)" :disabled="actionLoading === ledger.id" class="px-3 py-1 text-xs bg-red-100 text-red-800 rounded-full hover:bg-red-200 disabled:opacity-50 transition-colors">Cancelar</button>
+                  <button v-if="ledger.status === 'POSTED'" @click.stop="openReverseDialog(ledger)" :disabled="actionLoading === ledger.id" class="px-3 py-1 text-xs bg-orange-100 text-orange-800 rounded-full hover:bg-orange-200 disabled:opacity-50 transition-colors">Estornar</button>
                 </div>
               </div>
+              <!-- Right: amount + status -->
               <div class="text-right flex-shrink-0">
-                <p class="text-sm font-semibold" :class="ledger.documentType === 'EXPENSE' ? 'text-red-600' : 'text-green-600'">
+                <p class="text-sm md:text-base font-semibold" :class="ledger.documentType === 'EXPENSE' ? 'text-red-600' : 'text-green-600'">
                   {{ ledger.documentType === 'EXPENSE' ? '-' : '+' }} {{ currency.formatCurrency(ledger.totalAmount) }}
                 </p>
-                <span :class="getStatusClass(ledger.status)" class="px-2 py-0.5 text-[10px] font-medium rounded-full">
+                <span :class="getStatusClass(ledger.status)" class="px-2 py-0.5 text-[10px] md:text-xs font-medium rounded-full">
                   {{ formatStatus(ledger.status) }}
                 </span>
               </div>
             </div>
-          </div>
-
-          <!-- Desktop: Table -->
-          <div class="hidden md:block overflow-x-auto">
-            <table class="w-full">
-              <thead class="bg-muted">
-                <tr class="border-b border-border">
-                  <th class="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase">Data</th>
-                  <th class="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase">Descrição</th>
-                  <th class="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase">Tipo</th>
-                  <th class="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase">Valor</th>
-                  <th class="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase">Status</th>
-                  <th class="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase">Pedido</th>
-                  <th class="px-4 py-3 text-center text-xs font-medium text-muted-foreground uppercase">Ações</th>
-                </tr>
-              </thead>
-              <tbody class="bg-card divide-y divide-border">
-                <tr v-for="ledger in ledgers" :key="'d-' + ledger.id" class="hover:bg-accent/50">
-                  <td class="px-4 py-3 text-sm">{{ formatDate(ledger.entryDate) }}</td>
-                  <td class="px-4 py-3 text-sm max-w-[200px] truncate">{{ ledger.description }}</td>
-                  <td class="px-4 py-3 text-sm">
-                    <span :class="getDocTypeClass(ledger.documentType)" class="px-2 py-1 text-xs font-medium rounded-full">
-                      {{ formatDocType(ledger.documentType) }}
-                    </span>
-                  </td>
-                  <td class="px-4 py-3 text-sm font-semibold" :class="ledger.documentType === 'EXPENSE' ? 'text-red-600' : 'text-green-600'">
-                    {{ ledger.documentType === 'EXPENSE' ? '- ' : '+ ' }}{{ currency.formatCurrency(ledger.totalAmount) }}
-                  </td>
-                  <td class="px-4 py-3">
-                    <span :class="getStatusClass(ledger.status)" class="px-2 py-1 text-xs font-medium rounded-full">
-                      {{ formatStatus(ledger.status) }}
-                    </span>
-                  </td>
-                  <td class="px-4 py-3 text-sm">
-                    {{ ledger.orderReference || (ledger.orderId ? `#${ledger.orderId}` : '-') }}
-                  </td>
-                  <td class="px-4 py-3">
-                    <div class="flex items-center justify-center gap-1">
-                      <button v-if="ledger.status === 'PENDING'" @click="postLedger(ledger)" :disabled="actionLoading === ledger.id" class="p-2 text-green-600 hover:bg-green-50 rounded-lg transition-colors disabled:opacity-50" title="Postar">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-                      </button>
-                      <button v-if="ledger.status === 'PENDING'" @click="cancelLedger(ledger)" :disabled="actionLoading === ledger.id" class="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50" title="Cancelar">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
-                      </button>
-                      <button v-if="ledger.status === 'POSTED'" @click="openReverseDialog(ledger)" :disabled="actionLoading === ledger.id" class="p-2 text-orange-600 hover:bg-orange-50 rounded-lg transition-colors disabled:opacity-50" title="Estornar">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 5.5 5.5a5.5 5.5 0 0 1-5.5 5.5H11"/></svg>
-                      </button>
-                      <span v-if="ledger.status === 'REVERSED' || ledger.status === 'CANCELLED'" class="text-xs text-muted-foreground">-</span>
-                    </div>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
           </div>
 
           <Pagination
@@ -444,7 +397,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, onUnmounted } from 'vue'
 import ledgerService from '../services/ledger'
 import type { LedgerResponseDTO, LedgerSummaryDTO } from '../services/ledger'
 import Dialog from '../components/ui/Dialog.vue'
@@ -464,6 +417,9 @@ const notification = useNotification()
 // UI state
 const showFilters = ref(false)
 const expandedMobileId = ref<number | null>(null)
+const isMobile = ref(false)
+
+const updateIsMobile = () => { isMobile.value = window.innerWidth < 768 }
 
 // Data
 const ledgers = ref<LedgerResponseDTO[]>([])
@@ -747,7 +703,13 @@ async function submitReverse() {
 }
 
 onMounted(() => {
+  updateIsMobile()
+  window.addEventListener('resize', updateIsMobile)
   loadLedgers()
   loadSummary()
+})
+
+onUnmounted(() => {
+  window.removeEventListener('resize', updateIsMobile)
 })
 </script>
