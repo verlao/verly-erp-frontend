@@ -1,13 +1,23 @@
 <template>
   <div class="min-h-screen bg-background">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 md:py-8">
       <!-- Header -->
-      <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
+      <div class="flex items-center justify-between mb-4 md:mb-8">
         <div>
-          <h1 class="text-2xl font-semibold text-foreground">Lançamentos Contábeis</h1>
-          <p class="text-muted-foreground mt-1">Registre pagamentos e despesas</p>
+          <h1 class="text-xl md:text-2xl font-semibold text-foreground">Lançamentos</h1>
+          <p class="text-muted-foreground mt-1 hidden md:block">Registre pagamentos e despesas</p>
         </div>
-        <div class="flex flex-col sm:flex-row gap-2">
+        <!-- Mobile: icon buttons -->
+        <div class="flex gap-2 md:hidden">
+          <button @click="openPaymentModal" class="w-10 h-10 rounded-full bg-green-600 hover:bg-green-700 text-white flex items-center justify-center transition-colors">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+          </button>
+          <button @click="openExpenseModal" class="w-10 h-10 rounded-full bg-orange-600 hover:bg-orange-700 text-white flex items-center justify-center transition-colors">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"/><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"/><path d="M18 12a2 2 0 0 0 0 4h4v-4Z"/></svg>
+          </button>
+        </div>
+        <!-- Desktop: full buttons -->
+        <div class="hidden md:flex gap-2">
           <Button @click="openPaymentModal" class="bg-green-600 hover:bg-green-700 text-white gap-2">
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
             Registrar Pagamento
@@ -20,72 +30,85 @@
       </div>
 
       <!-- Cards de Resumo -->
-      <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
-        <Card class="bg-card border-border p-6 hover:shadow-lg transition-shadow duration-200">
+      <div class="grid grid-cols-3 gap-2 md:gap-4 mb-4 md:mb-6">
+        <Card class="bg-card border-border p-3 md:p-6 hover:shadow-lg transition-shadow duration-200">
           <div class="flex items-center">
-            <div class="p-3 rounded-full bg-emerald-500/10 text-emerald-600">
+            <div class="p-3 rounded-full bg-emerald-500/10 text-emerald-600 hidden md:flex">
               <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22,7 13.5,15.5 8.5,10.5 2,17"/><polyline points="16,7 22,7 22,13"/></svg>
             </div>
-            <div class="ml-4">
-              <h2 class="text-muted-foreground text-sm font-medium">Receitas</h2>
-              <p v-if="!loadingSummary" class="text-2xl font-bold text-emerald-600">{{ currency.formatCurrency(summary.totalRevenue) }}</p>
-              <Skeleton v-else class="h-7 w-28" />
+            <div class="md:ml-4">
+              <h2 class="text-muted-foreground text-xs md:text-sm font-medium">Receitas</h2>
+              <p v-if="!loadingSummary" class="text-base md:text-2xl font-bold text-emerald-600">{{ currency.formatCurrency(summary.totalRevenue) }}</p>
+              <Skeleton v-else class="h-5 md:h-7 w-16 md:w-28" />
             </div>
           </div>
         </Card>
 
-        <Card class="bg-card border-border p-6 hover:shadow-lg transition-shadow duration-200">
+        <Card class="bg-card border-border p-3 md:p-6 hover:shadow-lg transition-shadow duration-200">
           <div class="flex items-center">
-            <div class="p-3 rounded-full bg-red-500/10 text-red-600">
+            <div class="p-3 rounded-full bg-red-500/10 text-red-600 hidden md:flex">
               <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22,17 13.5,8.5 8.5,13.5 2,7"/><polyline points="16,17 22,17 22,11"/></svg>
             </div>
-            <div class="ml-4">
-              <h2 class="text-muted-foreground text-sm font-medium">Despesas</h2>
-              <p v-if="!loadingSummary" class="text-2xl font-bold text-red-600">{{ currency.formatCurrency(summary.totalExpenses) }}</p>
-              <Skeleton v-else class="h-7 w-28" />
+            <div class="md:ml-4">
+              <h2 class="text-muted-foreground text-xs md:text-sm font-medium">Despesas</h2>
+              <p v-if="!loadingSummary" class="text-base md:text-2xl font-bold text-red-600">{{ currency.formatCurrency(summary.totalExpenses) }}</p>
+              <Skeleton v-else class="h-5 md:h-7 w-16 md:w-28" />
             </div>
           </div>
         </Card>
 
-        <Card class="bg-card border-border p-6 hover:shadow-lg transition-shadow duration-200">
+        <Card class="bg-card border-border p-3 md:p-6 hover:shadow-lg transition-shadow duration-200">
           <div class="flex items-center">
-            <div class="p-3 rounded-full bg-primary/10 text-primary">
+            <div class="p-3 rounded-full bg-primary/10 text-primary hidden md:flex">
               <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 7V4a1 1 0 0 0-1-1H5a2 2 0 0 0 0 4h15a1 1 0 0 1 1 1v4h-3a2 2 0 0 0 0 4h3a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1"/><path d="M3 5v14a2 2 0 0 0 2 2h15a1 1 0 0 0 1-1v-4"/></svg>
             </div>
-            <div class="ml-4">
-              <h2 class="text-muted-foreground text-sm font-medium">Saldo</h2>
-              <p v-if="!loadingSummary" class="text-2xl font-bold" :class="summary.balance >= 0 ? 'text-foreground' : 'text-red-600'">{{ currency.formatCurrency(summary.balance) }}</p>
-              <Skeleton v-else class="h-7 w-28" />
+            <div class="md:ml-4">
+              <h2 class="text-muted-foreground text-xs md:text-sm font-medium">Saldo</h2>
+              <p v-if="!loadingSummary" class="text-base md:text-2xl font-bold" :class="summary.balance >= 0 ? 'text-foreground' : 'text-red-600'">{{ currency.formatCurrency(summary.balance) }}</p>
+              <Skeleton v-else class="h-5 md:h-7 w-16 md:w-28" />
             </div>
           </div>
         </Card>
       </div>
 
       <!-- Filtros de Data -->
-      <div class="bg-card rounded-lg shadow-sm border border-border p-4 mb-6">
-        <div class="flex flex-col sm:flex-row gap-4">
+      <!-- Mobile: collapsible -->
+      <div class="md:hidden mb-4">
+        <button
+          @click="showFilters = !showFilters"
+          class="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2v4"/><path d="M16 2v4"/><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M3 10h18"/></svg>
+          Filtros
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" :class="['transition-transform', showFilters ? 'rotate-180' : '']"><path d="m6 9 6 6 6-6"/></svg>
+        </button>
+        <div v-if="showFilters" class="bg-card rounded-lg shadow-sm border border-border p-4 mt-2">
+          <div class="flex flex-col gap-3">
+            <div>
+              <label for="startDateMobile" class="block text-xs font-medium text-muted-foreground mb-1">Data Inicial</label>
+              <input id="startDateMobile" v-model="filters.startDate" type="date" class="w-full px-3 py-2 border border-border rounded-lg bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary" />
+            </div>
+            <div>
+              <label for="endDateMobile" class="block text-xs font-medium text-muted-foreground mb-1">Data Final</label>
+              <input id="endDateMobile" v-model="filters.endDate" type="date" class="w-full px-3 py-2 border border-border rounded-lg bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary" />
+            </div>
+            <Button @click="applyFilters(); showFilters = false" size="sm" class="w-full">Filtrar</Button>
+          </div>
+        </div>
+      </div>
+      <!-- Desktop: always visible -->
+      <div class="hidden md:block bg-card rounded-lg shadow-sm border border-border p-4 mb-6">
+        <div class="flex gap-4">
           <div class="flex-1">
             <label for="startDate" class="block text-sm font-medium text-muted-foreground mb-1">Data Inicial</label>
-            <input
-              id="startDate"
-              v-model="filters.startDate"
-              type="date"
-              class="w-full px-3 py-2 border border-border rounded-lg bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
-            />
+            <input id="startDate" v-model="filters.startDate" type="date" class="w-full px-3 py-2 border border-border rounded-lg bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary" />
           </div>
           <div class="flex-1">
             <label for="endDate" class="block text-sm font-medium text-muted-foreground mb-1">Data Final</label>
-            <input
-              id="endDate"
-              v-model="filters.endDate"
-              type="date"
-              class="w-full px-3 py-2 border border-border rounded-lg bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
-            />
+            <input id="endDate" v-model="filters.endDate" type="date" class="w-full px-3 py-2 border border-border rounded-lg bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary" />
           </div>
           <div class="flex items-end">
-            <Button @click="applyFilters" class="w-full sm:w-auto">
-              Filtrar
-            </Button>
+            <Button @click="applyFilters">Filtrar</Button>
           </div>
         </div>
       </div>
@@ -113,7 +136,37 @@
         </div>
 
         <template v-else>
-          <div class="overflow-x-auto">
+          <!-- Mobile: Transaction list (Nubank style) -->
+          <div class="md:hidden divide-y divide-border">
+            <div
+              v-for="ledger in ledgers"
+              :key="'m-' + ledger.id"
+              class="flex items-center justify-between px-4 py-3 active:bg-accent/50"
+              @click="ledger.status === 'PENDING' || ledger.status === 'POSTED' ? (expandedMobileId = expandedMobileId === ledger.id ? null : ledger.id) : null"
+            >
+              <div class="flex-1 min-w-0 mr-3">
+                <p class="text-sm font-medium truncate">{{ ledger.description }}</p>
+                <p class="text-xs text-muted-foreground">{{ formatDate(ledger.entryDate) }} · {{ formatDocType(ledger.documentType) }}</p>
+                <!-- Mobile actions (expanded) -->
+                <div v-if="expandedMobileId === ledger.id" class="flex gap-2 mt-2">
+                  <button v-if="ledger.status === 'PENDING'" @click.stop="postLedger(ledger)" :disabled="actionLoading === ledger.id" class="px-3 py-1 text-xs bg-green-100 text-green-800 rounded-full disabled:opacity-50">Postar</button>
+                  <button v-if="ledger.status === 'PENDING'" @click.stop="cancelLedger(ledger)" :disabled="actionLoading === ledger.id" class="px-3 py-1 text-xs bg-red-100 text-red-800 rounded-full disabled:opacity-50">Cancelar</button>
+                  <button v-if="ledger.status === 'POSTED'" @click.stop="openReverseDialog(ledger)" :disabled="actionLoading === ledger.id" class="px-3 py-1 text-xs bg-orange-100 text-orange-800 rounded-full disabled:opacity-50">Estornar</button>
+                </div>
+              </div>
+              <div class="text-right flex-shrink-0">
+                <p class="text-sm font-semibold" :class="ledger.documentType === 'EXPENSE' ? 'text-red-600' : 'text-green-600'">
+                  {{ ledger.documentType === 'EXPENSE' ? '-' : '+' }} {{ currency.formatCurrency(ledger.totalAmount) }}
+                </p>
+                <span :class="getStatusClass(ledger.status)" class="px-2 py-0.5 text-[10px] font-medium rounded-full">
+                  {{ formatStatus(ledger.status) }}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Desktop: Table -->
+          <div class="hidden md:block overflow-x-auto">
             <table class="w-full">
               <thead class="bg-muted">
                 <tr class="border-b border-border">
@@ -127,7 +180,7 @@
                 </tr>
               </thead>
               <tbody class="bg-card divide-y divide-border">
-                <tr v-for="ledger in ledgers" :key="ledger.id" class="hover:bg-accent/50">
+                <tr v-for="ledger in ledgers" :key="'d-' + ledger.id" class="hover:bg-accent/50">
                   <td class="px-4 py-3 text-sm">{{ formatDate(ledger.entryDate) }}</td>
                   <td class="px-4 py-3 text-sm max-w-[200px] truncate">{{ ledger.description }}</td>
                   <td class="px-4 py-3 text-sm">
@@ -148,31 +201,13 @@
                   </td>
                   <td class="px-4 py-3">
                     <div class="flex items-center justify-center gap-1">
-                      <button
-                        v-if="ledger.status === 'PENDING'"
-                        @click="postLedger(ledger)"
-                        :disabled="actionLoading === ledger.id"
-                        class="p-2 text-green-600 hover:bg-green-50 rounded-lg transition-colors disabled:opacity-50"
-                        title="Postar lançamento"
-                      >
+                      <button v-if="ledger.status === 'PENDING'" @click="postLedger(ledger)" :disabled="actionLoading === ledger.id" class="p-2 text-green-600 hover:bg-green-50 rounded-lg transition-colors disabled:opacity-50" title="Postar">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
                       </button>
-                      <button
-                        v-if="ledger.status === 'PENDING'"
-                        @click="cancelLedger(ledger)"
-                        :disabled="actionLoading === ledger.id"
-                        class="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50"
-                        title="Cancelar lançamento"
-                      >
+                      <button v-if="ledger.status === 'PENDING'" @click="cancelLedger(ledger)" :disabled="actionLoading === ledger.id" class="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50" title="Cancelar">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
                       </button>
-                      <button
-                        v-if="ledger.status === 'POSTED'"
-                        @click="openReverseDialog(ledger)"
-                        :disabled="actionLoading === ledger.id"
-                        class="p-2 text-orange-600 hover:bg-orange-50 rounded-lg transition-colors disabled:opacity-50"
-                        title="Estornar lançamento"
-                      >
+                      <button v-if="ledger.status === 'POSTED'" @click="openReverseDialog(ledger)" :disabled="actionLoading === ledger.id" class="p-2 text-orange-600 hover:bg-orange-50 rounded-lg transition-colors disabled:opacity-50" title="Estornar">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 5.5 5.5a5.5 5.5 0 0 1-5.5 5.5H11"/></svg>
                       </button>
                       <span v-if="ledger.status === 'REVERSED' || ledger.status === 'CANCELLED'" class="text-xs text-muted-foreground">-</span>
@@ -425,6 +460,10 @@ import { useNotification } from '../composables/useNotification'
 
 const currency = useCurrency()
 const notification = useNotification()
+
+// UI state
+const showFilters = ref(false)
+const expandedMobileId = ref<number | null>(null)
 
 // Data
 const ledgers = ref<LedgerResponseDTO[]>([])
