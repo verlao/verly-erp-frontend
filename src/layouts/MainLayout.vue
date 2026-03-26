@@ -165,7 +165,6 @@
             <h2 class="text-xl md:text-2xl font-bold text-foreground">{{ pageTitle }}</h2>
           </div>
           <div class="flex items-center space-x-2 md:space-x-4">
-            <ThemeToggle />
             <DropdownMenu>
               <template #trigger>
                 <Button variant="ghost" class="flex items-center space-x-2">
@@ -208,7 +207,6 @@ import { useAuthStore } from '../stores/auth'
 
 import Button from '../components/ui/Button.vue'
 import DropdownMenu from '../components/ui/DropdownMenu.vue'
-import ThemeToggle from '../components/ui/ThemeToggle.vue'
 
 const router = useRouter()
 const route = useRoute()
