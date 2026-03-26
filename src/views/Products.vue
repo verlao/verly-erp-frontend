@@ -386,6 +386,7 @@ import productService from '../services/product'
 import type { ProductDTO } from '../services/product'
 import type { PaginatedResponse } from '../services/order'
 import laborCostService from '../services/labor-cost'
+import accessoryCostService from '../services/accessory-cost'
 import gainService from '../services/gain'
 import FilterBar from '../components/FilterBar.vue'
 import PageSizeSelector from '../components/PageSizeSelector.vue'
@@ -685,29 +686,32 @@ async function deleteProduct() {
 async function handleKitSave(product: ProductDTO, value: number | string) {
   try {
     const numericValue = typeof value === 'string' ? parseFloat(value) : value
-    
-    // Validar que o valor não seja undefined ou null ou NaN
+
     if (numericValue === undefined || numericValue === null || isNaN(numericValue)) {
       notification.error('Erro', 'Valor inválido')
       return
     }
 
-    // Update both kit and accessory
-    product.accessory = numericValue
-    product.kit = numericValue
+    if (!product.type || product.sheets === undefined || !product.width || !product.height) {
+      notification.error('Erro', 'Produto precisa ter tipo, folhas e dimensões definidos')
+      return
+    }
 
-    // Call the service to update in backend
-    const identifier = product.id?.toString() || product.key
-    await productService.update(identifier!, product)
+    // Use inline endpoint - updates all products with same type+sheets+width+height
+    await accessoryCostService.updateInline(
+      product.type,
+      product.sheets,
+      product.width,
+      product.height,
+      numericValue
+    )
 
-    notification.success('Sucesso', 'Kit atualizado com sucesso')
-    
-    // Reload products to get all updated values (cost, price, profit, etc)
+    notification.success('Sucesso', 'Kit atualizado para todos os produtos com mesmas dimensões')
     await loadProducts()
-  } catch (error) {
+  } catch (error: any) {
     console.error('Erro ao salvar kit:', error)
-    notification.error('Erro', 'Erro ao salvar o valor do kit. Tente novamente.')
-    // Reload products to revert changes
+    const msg = error.response?.data?.message || 'Erro ao salvar o valor do kit. Tente novamente.'
+    notification.error('Erro', msg)
     await loadProducts()
   }
 }
