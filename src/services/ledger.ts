@@ -38,6 +38,8 @@ export interface LedgerResponseDTO {
   documentNumber?: string
   orderId?: number
   customerId?: number
+  customerName?: string
+  orderReference?: string
   totalAmount: number
   status: 'PENDING' | 'POSTED' | 'REVERSED' | 'CANCELLED'
   reversedById?: number
@@ -136,10 +138,12 @@ const ledgerService = {
     return response.data
   },
 
-  recordPayment: async (orderId: number | null, customerId: number | null, amount: number, paymentMethod: string, receivedBy: string): Promise<LedgerResponseDTO> => {
-    const body: Record<string, any> = { amount, paymentMethod, receivedBy }
-    if (orderId) body.orderId = orderId
-    if (customerId) body.customerId = customerId
+  recordPayment: async (data: { amount: number, paymentMethod: string, receivedBy: string, customerName?: string, orderReference?: string, orderId?: number | null, customerId?: number | null }): Promise<LedgerResponseDTO> => {
+    const body: Record<string, any> = { amount: data.amount, paymentMethod: data.paymentMethod, receivedBy: data.receivedBy }
+    if (data.orderId) body.orderId = data.orderId
+    if (data.customerId) body.customerId = data.customerId
+    if (data.customerName) body.customerName = data.customerName
+    if (data.orderReference) body.orderReference = data.orderReference
     const response = await api.post('/ledgers/payment', body)
     return response.data
   },

@@ -144,7 +144,7 @@
                     </span>
                   </td>
                   <td class="px-4 py-3 text-sm">
-                    {{ ledger.orderId ? `#${ledger.orderId}` : '-' }}
+                    {{ ledger.orderReference || (ledger.orderId ? `#${ledger.orderId}` : '-') }}
                   </td>
                   <td class="px-4 py-3">
                     <div class="flex items-center justify-center gap-1">
@@ -204,18 +204,25 @@
         <form @submit.prevent="submitPayment" class="space-y-4">
           <div class="bg-gray-50 p-4 rounded-lg space-y-4">
             <div>
-              <label for="paymentOrder" class="block text-sm font-medium text-gray-700 mb-1">Pedido</label>
-              <select
-                id="paymentOrder"
-                v-model="paymentForm.orderId"
+              <label for="paymentName" class="block text-sm font-medium text-gray-700 mb-1">Nome</label>
+              <input
+                id="paymentName"
+                v-model="paymentForm.customerName"
+                type="text"
+                placeholder="Nome do cliente/pagador (opcional)"
                 class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary"
-                @change="onOrderSelected"
-              >
-                <option value="">Nenhum (opcional)</option>
-                <option v-for="order in orders" :key="order.id" :value="order.id">
-                  #{{ order.id }} - {{ getCustomerName(order.customerId) }} - R$ {{ (order.price || 0).toFixed(2) }}
-                </option>
-              </select>
+              />
+            </div>
+
+            <div>
+              <label for="paymentOrder" class="block text-sm font-medium text-gray-700 mb-1">Pedido</label>
+              <input
+                id="paymentOrder"
+                v-model="paymentForm.orderReference"
+                type="text"
+                placeholder="Referência do pedido (opcional)"
+                class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary"
+              />
             </div>
 
             <div>
@@ -404,11 +411,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import ledgerService from '../services/ledger'
-import orderService from '../services/order'
-import customerService from '../services/customer'
 import type { LedgerResponseDTO, LedgerSummaryDTO } from '../services/ledger'
-import type { OrderDTO } from '../services/order'
-import type { CustomerDTO } from '../services/customer'
 import Dialog from '../components/ui/Dialog.vue'
 import DialogContent from '../components/ui/DialogContent.vue'
 import DialogHeader from '../components/ui/DialogHeader.vue'
@@ -425,8 +428,6 @@ const notification = useNotification()
 
 // Data
 const ledgers = ref<LedgerResponseDTO[]>([])
-const orders = ref<OrderDTO[]>([])
-const customers = ref<CustomerDTO[]>([])
 const loading = ref(true)
 const loadingSummary = ref(true)
 const actionLoading = ref<number | null>(null)
@@ -447,8 +448,8 @@ const filters = ref({
 const showPaymentModal = ref(false)
 const savingPayment = ref(false)
 const paymentForm = ref({
-  orderId: '' as number | string,
-  customerId: 0,
+  customerName: '',
+  orderReference: '',
   amount: 0,
   amountDisplay: '',
   paymentMethod: ''
@@ -513,23 +514,6 @@ async function loadSummary() {
   }
 }
 
-async function loadOrders() {
-  try {
-    const response = await orderService.getAllNonPaginated()
-    orders.value = Array.isArray(response) ? response : response.content || []
-  } catch (error) {
-    console.error('Erro ao carregar pedidos:', error)
-  }
-}
-
-async function loadCustomers() {
-  try {
-    customers.value = await customerService.getAllNonPaginated()
-  } catch (error) {
-    console.error('Erro ao carregar clientes:', error)
-  }
-}
-
 function applyFilters() {
   currentPage.value = 1
   loadLedgers()
@@ -545,12 +529,6 @@ function handlePageSizeChange(size: number) {
   pageSize.value = size
   currentPage.value = 1
   loadLedgers()
-}
-
-// Helpers
-function getCustomerName(customerId: number): string {
-  const customer = customers.value.find(c => c.id === customerId)
-  return customer?.name || `Cliente #${customerId}`
 }
 
 function formatDate(dateString: string): string {
@@ -599,19 +577,8 @@ function formatDocType(docType: string): string {
 
 // Payment modal
 function openPaymentModal() {
-  paymentForm.value = { orderId: '', customerId: 0, amount: 0, amountDisplay: '', paymentMethod: '' }
+  paymentForm.value = { customerName: '', orderReference: '', amount: 0, amountDisplay: '', paymentMethod: '' }
   showPaymentModal.value = true
-}
-
-function onOrderSelected() {
-  const order = orders.value.find(o => o.id === Number(paymentForm.value.orderId))
-  if (order) {
-    paymentForm.value.customerId = order.customerId
-    if (order.debt > 0) {
-      paymentForm.value.amount = order.debt
-      paymentForm.value.amountDisplay = currency.formatCurrency(order.debt)
-    }
-  }
 }
 
 function handlePaymentAmountInput(event: Event) {
@@ -626,13 +593,13 @@ async function submitPayment() {
   if (!paymentForm.value.amount || !paymentForm.value.paymentMethod) return
   savingPayment.value = true
   try {
-    await ledgerService.recordPayment(
-      paymentForm.value.orderId ? Number(paymentForm.value.orderId) : null,
-      paymentForm.value.customerId || null,
-      paymentForm.value.amount,
-      paymentForm.value.paymentMethod,
-      getCurrentUser()
-    )
+    await ledgerService.recordPayment({
+      amount: paymentForm.value.amount,
+      paymentMethod: paymentForm.value.paymentMethod,
+      receivedBy: getCurrentUser(),
+      customerName: paymentForm.value.customerName || undefined,
+      orderReference: paymentForm.value.orderReference || undefined
+    })
     notification.success('Sucesso', 'Pagamento registrado com sucesso')
     showPaymentModal.value = false
     loadLedgers()
@@ -743,7 +710,5 @@ async function submitReverse() {
 onMounted(() => {
   loadLedgers()
   loadSummary()
-  loadOrders()
-  loadCustomers()
 })
 </script>
