@@ -27,8 +27,9 @@ export interface AddressDTO {
 export interface CustomerDTO {
   id?: number
   name: string
-  cpf: string
-  
+  // CPF é opcional — capturado quando o cliente quiser nota fiscal
+  cpf?: string
+
   // Phone fields
   phoneOne?: string
   phoneTwo?: string

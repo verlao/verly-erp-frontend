@@ -125,7 +125,10 @@
               />
             </div>
             <div>
-              <label class="block text-xs font-medium text-foreground mb-1">CPF *</label>
+              <label class="block text-xs font-medium text-foreground mb-1">
+                CPF
+                <span class="text-muted-foreground font-normal">(opcional, p/ nota fiscal)</span>
+              </label>
               <input
                 v-model="newCustomer.cpf"
                 type="text"
@@ -137,7 +140,7 @@
           <div class="flex gap-2">
             <button
               @click="createCustomer"
-              :disabled="creatingCustomer || !newCustomer.name || !newCustomer.cpf"
+              :disabled="creatingCustomer || !newCustomer.name"
               class="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white rounded-lg text-sm font-medium"
             >
               {{ creatingCustomer ? 'Criando…' : 'Criar Cliente' }}
@@ -407,7 +410,7 @@ const phoneInput = ref('')
 const phoneSearchLoading = ref(false)
 const customer = ref<CustomerDTO | null>(null)
 const showCreateForm = ref(false)
-const newCustomer = ref<{ name: string; cpf: string }>({ name: '', cpf: '' })
+const newCustomer = ref<{ name: string; cpf?: string }>({ name: '', cpf: '' })
 const creatingCustomer = ref(false)
 
 const phoneDigits = computed(() => phoneInput.value.replace(/\D/g, ''))
@@ -434,18 +437,23 @@ async function searchByPhone() {
 async function createCustomer() {
   creatingCustomer.value = true
   try {
-    const created = await customerService.create({
+    // BE retorna 201 sem body, então recuperamos o cliente recém-criado via phone
+    await customerService.create({
       name: newCustomer.value.name,
-      cpf: newCustomer.value.cpf,
+      cpf: newCustomer.value.cpf || undefined,
       phoneOne: phoneInput.value,
     })
-    customer.value = created
+    const fetched = await customerService.findByPhone(phoneInput.value)
+    if (!fetched) {
+      throw new Error('Cliente foi criado mas não retornou da busca')
+    }
+    customer.value = fetched
     showCreateForm.value = false
     notification.success('Sucesso', 'Cliente criado')
   } catch (err: any) {
     notification.error(
       'Erro',
-      err?.response?.data?.message || 'Falha ao criar cliente'
+      err?.response?.data?.message || err?.message || 'Falha ao criar cliente'
     )
   } finally {
     creatingCustomer.value = false
