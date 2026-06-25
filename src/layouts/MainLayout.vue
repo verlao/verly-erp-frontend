@@ -39,6 +39,12 @@
                 Produtos
               </button>
             </router-link>
+            <router-link to="/new-quote" custom v-slot="{ navigate, isActive }">
+              <button @click="handleMobileNav(navigate)" :class="['w-full text-left px-6 py-4 text-base flex items-center gap-3 transition-colors', isActive ? 'bg-accent text-foreground font-medium' : 'text-muted-foreground hover:bg-accent/50']">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+                Novo Orçamento
+              </button>
+            </router-link>
             <router-link to="/quotes" custom v-slot="{ navigate, isActive }">
               <button @click="handleMobileNav(navigate)" :class="['w-full text-left px-6 py-4 text-base flex items-center gap-3 transition-colors', isActive ? 'bg-accent text-foreground font-medium' : 'text-muted-foreground hover:bg-accent/50']">
                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 20 20" fill="currentColor"><path d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z"/><path fill-rule="evenodd" d="M4 5a2 2 0 012-2 3 3 0 003 3h2a3 3 0 003-3 2 2 0 012 2v11a2 2 0 01-2 2H6a2 2 0 01-2-2V5zm3 4a1 1 0 000 2h.01a1 1 0 100-2H7zm3 0a1 1 0 000 2h3a1 1 0 100-2h-3zm-3 4a1 1 0 100 2h.01a1 1 0 100-2H7zm3 0a1 1 0 100 2h3a1 1 0 100-2h-3z" clip-rule="evenodd"/></svg>
@@ -101,6 +107,12 @@
           <Button @click="navigate" :variant="isActive ? 'secondary' : 'ghost'" class="w-full justify-start">
             <span class="mr-2"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m7.5 4.27 9 5.15"/><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/></svg></span>
             <span :class="{ 'sr-only': isSidebarCollapsed }">Produtos</span>
+          </Button>
+        </router-link>
+        <router-link to="new-quote" custom v-slot="{ navigate, isActive }">
+          <Button @click="navigate" :variant="isActive ? 'secondary' : 'ghost'" class="w-full justify-start">
+            <span class="mr-2"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg></span>
+            <span :class="{ 'sr-only': isSidebarCollapsed }">Novo Orçamento</span>
           </Button>
         </router-link>
         <router-link to="quotes" custom v-slot="{ navigate, isActive }">
@@ -231,6 +243,7 @@ const pageTitle = computed(() => {
   if (route.path.endsWith('dashboard')) return 'Dashboard'
   if (route.path.endsWith('customers')) return 'Clientes'
   if (route.path.endsWith('products')) return 'Produtos'
+  if (route.path.endsWith('new-quote')) return 'Novo Orçamento'
   if (route.path.endsWith('quotes')) return 'Orçamentos'
   if (route.path.endsWith('orders')) return 'Pedidos'
   if (route.path.endsWith('ledger')) return 'Lançamentos Contábeis'
