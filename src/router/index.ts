@@ -1,4 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router'
+import { postLoginRoute } from '../lib/routes'
 
 const routes = [
   {
@@ -103,8 +104,7 @@ router.beforeEach((to, _from, next) => {
   }
 
   if (to.path === '/' && isValidToken) {
-    // Redirecionar para dashboard se já estiver autenticado e tentar acessar login
-    next('/ledger')
+    next(postLoginRoute)
   } else {
     next()
   }

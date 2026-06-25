@@ -19,11 +19,6 @@
         </button>
       </div>
 
-      <!-- Gerenciamento de Custos -->
-      <div class="mb-6">
-        <CostsAccordion />
-      </div>
-
       <!-- Tabela de Produtos -->
       <div class="bg-card rounded-lg shadow-sm border border-border overflow-hidden">
         <div class="px-4 sm:px-6 py-4 border-b border-border space-y-4">
@@ -351,6 +346,11 @@
             </div>
           </div>
         </div>
+      </div>
+
+      <!-- Gerenciamento de Custos -->
+      <div class="mt-6">
+        <CostsAccordion />
       </div>
 
       <!-- Product Modal -->

@@ -57,6 +57,7 @@
 import { ref, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
+import { postLoginRoute } from '../lib/routes'
 
 const router = useRouter()
 const route = useRoute()
@@ -64,7 +65,7 @@ const authStore = useAuthStore()
 
 const username = ref('')
 const password = ref('')
-const redirectPath = ref('/ledger')
+const redirectPath = ref(postLoginRoute)
 const errorMessage = ref('')
 
 // Capturar o caminho de redirecionamento se existir
