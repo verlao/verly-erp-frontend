@@ -34,6 +34,11 @@ const routes = [
         component: () => import('../views/Quotes.vue'),
       },
       {
+        path: 'new-quote',
+        name: 'NewQuote',
+        component: () => import('../views/NewQuote.vue'),
+      },
+      {
         path: 'orders',
         name: 'Orders',
         component: () => import('../views/Orders.vue'),

@@ -451,19 +451,23 @@ const createDefaultLaborCosts = async () => {
 const createDefaultGains = async () => {
   try {
     const types = ['PORTA', 'JANELA', 'SACADA', 'BASCULANTE', 'FIXO', 'BOX']
+    const colors = ['INCOLOR', 'VERDE', 'FUME']
     const sheets = [1, 2, 4]
-    
+
     for (const type of types) {
-      for (const sheet of sheets) {
-        await gainService.create({
-          type,
-          sheets: sheet,
-          gainValue: 30.00,
-          active: true
-        })
+      for (const color of colors) {
+        for (const sheet of sheets) {
+          await gainService.create({
+            type,
+            color,
+            sheets: sheet,
+            gainValue: 30.00,
+            active: true
+          })
+        }
       }
     }
-    
+
     showSuccess('Sucesso', 'Margens criadas')
     await loadGains()
   } catch (error) {

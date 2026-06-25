@@ -29,7 +29,7 @@
               :key="customer.id"
               :value="customer.id"
             >
-              {{ customer.name }} - {{ formatCPF(customer.cpf) }}
+              {{ customer.name }}{{ customer.cpf ? ' - ' + formatCPF(customer.cpf) : '' }}
             </option>
           </select>
         </div>

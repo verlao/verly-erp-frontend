@@ -27,8 +27,9 @@ export interface AddressDTO {
 export interface CustomerDTO {
   id?: number
   name: string
-  cpf: string
-  
+  // CPF é opcional — capturado quando o cliente quiser nota fiscal
+  cpf?: string
+
   // Phone fields
   phoneOne?: string
   phoneTwo?: string
@@ -70,6 +71,21 @@ const customerService = {
   getAllNonPaginated: async () => {
     const response = await api.get(`/customers?_t=${Date.now()}`)
     return response.data
+  },
+
+  // Busca client-side por telefone — sem endpoint dedicado no backend.
+  // Normaliza ambos os lados removendo não-dígitos pra match (parens/espaços/hifens).
+  findByPhone: async (rawPhone: string): Promise<CustomerDTO | null> => {
+    const target = rawPhone.replace(/\D/g, '')
+    if (!target) return null
+    const list: CustomerDTO[] = await customerService.getAllNonPaginated()
+    return (
+      list.find(c => {
+        const p1 = (c.phoneOne ?? '').replace(/\D/g, '')
+        const p2 = (c.phoneTwo ?? '').replace(/\D/g, '')
+        return p1 === target || p2 === target
+      }) ?? null
+    )
   },
   
   getById: async (id: number) => {

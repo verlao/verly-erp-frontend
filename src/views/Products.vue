@@ -752,43 +752,25 @@ async function handleLaborSave(product: ProductDTO, value: number | string) {
 async function handleGainSave(product: ProductDTO, value: number | string) {
   try {
     const numericValue = typeof value === 'string' ? parseFloat(value) : value
-    
-    // Validar que o valor não seja undefined ou null ou NaN
+
     if (numericValue === undefined || numericValue === null || isNaN(numericValue)) {
       notification.error('Erro', 'Valor inválido')
       return
     }
 
-    // Validar que o produto tem type e sheets
-    if (!product.type || product.sheets === undefined) {
-      notification.error('Erro', 'Produto precisa ter tipo e número de folhas definidos')
+    if (!product.type || product.sheets === undefined || !product.color) {
+      notification.error('Erro', 'Produto precisa ter tipo, cor e número de folhas definidos')
       return
     }
 
-    // Buscar o ganho existente por type e sheets
-    const gains = await gainService.getAll()
-    const existingGain = gains.find(g => g.type === product.type && g.sheets === product.sheets)
-    
-    if (!existingGain || !existingGain.id) {
-      notification.error('Erro', 'Ganho não encontrado para esse tipo e número de folhas')
-      return
-    }
-
-    // Atualizar o ganho
-    await gainService.update(existingGain.id, {
-      ...existingGain,
-      gainValue: numericValue
-    })
+    await gainService.updateInline(product.type, product.color, product.sheets, numericValue)
 
     notification.success('Sucesso', 'Ganho atualizado com sucesso')
-    
-    // Reload products to get all updated values (cost, price, profit, etc)
     await loadProducts()
   } catch (error: any) {
     console.error('Erro ao salvar ganho:', error)
     const errorMessage = error.response?.data?.message || 'Erro ao atualizar ganho. Tente novamente.'
     notification.error('Erro', errorMessage)
-    // Reload products to revert changes
     await loadProducts()
   }
 }
