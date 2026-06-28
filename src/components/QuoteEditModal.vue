@@ -294,11 +294,16 @@ async function save() {
     for (const item of cart.value) {
       if (item.product.id) products[String(item.product.id)] = item.quantity
     }
+    // BE espera ISO LocalDateTime — campo <input type="date"> só dá YYYY-MM-DD.
+    // Mesmo padrão de QuoteModal: anexa T23:59:59 pra virar datetime válido.
+    const expDate = expirationDate.value
+      ? `${expirationDate.value}T23:59:59`
+      : undefined
     await quoteService.update(props.quote.id, {
       customerId: props.quote.customerId,
       products,
       observations: observations.value || undefined,
-      expirationDate: expirationDate.value || undefined,
+      expirationDate: expDate,
     })
     notification.success('Sucesso', `Orçamento #${props.quote.id} atualizado`)
     emit('saved')

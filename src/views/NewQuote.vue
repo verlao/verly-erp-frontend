@@ -251,7 +251,7 @@
         </p>
 
         <!-- Carrinho -->
-        <div v-if="cart.length > 0" ref="cartContainerRef" class="pt-2">
+        <div v-if="cart.length > 0" class="pt-2">
           <h3 class="text-sm font-medium text-foreground mb-2">
             Selecionados ({{ cart.length }})
           </h3>
@@ -299,7 +299,7 @@
           </p>
         </div>
 
-        <div class="flex justify-between pt-2">
+        <div ref="reviewActionsRef" class="flex justify-between pt-2">
           <button
             @click="step = 1"
             class="px-6 py-2 text-muted-foreground hover:text-foreground"
@@ -535,7 +535,7 @@ const productQuery = ref('')
 const productSearchLoading = ref(false)
 const searchResults = ref<ProductDTO[]>([])
 const cart = ref<CartItem[]>([])
-const cartContainerRef = ref<HTMLElement | null>(null)
+const reviewActionsRef = ref<HTMLElement | null>(null)
 let searchTimer: ReturnType<typeof setTimeout> | null = null
 
 function onProductSearch() {
@@ -568,9 +568,10 @@ function addProduct(p: ProductDTO) {
   } else {
     cart.value.push({ product: p, quantity: 1 })
   }
-  // Scroll suave pro carrinho (especialmente útil em mobile e quando lista cresce)
+  // Scroll suave pro botão "Revisar →" — inclui o carrinho inteiro na viewport
+  // (especialmente útil em mobile pra usuário ver item adicionado + ação seguinte)
   nextTick(() => {
-    cartContainerRef.value?.scrollIntoView({ behavior: 'smooth', block: 'end' })
+    reviewActionsRef.value?.scrollIntoView({ behavior: 'smooth', block: 'end' })
   })
 }
 
