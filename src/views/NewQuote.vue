@@ -152,6 +152,22 @@
               />
             </div>
           </div>
+
+          <!-- Endereço (com busca de logradouro RJ pelo BE) -->
+          <div class="border-t border-blue-200 pt-3 mt-3">
+            <p class="text-xs font-medium text-foreground mb-2">
+              Endereço
+              <span class="text-muted-foreground font-normal">
+                (digite o CEP, ou pesquise pela rua se não souber)
+              </span>
+            </p>
+            <AddressForm
+              v-model="newAddress"
+              :enable-street-search="true"
+              default-uf="RJ"
+            />
+          </div>
+
           <div class="flex gap-2">
             <button
               @click="createCustomer"
@@ -406,12 +422,13 @@
 
 <script setup lang="ts">
 import { computed, nextTick, ref } from 'vue'
-import customerService, { type CustomerDTO } from '../services/customer'
+import customerService, { type AddressDTO, type CustomerDTO } from '../services/customer'
 import productService, { type ProductDTO } from '../services/product'
 import quoteService from '../services/quote'
 import { useNotification } from '../composables/useNotification'
 import { maskCpf, maskCnpj, maskPhone } from '../lib/masks'
 import { buildWhatsAppUrl, buildQuoteMessage } from '../lib/whatsapp'
+import AddressForm from '../components/AddressForm.vue'
 
 interface CartItem {
   product: ProductDTO
@@ -432,6 +449,7 @@ const newCustomer = ref<{ name: string; cpf?: string; cnpj?: string }>({
   cpf: '',
   cnpj: '',
 })
+const newAddress = ref<AddressDTO>({ isPrimary: true })
 const creatingCustomer = ref(false)
 
 const phoneDigits = computed(() => phoneInput.value.replace(/\D/g, ''))
@@ -474,11 +492,19 @@ async function createCustomer() {
   creatingCustomer.value = true
   try {
     // BE retorna 201 sem body, então recuperamos o cliente recém-criado via phone
+    // Envia address apenas se algum campo foi preenchido
+    const hasAddress = !!(
+      newAddress.value.cep ||
+      newAddress.value.logradouro ||
+      newAddress.value.bairro ||
+      newAddress.value.localidade
+    )
     await customerService.create({
       name: newCustomer.value.name,
       cpf: newCustomer.value.cpf || undefined,
       cnpj: newCustomer.value.cnpj || undefined,
       phoneOne: phoneInput.value,
+      addresses: hasAddress ? [{ ...newAddress.value, isPrimary: true }] : undefined,
     })
     const fetched = await customerService.findByPhone(phoneInput.value)
     if (!fetched) {
@@ -501,6 +527,7 @@ function resetCustomer() {
   customer.value = null
   showCreateForm.value = false
   newCustomer.value = { name: '', cpf: '', cnpj: '' }
+  newAddress.value = { isPrimary: true }
 }
 
 // ===== STEP 2: produtos =====
@@ -642,6 +669,7 @@ function resetWizard() {
   customer.value = null
   showCreateForm.value = false
   newCustomer.value = { name: '', cpf: '', cnpj: '' }
+  newAddress.value = { isPrimary: true }
   productQuery.value = ''
   searchResults.value = []
   cart.value = []

@@ -55,6 +55,22 @@ class CepService {
     }
   }
 
+  /**
+   * Forward search por logradouro. BE faz proxy pro ViaCEP.
+   * Retorna array vazio se nenhum match ou erro.
+   */
+  async buscarPorRua(uf: string, cidade: string, rua: string): Promise<CepResponse[]> {
+    try {
+      const response = await api.get(`/cep/logradouro`, {
+        params: { uf, cidade, rua },
+      })
+      return response.data ?? []
+    } catch (error) {
+      console.error('Erro ao buscar por rua:', error)
+      return []
+    }
+  }
+
   async verificarStatusServicos(): Promise<string> {
     try {
       const response = await api.get(`/cep/status`)
