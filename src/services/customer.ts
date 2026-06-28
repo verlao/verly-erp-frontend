@@ -29,6 +29,8 @@ export interface CustomerDTO {
   name: string
   // CPF é opcional — capturado quando o cliente quiser nota fiscal
   cpf?: string
+  // CNPJ opcional — para clientes pessoa jurídica
+  cnpj?: string
 
   // Phone fields
   phoneOne?: string
