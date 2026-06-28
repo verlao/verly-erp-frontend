@@ -100,6 +100,54 @@ export function validatePhone(phone: string): boolean {
 }
 
 /**
+ * Aplica máscara de CNPJ (00.000.000/0000-00)
+ */
+export function maskCnpj(value: string): string {
+  if (!value) return ''
+
+  const digits = value.replace(/\D/g, '')
+
+  return digits
+    .replace(/(\d{2})(\d)/, '$1.$2')
+    .replace(/(\d{3})(\d)/, '$1.$2')
+    .replace(/(\d{3})(\d)/, '$1/$2')
+    .replace(/(\d{4})(\d{1,2})/, '$1-$2')
+    .replace(/(-\d{2})\d+?$/, '$1')
+}
+
+/**
+ * Remove máscara do CNPJ
+ */
+export function unmaskCnpj(value: string): string {
+  return value.replace(/\D/g, '')
+}
+
+/**
+ * Valida CNPJ (14 dígitos + dígitos verificadores)
+ */
+export function validateCnpj(cnpj: string): boolean {
+  const digits = unmaskCnpj(cnpj)
+
+  if (digits.length !== 14) return false
+  if (/^(\d)\1{13}$/.test(digits)) return false
+
+  const calcDigit = (slice: string, factors: number[]): number => {
+    const sum = factors.reduce((acc, f, i) => acc + parseInt(slice[i]) * f, 0)
+    const remainder = sum % 11
+    return remainder < 2 ? 0 : 11 - remainder
+  }
+
+  const firstFactors = [5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2]
+  const secondFactors = [6, 5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2]
+
+  const digit1 = calcDigit(digits.slice(0, 12), firstFactors)
+  if (parseInt(digits[12]) !== digit1) return false
+
+  const digit2 = calcDigit(digits.slice(0, 13), secondFactors)
+  return parseInt(digits[13]) === digit2
+}
+
+/**
  * Aplica máscara de CEP (00000-000)
  */
 export function maskCep(value: string): string {

@@ -72,6 +72,7 @@
               placeholder="(11) 99999-9999"
               :disabled="phoneSearchLoading"
               class="flex-1 px-3 py-2 border border-border rounded-lg bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+              @input="onPhoneInput"
               @keyup.enter="searchByPhone"
             />
             <button
@@ -134,6 +135,20 @@
                 type="text"
                 placeholder="000.000.000-00"
                 class="w-full px-3 py-2 border border-border rounded-lg bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary text-sm"
+                @input="onCpfInput"
+              />
+            </div>
+            <div>
+              <label class="block text-xs font-medium text-foreground mb-1">
+                CNPJ
+                <span class="text-muted-foreground font-normal">(opcional, pessoa jurídica)</span>
+              </label>
+              <input
+                v-model="newCustomer.cnpj"
+                type="text"
+                placeholder="00.000.000/0000-00"
+                class="w-full px-3 py-2 border border-border rounded-lg bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary text-sm"
+                @input="onCnpjInput"
               />
             </div>
           </div>
@@ -220,7 +235,7 @@
         </p>
 
         <!-- Carrinho -->
-        <div v-if="cart.length > 0" class="pt-2">
+        <div v-if="cart.length > 0" ref="cartContainerRef" class="pt-2">
           <h3 class="text-sm font-medium text-foreground mb-2">
             Selecionados ({{ cart.length }})
           </h3>
@@ -390,11 +405,13 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, nextTick, ref } from 'vue'
 import customerService, { type CustomerDTO } from '../services/customer'
 import productService, { type ProductDTO } from '../services/product'
 import quoteService from '../services/quote'
 import { useNotification } from '../composables/useNotification'
+import { maskCpf, maskCnpj, maskPhone } from '../lib/masks'
+import { buildWhatsAppUrl, buildQuoteMessage } from '../lib/whatsapp'
 
 interface CartItem {
   product: ProductDTO
@@ -410,10 +427,29 @@ const phoneInput = ref('')
 const phoneSearchLoading = ref(false)
 const customer = ref<CustomerDTO | null>(null)
 const showCreateForm = ref(false)
-const newCustomer = ref<{ name: string; cpf?: string }>({ name: '', cpf: '' })
+const newCustomer = ref<{ name: string; cpf?: string; cnpj?: string }>({
+  name: '',
+  cpf: '',
+  cnpj: '',
+})
 const creatingCustomer = ref(false)
 
 const phoneDigits = computed(() => phoneInput.value.replace(/\D/g, ''))
+
+function onPhoneInput(e: Event) {
+  const target = e.target as HTMLInputElement
+  phoneInput.value = maskPhone(target.value)
+}
+
+function onCpfInput(e: Event) {
+  const target = e.target as HTMLInputElement
+  newCustomer.value.cpf = maskCpf(target.value)
+}
+
+function onCnpjInput(e: Event) {
+  const target = e.target as HTMLInputElement
+  newCustomer.value.cnpj = maskCnpj(target.value)
+}
 
 async function searchByPhone() {
   if (!phoneDigits.value) return
@@ -441,6 +477,7 @@ async function createCustomer() {
     await customerService.create({
       name: newCustomer.value.name,
       cpf: newCustomer.value.cpf || undefined,
+      cnpj: newCustomer.value.cnpj || undefined,
       phoneOne: phoneInput.value,
     })
     const fetched = await customerService.findByPhone(phoneInput.value)
@@ -463,7 +500,7 @@ async function createCustomer() {
 function resetCustomer() {
   customer.value = null
   showCreateForm.value = false
-  newCustomer.value = { name: '', cpf: '' }
+  newCustomer.value = { name: '', cpf: '', cnpj: '' }
 }
 
 // ===== STEP 2: produtos =====
@@ -471,6 +508,7 @@ const productQuery = ref('')
 const productSearchLoading = ref(false)
 const searchResults = ref<ProductDTO[]>([])
 const cart = ref<CartItem[]>([])
+const cartContainerRef = ref<HTMLElement | null>(null)
 let searchTimer: ReturnType<typeof setTimeout> | null = null
 
 function onProductSearch() {
@@ -503,6 +541,10 @@ function addProduct(p: ProductDTO) {
   } else {
     cart.value.push({ product: p, quantity: 1 })
   }
+  // Scroll suave pro carrinho (especialmente útil em mobile e quando lista cresce)
+  nextTick(() => {
+    cartContainerRef.value?.scrollIntoView({ behavior: 'smooth', block: 'end' })
+  })
 }
 
 function updateQty(item: CartItem, qty: number) {
@@ -542,6 +584,12 @@ async function submitQuote() {
     })
     createdQuoteId.value = created?.id ?? null
     notification.success('Sucesso', `Orçamento #${createdQuoteId.value} gerado`)
+
+    // Auto-abre WhatsApp com mensagem pronta. Browser pode bloquear popup
+    // se delay for grande; rodamos sem await após o success do POST.
+    if (createdQuoteId.value && customer.value?.phoneOne) {
+      openWhatsApp()
+    }
   } catch (err: any) {
     notification.error(
       'Erro',
@@ -574,18 +622,17 @@ async function downloadPdf() {
 }
 
 function openWhatsApp() {
-  if (!customer.value || !createdQuoteId.value) return
-  const phone = (customer.value.phoneOne ?? '').replace(/\D/g, '')
-  // Anexa 55 se o número não começar com DDI BR
-  const withCountry = phone.startsWith('55') ? phone : `55${phone}`
-  const lines = cart.value.map(
-    i => `• ${i.quantity}× ${i.product.type} ${i.product.sheets}F ${i.product.color}`
-  )
-  const message =
-    `Olá ${customer.value.name}, segue seu orçamento Verly #${createdQuoteId.value}:\n\n` +
-    lines.join('\n') +
-    `\n\n*Total: R$ ${cartTotal.value.toFixed(2)}*\n\nQualquer dúvida estou à disposição.`
-  const url = `https://wa.me/${withCountry}?text=${encodeURIComponent(message)}`
+  if (!customer.value || !createdQuoteId.value || !customer.value.phoneOne) return
+  const message = buildQuoteMessage({
+    customerName: customer.value.name,
+    quoteId: createdQuoteId.value,
+    items: cart.value.map(i => ({
+      qty: i.quantity,
+      label: `${i.product.type} ${i.product.sheets}F ${i.product.color}`,
+    })),
+    total: cartTotal.value,
+  })
+  const url = buildWhatsAppUrl(customer.value.phoneOne, message)
   window.open(url, '_blank', 'noopener,noreferrer')
 }
 
@@ -594,7 +641,7 @@ function resetWizard() {
   phoneInput.value = ''
   customer.value = null
   showCreateForm.value = false
-  newCustomer.value = { name: '', cpf: '' }
+  newCustomer.value = { name: '', cpf: '', cnpj: '' }
   productQuery.value = ''
   searchResults.value = []
   cart.value = []
