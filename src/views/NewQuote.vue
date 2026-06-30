@@ -71,14 +71,14 @@
               type="tel"
               placeholder="(11) 99999-9999"
               :disabled="phoneSearchLoading"
-              class="flex-1 px-3 py-2 border border-border rounded-lg bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+              class="flex-1 px-3 py-3 sm:py-2 min-h-[44px] sm:min-h-0 border border-border rounded-lg bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
               @input="onPhoneInput"
               @keyup.enter="searchByPhone"
             />
             <button
               @click="searchByPhone"
               :disabled="phoneSearchLoading || !phoneDigits"
-              class="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white rounded-lg transition-colors font-medium"
+              class="px-4 py-3 sm:py-2 min-h-[44px] sm:min-h-0 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white rounded-lg transition-transform active:scale-95 font-medium"
             >
               {{ phoneSearchLoading ? 'Buscando…' : 'Buscar' }}
             </button>
@@ -122,7 +122,7 @@
               <input
                 v-model="newCustomer.name"
                 type="text"
-                class="w-full px-3 py-2 border border-border rounded-lg bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary text-sm"
+                class="w-full px-3 py-3 sm:py-2 min-h-[44px] sm:min-h-0 border border-border rounded-lg bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary text-sm"
               />
             </div>
             <div>
@@ -134,7 +134,7 @@
                 v-model="newCustomer.cpf"
                 type="text"
                 placeholder="000.000.000-00"
-                class="w-full px-3 py-2 border border-border rounded-lg bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary text-sm"
+                class="w-full px-3 py-3 sm:py-2 min-h-[44px] sm:min-h-0 border border-border rounded-lg bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary text-sm"
                 @input="onCpfInput"
               />
             </div>
@@ -147,7 +147,7 @@
                 v-model="newCustomer.cnpj"
                 type="text"
                 placeholder="00.000.000/0000-00"
-                class="w-full px-3 py-2 border border-border rounded-lg bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary text-sm"
+                class="w-full px-3 py-3 sm:py-2 min-h-[44px] sm:min-h-0 border border-border rounded-lg bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary text-sm"
                 @input="onCnpjInput"
               />
             </div>
@@ -172,7 +172,7 @@
             <button
               @click="createCustomer"
               :disabled="creatingCustomer || !newCustomer.name"
-              class="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white rounded-lg text-sm font-medium"
+              class="px-4 py-3 sm:py-2 min-h-[44px] sm:min-h-0 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white rounded-lg text-sm font-medium transition-transform active:scale-95"
             >
               {{ creatingCustomer ? 'Criando…' : 'Criar Cliente' }}
             </button>
@@ -189,7 +189,7 @@
           <button
             @click="step = 2"
             :disabled="!customer"
-            class="px-6 py-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white rounded-lg font-medium"
+            class="px-6 py-3 sm:py-2 min-h-[44px] sm:min-h-0 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white rounded-lg font-medium transition-transform active:scale-95"
           >
             Continuar →
           </button>
@@ -209,7 +209,7 @@
             v-model="productQuery"
             type="text"
             placeholder="Buscar produtos por tipo, cor ou dimensão…"
-            class="w-full px-3 py-2 border border-border rounded-lg bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+            class="w-full px-3 py-3 sm:py-2 min-h-[44px] sm:min-h-0 border border-border rounded-lg bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
             @input="onProductSearch"
           />
         </div>
@@ -237,7 +237,7 @@
             </div>
             <button
               @click="addProduct(p)"
-              class="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-md text-sm font-medium"
+              class="px-3 py-2 sm:py-1.5 min-h-[44px] sm:min-h-0 bg-blue-600 hover:bg-blue-700 text-white rounded-md text-sm font-medium transition-transform active:scale-95"
             >
               + Adicionar
             </button>
@@ -274,20 +274,21 @@
               <div class="flex items-center gap-2">
                 <button
                   @click="updateQty(item, item.quantity - 1)"
-                  class="w-7 h-7 rounded border border-border text-muted-foreground hover:bg-accent"
+                  class="min-w-[44px] min-h-[44px] rounded border border-border text-muted-foreground hover:bg-accent active:scale-95 transition-transform"
                 >
-                  -
+                  −
                 </button>
-                <span class="w-8 text-center text-sm">{{ item.quantity }}</span>
+                <span class="w-8 text-center text-sm font-medium">{{ item.quantity }}</span>
                 <button
                   @click="updateQty(item, item.quantity + 1)"
-                  class="w-7 h-7 rounded border border-border text-muted-foreground hover:bg-accent"
+                  class="min-w-[44px] min-h-[44px] rounded border border-border text-muted-foreground hover:bg-accent active:scale-95 transition-transform"
                 >
                   +
                 </button>
                 <button
                   @click="removeProduct(item)"
-                  class="ml-1 w-7 h-7 rounded text-destructive hover:bg-destructive/10"
+                  class="ml-1 min-w-[44px] min-h-[44px] rounded text-destructive hover:bg-destructive/10 active:scale-95 transition-transform"
+                  aria-label="Remover produto"
                 >
                   ×
                 </button>
@@ -309,7 +310,7 @@
           <button
             @click="step = 3"
             :disabled="cart.length === 0"
-            class="px-6 py-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white rounded-lg font-medium"
+            class="px-6 py-3 sm:py-2 min-h-[44px] sm:min-h-0 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white rounded-lg font-medium transition-transform active:scale-95"
           >
             Revisar →
           </button>
@@ -360,7 +361,7 @@
             <textarea
               v-model="observations"
               rows="2"
-              class="w-full px-3 py-2 border border-border rounded-lg bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary text-sm"
+              class="w-full px-3 py-3 sm:py-2 min-h-[44px] sm:min-h-0 border border-border rounded-lg bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary text-sm"
             ></textarea>
           </div>
         </div>
@@ -376,7 +377,7 @@
           <button
             @click="submitQuote"
             :disabled="submitting"
-            class="px-6 py-2 bg-green-600 hover:bg-green-700 disabled:opacity-50 text-white rounded-lg font-medium"
+            class="px-6 py-3 sm:py-2 min-h-[44px] sm:min-h-0 bg-green-600 hover:bg-green-700 disabled:opacity-50 text-white rounded-lg font-medium transition-transform active:scale-95"
           >
             {{ submitting ? 'Gerando…' : 'Gerar Orçamento' }}
           </button>
@@ -394,19 +395,19 @@
             <button
               @click="downloadPdf"
               :disabled="pdfLoading"
-              class="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white rounded-lg text-sm font-medium"
+              class="px-4 py-3 sm:py-2 min-h-[44px] sm:min-h-0 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white rounded-lg text-sm font-medium transition-transform active:scale-95"
             >
               📄 {{ pdfLoading ? 'Baixando…' : 'Baixar PDF' }}
             </button>
             <button
               @click="openWhatsApp"
-              class="px-4 py-2 bg-[#25D366] hover:bg-[#1DA851] text-white rounded-lg text-sm font-medium"
+              class="px-4 py-3 sm:py-2 min-h-[44px] sm:min-h-0 bg-[#25D366] hover:bg-[#1DA851] text-white rounded-lg text-sm font-medium transition-transform active:scale-95"
             >
               💬 Enviar via WhatsApp
             </button>
             <button
               @click="resetWizard"
-              class="px-4 py-2 border border-border hover:bg-accent text-foreground rounded-lg text-sm font-medium"
+              class="px-4 py-3 sm:py-2 min-h-[44px] sm:min-h-0 border border-border hover:bg-accent text-foreground rounded-lg text-sm font-medium transition-transform active:scale-95"
             >
               🔁 Novo Orçamento
             </button>

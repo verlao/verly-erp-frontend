@@ -37,7 +37,7 @@
           <input
             v-model="expirationDate"
             type="date"
-            class="w-full px-3 py-2 border border-border rounded-lg bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary text-sm"
+            class="w-full px-3 py-3 sm:py-2 min-h-[44px] sm:min-h-0 border border-border rounded-lg bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary text-sm"
           />
         </div>
 
@@ -76,21 +76,22 @@
               <div class="flex items-center gap-1.5">
                 <button
                   @click="setQty(item, item.quantity - 1)"
-                  class="w-6 h-6 rounded border border-border text-muted-foreground hover:bg-accent text-xs"
+                  class="min-w-[44px] min-h-[44px] sm:min-w-[28px] sm:min-h-[28px] rounded border border-border text-muted-foreground hover:bg-accent active:scale-95 transition-transform"
                 >
-                  -
+                  −
                 </button>
-                <span class="w-6 text-center text-sm">{{ item.quantity }}</span>
+                <span class="w-8 text-center text-sm font-medium">{{ item.quantity }}</span>
                 <button
                   @click="setQty(item, item.quantity + 1)"
-                  class="w-6 h-6 rounded border border-border text-muted-foreground hover:bg-accent text-xs"
+                  class="min-w-[44px] min-h-[44px] sm:min-w-[28px] sm:min-h-[28px] rounded border border-border text-muted-foreground hover:bg-accent active:scale-95 transition-transform"
                 >
                   +
                 </button>
                 <button
                   @click="removeProduct(item)"
-                  class="ml-1 w-6 h-6 rounded text-destructive hover:bg-destructive/10 text-xs"
+                  class="ml-1 min-w-[44px] min-h-[44px] sm:min-w-[28px] sm:min-h-[28px] rounded text-destructive hover:bg-destructive/10 active:scale-95 transition-transform"
                   title="Remover"
+                  aria-label="Remover produto"
                 >
                   ×
                 </button>
@@ -108,7 +109,7 @@
             v-model="productQuery"
             type="text"
             placeholder="Buscar tipo, cor, dimensão…"
-            class="w-full px-3 py-2 border border-border rounded-lg bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary text-sm"
+            class="w-full px-3 py-3 sm:py-2 min-h-[44px] sm:min-h-0 border border-border rounded-lg bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary text-sm"
             @input="onProductSearch"
           />
           <div
@@ -127,7 +128,8 @@
               </p>
               <button
                 @click="addProduct(p)"
-                class="px-2.5 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded-md text-xs"
+                class="min-w-[44px] min-h-[44px] sm:min-w-[32px] sm:min-h-[32px] px-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-md text-sm font-bold active:scale-95 transition-transform"
+                aria-label="Adicionar produto"
               >
                 +
               </button>
@@ -143,7 +145,7 @@
           <textarea
             v-model="observations"
             rows="2"
-            class="w-full px-3 py-2 border border-border rounded-lg bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary text-sm"
+            class="w-full px-3 py-3 sm:py-2 min-h-[44px] sm:min-h-0 border border-border rounded-lg bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary text-sm"
           ></textarea>
         </div>
 
@@ -160,14 +162,14 @@
         <button
           @click="onCloseDialog(false)"
           :disabled="saving"
-          class="px-4 py-2 border border-border rounded-lg hover:bg-muted transition-colors disabled:opacity-50"
+          class="px-4 py-3 sm:py-2 min-h-[44px] sm:min-h-0 border border-border rounded-lg hover:bg-muted transition-colors disabled:opacity-50"
         >
           Cancelar
         </button>
         <button
           @click="save"
           :disabled="saving || cart.length === 0"
-          class="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white rounded-lg transition-colors flex items-center gap-2"
+          class="px-4 py-3 sm:py-2 min-h-[44px] sm:min-h-0 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white rounded-lg transition-transform active:scale-95 flex items-center justify-center gap-2"
         >
           {{ saving ? 'Salvando…' : 'Salvar' }}
         </button>

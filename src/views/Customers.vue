@@ -19,6 +19,90 @@
       <div v-else-if="customers.length === 0" class="p-6 text-center">
         <p>Nenhum cliente encontrado</p>
       </div>
+      <!-- Mobile: cards verticais -->
+      <div v-else-if="isMobile" class="divide-y divide-gray-200">
+        <div
+          v-for="customer in customers"
+          :key="customer.id"
+          class="p-4 space-y-2 active:bg-gray-50 transition-colors"
+        >
+          <div class="flex items-start justify-between gap-2">
+            <div class="min-w-0 flex-1">
+              <p class="text-sm font-semibold text-gray-900 truncate">
+                #{{ customer.id }} • {{ customer.name }}
+              </p>
+              <p
+                v-if="customer.phoneOne"
+                class="text-xs text-gray-500 mt-0.5"
+              >
+                {{ customer.phoneOne }}
+                <span v-if="customer.phoneTwo"> • {{ customer.phoneTwo }}</span>
+              </p>
+              <p v-if="customer.cpf" class="text-xs text-gray-400">
+                CPF {{ customer.cpf }}
+              </p>
+            </div>
+          </div>
+          <div
+            v-if="customer.addresses && customer.addresses.length > 0 && customer.addresses[0].logradouro"
+            class="text-xs text-gray-500"
+          >
+            <p>
+              {{ customer.addresses[0].logradouro }},
+              {{ customer.addresses[0].number || 's/n' }}
+            </p>
+            <p>
+              {{ customer.addresses[0].bairro }} •
+              {{ customer.addresses[0].localidade }}
+            </p>
+          </div>
+          <div class="flex justify-end gap-1 pt-1">
+            <button
+              @click="openModal(customer)"
+              class="min-w-[44px] min-h-[44px] flex items-center justify-center text-blue-600 hover:bg-blue-50 rounded-lg active:scale-95 transition-transform"
+              aria-label="Editar cliente"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                class="h-5 w-5"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+              </svg>
+            </button>
+            <button
+              @click="confirmDelete(customer)"
+              class="min-w-[44px] min-h-[44px] flex items-center justify-center text-red-600 hover:bg-red-50 rounded-lg active:scale-95 transition-transform"
+              aria-label="Excluir cliente"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                class="h-5 w-5"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <path d="M3 6h18" />
+                <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" />
+                <path d="M8 6V4c0-1 1-2 2-2h4c0 1 1 2 1 2v2" />
+                <line x1="10" x2="10" y1="11" y2="17" />
+                <line x1="14" x2="14" y1="11" y2="17" />
+              </svg>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Desktop: tabela -->
       <div v-else class="overflow-x-auto">
         <table class="min-w-full divide-y divide-gray-200">
           <thead class="bg-gray-50">
@@ -359,8 +443,11 @@ import cepService from '../services/cep'
 import Pagination from '../components/ui/Pagination.vue'
 import Button from '../components/ui/Button.vue'
 import { maskCpf, unmaskCpf, validateCpf, maskPhone, unmaskPhone, validatePhone, maskCep } from '../lib/masks'
+import { useBreakpoint } from '../composables/useBreakpoint'
 import type { CustomerDTO } from '../services/customer'
 import type { PaginatedResponse } from '../services/order'
+
+const { isMobile } = useBreakpoint()
 
 const customers = ref<CustomerDTO[]>([])
 const loading = ref(true)
