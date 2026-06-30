@@ -145,6 +145,16 @@ const productService = {
     }
 
     return response.data
+  },
+
+  /**
+   * Calcula preço/custo/lucro pra dimensão fora do catálogo SEM persistir.
+   * Usado pela calculadora rápida da página Products quando cliente pede
+   * combinação tipo+cor+folhas+dims que não está cadastrada.
+   */
+  calculate: async (input: Pick<ProductDTO, 'category' | 'type' | 'color' | 'sheets' | 'width' | 'height'>) => {
+    const response = await api.post('/products/calculate', input)
+    return normalizeProduct(response.data)
   }
 }
 

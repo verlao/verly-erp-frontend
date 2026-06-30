@@ -19,6 +19,11 @@
         </button>
       </div>
 
+      <!-- Calculadora rápida (colapsada por default) -->
+      <div class="mb-4">
+        <QuickPriceCalculator />
+      </div>
+
       <!-- Tabela de Produtos -->
       <div class="bg-card rounded-lg shadow-sm border border-border overflow-hidden">
         <div class="px-4 sm:px-6 py-4 border-b border-border space-y-4">
@@ -129,6 +134,178 @@
             Criar Primeiro Produto
           </button>
         </div>
+      <!-- Mobile: cards verticais com preço destacado -->
+      <div v-else-if="isMobile" class="divide-y divide-border">
+        <div
+          v-for="product in filteredProducts"
+          :key="product.id || product.key"
+          class="p-4 space-y-3 active:bg-accent/30 transition-colors"
+        >
+          <!-- Header: badges tipo + cor + sheets -->
+          <div class="flex items-center gap-2 flex-wrap">
+            <span
+              class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium"
+              :class="{
+                'bg-blue-100 text-blue-800': product.type === 'PORTA',
+                'bg-green-100 text-green-800': product.type === 'JANELA',
+                'bg-purple-100 text-purple-800': product.type === 'SACADA',
+                'bg-orange-100 text-orange-800': product.type === 'BASCULANTE',
+                'bg-cyan-100 text-cyan-800': product.type === 'BOX',
+                'bg-gray-100 text-gray-800': product.type === 'FIXO',
+              }"
+            >
+              {{ product.type || '-' }}
+            </span>
+            <span class="text-xs text-muted-foreground">
+              {{ product.sheets }}F
+            </span>
+            <span
+              class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium"
+              :class="{
+                'bg-indigo-100 text-indigo-800': product.color === 'INCOLOR',
+                'bg-emerald-100 text-emerald-800': product.color === 'VERDE',
+                'bg-slate-100 text-slate-800': product.color === 'FUME',
+                'bg-yellow-100 text-yellow-800': product.color === 'BRONZE',
+              }"
+            >
+              {{ product.color || '-' }}
+            </span>
+            <span class="text-xs text-muted-foreground ml-auto">
+              {{ product.width }}×{{ product.height }}cm
+              <span v-if="product.measure">
+                ({{ product.measure.toFixed(2) }}m²)
+              </span>
+            </span>
+          </div>
+
+          <!-- Preço à vista (BIG, primário) -->
+          <div class="flex items-end justify-between gap-2">
+            <div>
+              <p class="text-xs text-muted-foreground uppercase tracking-wide">
+                À vista
+              </p>
+              <p class="text-2xl font-bold text-green-600 leading-tight">
+                R$ {{ product.price ? product.price.toFixed(2) : '0,00' }}
+              </p>
+            </div>
+            <div v-if="product.priceOptions" class="text-right text-xs space-y-0.5">
+              <div
+                v-if="product.priceOptions.installments4x"
+                class="text-muted-foreground"
+              >
+                4× R$
+                {{ (product.priceOptions.installments4x / 4).toFixed(2) }}
+              </div>
+              <div
+                v-if="product.priceOptions.installments10x"
+                class="text-muted-foreground"
+              >
+                10× R$
+                {{ (product.priceOptions.installments10x / 10).toFixed(2) }}
+              </div>
+              <div
+                v-if="product.priceOptions.installments12x"
+                class="text-muted-foreground"
+              >
+                12× R$
+                {{ (product.priceOptions.installments12x / 12).toFixed(2) }}
+              </div>
+            </div>
+          </div>
+
+          <!-- Custo / Lucro (secundário) -->
+          <div class="flex justify-between text-xs pt-2 border-t border-border">
+            <span class="text-muted-foreground">
+              Custo
+              <span class="font-medium text-foreground">
+                R$ {{ product.cost ? product.cost.toFixed(2) : '0,00' }}
+              </span>
+            </span>
+            <span class="text-muted-foreground">
+              Lucro
+              <span class="font-medium text-purple-600">
+                R$ {{ calculateProfit(product) }}
+              </span>
+            </span>
+            <span v-if="product.gainValue" class="text-muted-foreground">
+              Margem
+              <span class="font-medium text-foreground">
+                {{ product.gainValue }}%
+              </span>
+            </span>
+          </div>
+
+          <!-- Ações -->
+          <div class="flex justify-end gap-1 pt-1">
+            <button
+              v-if="product.id"
+              @click="toggleProduct(product.id)"
+              :class="[
+                'min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg active:scale-95 transition-transform',
+                selectedProductIds.has(product.id)
+                  ? 'text-blue-600 bg-blue-50'
+                  : 'text-muted-foreground hover:bg-accent',
+              ]"
+              :aria-label="selectedProductIds.has(product.id) ? 'Desselecionar' : 'Selecionar'"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                class="h-5 w-5"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <path v-if="selectedProductIds.has(product.id)" d="M20 6 9 17l-5-5" />
+                <rect v-else x="3" y="3" width="18" height="18" rx="2" />
+              </svg>
+            </button>
+            <button
+              @click="openModal(product)"
+              class="min-w-[44px] min-h-[44px] flex items-center justify-center text-blue-600 hover:bg-blue-50 rounded-lg active:scale-95 transition-transform"
+              aria-label="Editar produto"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                class="h-5 w-5"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+              </svg>
+            </button>
+            <button
+              @click="confirmDelete(product)"
+              class="min-w-[44px] min-h-[44px] flex items-center justify-center text-red-600 hover:bg-red-50 rounded-lg active:scale-95 transition-transform"
+              aria-label="Excluir produto"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                class="h-5 w-5"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <path d="M3 6h18" />
+                <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" />
+                <path d="M8 6V4c0-1 1-2 2-2h4c0 1 1 2 1 2v2" />
+              </svg>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Desktop: tabela tradicional -->
       <div v-else class="overflow-x-auto">
           <table class="w-full">
             <thead class="bg-muted">
@@ -396,8 +573,12 @@ import GlassCostQuickView from '../components/GlassCostQuickView.vue'
 import EditableValue from '../components/EditableValue.vue'
 import CostsAccordion from '../components/CostsAccordion.vue'
 import QuoteModal from '../components/QuoteModal.vue'
+import QuickPriceCalculator from '../components/QuickPriceCalculator.vue'
 import { useNotification } from '../composables/useNotification'
 import { useCurrency } from '../composables/useCurrency'
+import { useBreakpoint } from '../composables/useBreakpoint'
+
+const { isMobile } = useBreakpoint()
 
 const notification = useNotification()
 const { formatCurrency } = useCurrency()
