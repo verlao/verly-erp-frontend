@@ -1,6 +1,7 @@
 <template>
   <header
-    class="fixed top-0 left-0 right-0 z-40 bg-background border-b border-border h-14 flex items-center justify-between px-4"
+    class="fixed top-0 left-0 right-0 z-40 bg-background border-b border-border flex items-center justify-between px-4 pt-[env(safe-area-inset-top)]"
+    style="height: calc(3.5rem + env(safe-area-inset-top))"
   >
     <h2 class="text-lg font-semibold text-foreground truncate">{{ title }}</h2>
     <DropdownMenu>

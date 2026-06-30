@@ -22,12 +22,16 @@
     <main
       :class="[
         'min-h-screen transition-all duration-300 ease-in-out',
-        isMobile
-          ? 'pt-14 pb-20 px-4'
-          : sidebarCollapsed
-            ? 'ml-16 p-6'
-            : 'ml-64 p-6',
+        isMobile ? 'px-4' : sidebarCollapsed ? 'ml-16 p-6' : 'ml-64 p-6',
       ]"
+      :style="
+        isMobile
+          ? {
+              paddingTop: 'calc(3.5rem + env(safe-area-inset-top))',
+              paddingBottom: 'calc(5rem + env(safe-area-inset-bottom))',
+            }
+          : {}
+      "
     >
       <!-- Desktop header (mobile usa MobileTopBar) -->
       <header

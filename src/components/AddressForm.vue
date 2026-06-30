@@ -7,7 +7,7 @@
         :value="local.cep || ''"
         @input="onCepInput"
         type="text"
-        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm min-h-[44px] sm:min-h-0 py-3 sm:py-2 px-3"
         placeholder="00000-000"
         maxlength="9"
       />
@@ -48,7 +48,7 @@
           @input="onLogradouroInput"
           type="text"
           :disabled="fieldsLocked"
-          class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm disabled:bg-gray-100"
+          class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm disabled:bg-gray-100 min-h-[44px] sm:min-h-0 py-3 sm:py-2 px-3"
         />
         <!-- Dropdown autocomplete -->
         <ul
@@ -81,7 +81,7 @@
           @input="onFieldInput($event, 'number')"
           type="text"
           :disabled="fieldsLocked"
-          class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm disabled:bg-gray-100"
+          class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm disabled:bg-gray-100 min-h-[44px] sm:min-h-0 py-3 sm:py-2 px-3"
         />
       </div>
     </div>
@@ -95,7 +95,7 @@
           @input="onFieldInput($event, 'bairro')"
           type="text"
           :disabled="fieldsLocked"
-          class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm disabled:bg-gray-100"
+          class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm disabled:bg-gray-100 min-h-[44px] sm:min-h-0 py-3 sm:py-2 px-3"
         />
       </div>
       <div>
@@ -105,7 +105,7 @@
           @input="onFieldInput($event, 'localidade')"
           type="text"
           :disabled="fieldsLocked"
-          class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm disabled:bg-gray-100"
+          class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm disabled:bg-gray-100 min-h-[44px] sm:min-h-0 py-3 sm:py-2 px-3"
         />
       </div>
     </div>
@@ -118,7 +118,7 @@
         @input="onFieldInput($event, 'complemento')"
         type="text"
         :disabled="fieldsLocked"
-        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm disabled:bg-gray-100"
+        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm disabled:bg-gray-100 min-h-[44px] sm:min-h-0 py-3 sm:py-2 px-3"
       />
     </div>
 
@@ -130,7 +130,7 @@
         @input="onFieldInput($event, 'reference')"
         type="text"
         :disabled="fieldsLocked"
-        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm disabled:bg-gray-100"
+        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm disabled:bg-gray-100 min-h-[44px] sm:min-h-0 py-3 sm:py-2 px-3"
       />
     </div>
   </div>

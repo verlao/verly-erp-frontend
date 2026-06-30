@@ -1,6 +1,7 @@
 <template>
   <nav
-    class="fixed bottom-0 left-0 right-0 z-40 bg-background border-t border-border h-16 grid grid-cols-5"
+    class="fixed bottom-0 left-0 right-0 z-40 bg-background border-t border-border grid grid-cols-5 pb-[env(safe-area-inset-bottom)]"
+    style="height: calc(4rem + env(safe-area-inset-bottom))"
   >
     <!-- Produtos -->
     <router-link to="/products" custom v-slot="{ navigate, isActive }">

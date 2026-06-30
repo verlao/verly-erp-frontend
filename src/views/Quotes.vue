@@ -72,6 +72,158 @@
           <p class="text-muted-foreground">Crie orçamentos a partir da página de produtos.</p>
         </div>
 
+        <!-- Mobile: lista de cards -->
+        <div v-else-if="isMobile" class="divide-y divide-border">
+          <div
+            v-for="quote in filteredQuotes"
+            :key="quote.id"
+            class="p-4 space-y-2 active:bg-accent/40 transition-colors"
+          >
+            <!-- Linha 1: ID + cliente + status -->
+            <div class="flex items-start justify-between gap-2">
+              <div class="min-w-0 flex-1">
+                <p class="text-sm font-semibold truncate">
+                  #{{ quote.id }} • {{ getCustomerName(quote.customerId) }}
+                </p>
+                <p class="text-xs text-muted-foreground">
+                  {{ getProductCount(quote.products) }} itens • criado
+                  {{ formatDate(quote.createdDate) }}
+                </p>
+              </div>
+              <span
+                :class="getStatusBadgeClass(quote.status)"
+                class="px-2 py-1 text-xs font-medium rounded-full whitespace-nowrap"
+              >
+                {{ getStatusLabel(quote.status) }}
+              </span>
+            </div>
+
+            <!-- Linha 2: total + lucro -->
+            <div class="flex justify-between text-sm">
+              <span class="text-muted-foreground">Total</span>
+              <span class="font-semibold text-green-600">
+                R$ {{ (quote.totalPrice || 0).toFixed(2) }}
+              </span>
+            </div>
+            <div class="flex justify-between text-sm">
+              <span class="text-muted-foreground">Lucro</span>
+              <span class="font-medium text-blue-600">
+                R$ {{ (quote.totalProfit || 0).toFixed(2) }}
+              </span>
+            </div>
+
+            <!-- Linha 3: expiração + ações -->
+            <div class="flex items-center justify-between pt-1">
+              <span class="text-xs" :class="getExpirationClass(quote.expirationDate)">
+                Expira {{ formatDate(quote.expirationDate) }}
+              </span>
+              <div class="flex items-center gap-1">
+                <button
+                  @click="downloadPDF(quote.id)"
+                  :disabled="loadingPDF === quote.id"
+                  class="min-w-[44px] min-h-[44px] flex items-center justify-center text-blue-600 hover:bg-blue-50 rounded-lg active:scale-95 transition-transform disabled:opacity-50"
+                  title="Baixar PDF"
+                  aria-label="Baixar PDF"
+                >
+                  <svg
+                    v-if="loadingPDF === quote.id"
+                    class="animate-spin h-5 w-5"
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                  >
+                    <circle
+                      class="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      stroke-width="4"
+                    ></circle>
+                    <path
+                      class="opacity-75"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                    ></path>
+                  </svg>
+                  <svg
+                    v-else
+                    xmlns="http://www.w3.org/2000/svg"
+                    class="h-5 w-5"
+                    viewBox="0 0 20 20"
+                    fill="currentColor"
+                  >
+                    <path
+                      fill-rule="evenodd"
+                      d="M6 2a2 2 0 00-2 2v12a2 2 0 002 2h8a2 2 0 002-2V7.414A2 2 0 0015.414 6L12 2.586A2 2 0 0010.586 2H6zm5 6a1 1 0 10-2 0v3.586l-1.293-1.293a1 1 0 10-1.414 1.414l3 3a1 1 0 001.414 0l3-3a1 1 0 00-1.414-1.414L11 11.586V8z"
+                      clip-rule="evenodd"
+                    />
+                  </svg>
+                </button>
+                <button
+                  v-if="quote.status !== 'CONVERTED'"
+                  @click="openEditModal(quote)"
+                  class="min-w-[44px] min-h-[44px] flex items-center justify-center text-amber-600 hover:bg-amber-50 rounded-lg active:scale-95 transition-transform"
+                  title="Editar"
+                  aria-label="Editar"
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    class="h-5 w-5"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  >
+                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                  </svg>
+                </button>
+                <button
+                  @click="resendWhatsApp(quote)"
+                  class="min-w-[44px] min-h-[44px] flex items-center justify-center text-[#25D366] hover:bg-green-50 rounded-lg active:scale-95 transition-transform"
+                  title="WhatsApp"
+                  aria-label="Reenviar via WhatsApp"
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    class="h-5 w-5"
+                    viewBox="0 0 24 24"
+                    fill="currentColor"
+                  >
+                    <path
+                      d="M.057 24l1.687-6.163a11.867 11.867 0 0 1-1.587-5.946C.16 5.335 5.495 0 12.05 0a11.817 11.817 0 0 1 8.413 3.488 11.824 11.824 0 0 1 3.48 8.414c-.003 6.557-5.338 11.892-11.893 11.892a11.9 11.9 0 0 1-5.688-1.448L.057 24zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.742-.981zm11.387-5.464c-.074-.124-.272-.198-.57-.347-.297-.149-1.758-.868-2.031-.967-.272-.099-.47-.149-.669.149-.198.297-.768.967-.941 1.165-.173.198-.347.223-.644.074-.297-.149-1.255-.462-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.297-.347.446-.521.151-.172.2-.296.3-.495.099-.198.05-.372-.025-.521-.075-.148-.669-1.611-.916-2.206-.242-.579-.487-.501-.669-.51l-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.095 3.2 5.076 4.487.709.306 1.263.489 1.694.626.712.226 1.36.194 1.872.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413z"
+                    />
+                  </svg>
+                </button>
+                <button
+                  v-if="quote.status === 'VALID'"
+                  @click="openConvertDialog(quote)"
+                  class="min-w-[44px] min-h-[44px] flex items-center justify-center text-green-600 hover:bg-green-50 rounded-lg active:scale-95 transition-transform"
+                  title="Converter"
+                  aria-label="Converter para pedido"
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    class="h-5 w-5"
+                    viewBox="0 0 20 20"
+                    fill="currentColor"
+                  >
+                    <path
+                      fill-rule="evenodd"
+                      d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-8.707l-3-3a1 1 0 00-1.414 1.414L10.586 9H7a1 1 0 100 2h3.586l-1.293 1.293a1 1 0 101.414 1.414l3-3a1 1 0 000-1.414z"
+                      clip-rule="evenodd"
+                    />
+                  </svg>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Desktop: tabela tradicional -->
         <div v-else class="overflow-x-auto">
           <table class="w-full">
             <thead class="bg-muted">
@@ -242,10 +394,12 @@ import DialogHeader from '../components/ui/DialogHeader.vue'
 import DialogTitle from '../components/ui/DialogTitle.vue'
 import QuoteEditModal from '../components/QuoteEditModal.vue'
 import { useNotification } from '../composables/useNotification'
+import { useBreakpoint } from '../composables/useBreakpoint'
 import { buildWhatsAppUrl, buildQuoteMessage } from '../lib/whatsapp'
 
 const router = useRouter()
 const notification = useNotification()
+const { isMobile } = useBreakpoint()
 
 const quotes = ref<any[]>([])
 const customers = ref<any[]>([])
