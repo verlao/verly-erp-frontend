@@ -72,6 +72,20 @@ const canMarkContacted = computed(() => {
 const canMarkQualified = computed(() => {
   return props.lead?.status === 'CONTACTED'
 })
+
+// V2_17: tier badge color
+const tierBadgeClass = computed(() => {
+  const t = props.lead?.tier
+  if (t === '$$$') return 'bg-yellow-500 text-white'
+  if (t === '$$') return 'bg-blue-500 text-white'
+  if (t === '$') return 'bg-gray-400 text-white'
+  return ''
+})
+
+function formatBrl(n?: number | null): string {
+  if (n == null) return '—'
+  return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(n)
+}
 </script>
 
 <template>
@@ -195,6 +209,52 @@ const canMarkQualified = computed(() => {
         </section>
 
         <Separator />
+
+        <!-- V2_17: Product items (multi-item, aggregated with tier) -->
+        <section v-if="lead.items && lead.items.length > 0">
+          <div class="flex items-baseline justify-between mb-2 md:mb-3">
+            <h3 class="text-xs md:text-sm font-semibold text-foreground">
+              Produtos ({{ lead.items.length }})
+            </h3>
+            <span
+              v-if="lead.tier"
+              :class="['inline-flex items-center px-2 py-0.5 rounded font-bold text-xs', tierBadgeClass]"
+            >
+              {{ lead.tier }}
+            </span>
+          </div>
+          <div class="space-y-1.5 text-xs md:text-sm">
+            <div
+              v-for="(item, idx) in lead.items"
+              :key="item.id ?? idx"
+              class="flex items-start justify-between gap-2 py-1 border-b border-border last:border-0"
+            >
+              <div class="flex-1 min-w-0">
+                <span class="font-medium">{{ item.quantity || 1 }}x</span>
+                <span class="ml-1">{{ item.productType || 'ITEM' }}</span>
+                <span v-if="item.widthCm && item.heightCm" class="text-muted-foreground">
+                  {{ item.widthCm }}cm × {{ item.heightCm }}cm
+                </span>
+                <span v-if="item.color && item.color !== 'INCOLOR'" class="ml-1 text-muted-foreground">
+                  {{ item.color }}
+                </span>
+              </div>
+              <span class="text-foreground font-mono shrink-0">{{ formatBrl(item.estimatedValue) }}</span>
+            </div>
+          </div>
+          <div class="mt-2 pt-2 border-t border-border text-xs md:text-sm space-y-0.5">
+            <div class="flex justify-between font-semibold">
+              <span>Total estimado:</span>
+              <span class="font-mono">{{ formatBrl(lead.totalEstimatedValue) }}</span>
+            </div>
+            <div v-if="lead.totalEstimatedProfit != null" class="flex justify-between text-muted-foreground">
+              <span>Lucro estimado:</span>
+              <span class="font-mono">{{ formatBrl(lead.totalEstimatedProfit) }}</span>
+            </div>
+          </div>
+        </section>
+
+        <Separator v-if="lead.items && lead.items.length > 0" />
 
         <!-- Description -->
         <section>

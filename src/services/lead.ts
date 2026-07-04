@@ -13,6 +13,19 @@ export interface PaginatedResponse<T> {
 
 export type LeadStatus = 'NEW' | 'CONTACTED' | 'QUALIFIED' | 'CONVERTED' | 'LOST'
 export type LeadPriority = 'HIGH' | 'MEDIUM' | 'LOW'
+export type LeadTier = '$' | '$$' | '$$$'
+
+export interface LeadItemDTO {
+  id?: number
+  productType?: string
+  widthCm?: number
+  heightCm?: number
+  sheets?: number
+  color?: string
+  quantity: number
+  estimatedValue?: number
+  estimatedProfit?: number
+}
 
 export interface LeadDTO {
   id: number
@@ -43,6 +56,14 @@ export interface LeadDTO {
   lastContactDate?: string
   assignedTo?: string
   notes?: string[]
+
+  // V2_17 backend additions
+  items?: LeadItemDTO[]
+  totalEstimatedValue?: number
+  totalEstimatedProfit?: number
+  tier?: LeadTier
+  sourceExtractionId?: number
+  source?: string
 }
 
 const leadService = {
