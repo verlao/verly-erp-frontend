@@ -1,6 +1,6 @@
 <template>
   <nav
-    class="fixed bottom-0 left-0 right-0 z-40 bg-white dark:bg-gray-900 border-t border-border grid grid-cols-5 pb-[env(safe-area-inset-bottom)] shadow-[0_-2px_8px_rgba(0,0,0,0.04)]"
+    class="fixed bottom-0 left-0 right-0 z-40 bg-white border-t border-border grid grid-cols-5 pb-[env(safe-area-inset-bottom)] shadow-[0_-2px_8px_rgba(0,0,0,0.04)]"
     style="height: calc(4rem + env(safe-area-inset-bottom))"
   >
     <!-- Produtos -->

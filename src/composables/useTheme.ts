@@ -1,14 +1,11 @@
 import { ref, watch, onMounted } from 'vue'
-import { useStorage, usePreferredDark } from '@vueuse/core'
+import { useStorage } from '@vueuse/core'
 
 export type ThemeMode = 'light' | 'dark' | 'system'
 
 export function useTheme() {
   // Store the user's theme preference (light/dark/system)
-  const themeMode = useStorage<ThemeMode>('theme-mode', 'system')
-
-  // Get system dark mode preference
-  const preferredDark = usePreferredDark()
+  const themeMode = useStorage<ThemeMode>('theme-mode', 'light')
 
   // Current applied theme
   const isDark = ref(false)
@@ -26,17 +23,11 @@ export function useTheme() {
     isDark.value = dark
   }
 
-  // Determine if dark mode should be active based on themeMode
-  const resolveTheme = () => {
-    if (themeMode.value === 'dark') {
-      return true
-    } else if (themeMode.value === 'light') {
-      return false
-    } else {
-      // system
-      return preferredDark.value
-    }
-  }
+  // Determine if dark mode should be active based on themeMode.
+  // Dark mode ainda não é suportado app-wide (só chrome dos navs tinha
+  // estilo dark), então NÃO seguimos o prefers-color-scheme do SO: 'system'
+  // e 'light' renderizam claro. Reativar quando o dark mode for completo.
+  const resolveTheme = () => themeMode.value === 'dark'
 
   // Function to set theme mode
   const setThemeMode = (mode: ThemeMode) => {
@@ -47,13 +38,6 @@ export function useTheme() {
   // Watch for theme mode changes
   watch(themeMode, () => {
     applyTheme(resolveTheme())
-  })
-
-  // Watch for system preference changes when in system mode
-  watch(preferredDark, (newPreferredDark) => {
-    if (themeMode.value === 'system') {
-      applyTheme(newPreferredDark)
-    }
   })
 
   // Initialize theme
