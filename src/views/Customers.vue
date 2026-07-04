@@ -100,6 +100,19 @@
             </button>
           </div>
         </div>
+
+        <!-- Sentinela de scroll infinito (mobile) -->
+        <div ref="loadMoreSentinel" class="h-px"></div>
+        <div v-if="loadingMore" class="p-4 flex items-center justify-center gap-2 text-sm text-gray-500">
+          <svg class="animate-spin h-4 w-4 text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor" d="m4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+          </svg>
+          Carregando mais...
+        </div>
+        <div v-else-if="!hasMore" class="p-4 text-center text-xs text-gray-400">
+          Todos os clientes carregados
+        </div>
       </div>
 
       <!-- Desktop: tabela -->
@@ -162,9 +175,9 @@
         </table>
       </div>
       
-      <!-- Paginação -->
+      <!-- Paginação (desktop apenas; mobile usa scroll infinito) -->
       <Pagination
-        v-if="totalItems > 0"
+        v-if="!isMobile && totalItems > 0"
         :current-page="currentPage"
         :total-items="totalItems"
         :page-size="pageSize"
@@ -437,7 +450,8 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, watch } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
+import { useIntersectionObserver } from '@vueuse/core'
 import customerService from '../services/customer'
 import cepService from '../services/cep'
 import Pagination from '../components/ui/Pagination.vue'
@@ -451,6 +465,7 @@ const { isMobile } = useBreakpoint()
 
 const customers = ref<CustomerDTO[]>([])
 const loading = ref(true)
+const loadingMore = ref(false)
 const showModal = ref(false)
 const showDeleteModal = ref(false)
 const isEditing = ref(false)
@@ -468,6 +483,12 @@ const currentPage = ref(1)
 const pageSize = ref(25)
 const totalItems = ref(0)
 const totalPages = ref(0)
+
+// Scroll infinito (mobile): há mais itens pra carregar?
+const hasMore = computed(() => customers.value.length < totalItems.value)
+
+// Sentinela do scroll infinito (mobile)
+const loadMoreSentinel = ref<HTMLElement | null>(null)
 
 const currentCustomer = ref<CustomerDTO>({
   name: '',
@@ -491,6 +512,35 @@ const customerToDelete = ref<CustomerDTO | null>(null)
 onMounted(async () => {
   await loadCustomers()
 })
+
+// Dispara o carregamento da próxima página quando a sentinela entra na
+// viewport. useIntersectionObserver re-observa ao (re)montar o elemento e
+// limpa sozinho no unmount — só relevante no mobile (sentinela é v-if).
+useIntersectionObserver(
+  loadMoreSentinel,
+  ([entry]) => {
+    if (entry?.isIntersecting) loadMore()
+  },
+  { rootMargin: '200px' }
+)
+
+// Ao alternar entre mobile/desktop, reinicia a lista pra manter consistência
+// entre paginação por botões e scroll infinito.
+watch(isMobile, () => {
+  currentPage.value = 1
+  loadCustomers()
+})
+
+async function loadMore() {
+  if (loading.value || loadingMore.value || !hasMore.value) return
+  try {
+    loadingMore.value = true
+    currentPage.value++
+    await loadCustomers(true)
+  } finally {
+    loadingMore.value = false
+  }
+}
 
 // Watcher para busca automática de CEP
 watch(() => currentCustomer.value.addresses?.[0]?.cep, (newCep) => {
@@ -550,39 +600,37 @@ async function buscarCepAutomatico(cep: string) {
   }
 }
 
-async function loadCustomers() {
+// append=true acrescenta a página à lista (scroll infinito mobile);
+// append=false substitui (carga inicial e paginação por botões no desktop).
+async function loadCustomers(append = false) {
   try {
-    loading.value = true
-    console.log('Carregando clientes - Página:', currentPage.value, 'Tamanho:', pageSize.value)
-    
+    if (!append) loading.value = true
+
     const response: PaginatedResponse<CustomerDTO> = await customerService.getAll({
       page: currentPage.value - 1, // Spring Boot usa páginas baseadas em 0
       size: pageSize.value,
       sort: 'name,asc'
     })
-    
-    console.log('Resposta da API:', response)
-    console.log('Conteúdo:', response.content)
-    console.log('Total de elementos:', response.totalElements)
-    console.log('Total de páginas:', response.totalPages)
-    
-    customers.value = response.content
+
+    customers.value = append
+      ? [...customers.value, ...response.content]
+      : response.content
     totalItems.value = response.totalElements
     totalPages.value = response.totalPages
   } catch (error) {
     console.error('Erro ao carregar clientes:', error)
-    // Fallback para API sem paginação
-    try {
-      console.log('Tentando fallback para API sem paginação')
-      customers.value = await customerService.getAllNonPaginated()
-      console.log('Clientes do fallback:', customers.value)
-      totalItems.value = customers.value.length
-      totalPages.value = 1
-    } catch (fallbackError) {
-      console.error('Erro no fallback:', fallbackError)
+    // Fallback para API sem paginação (apenas na carga inicial)
+    if (!append) {
+      try {
+        customers.value = await customerService.getAllNonPaginated()
+        totalItems.value = customers.value.length
+        totalPages.value = 1
+      } catch (fallbackError) {
+        console.error('Erro no fallback:', fallbackError)
+      }
     }
   } finally {
-    loading.value = false
+    if (!append) loading.value = false
   }
 }
 
@@ -662,6 +710,7 @@ async function saveCustomer() {
     }
     
     showModal.value = false
+    currentPage.value = 1
     await loadCustomers()
   } catch (error) {
     console.error('Erro ao salvar cliente:', error)
@@ -683,6 +732,7 @@ async function deleteCustomer() {
     deleting.value = true
     await customerService.delete(customerToDelete.value.id)
     showDeleteModal.value = false
+    currentPage.value = 1
     await loadCustomers()
   } catch (error) {
     console.error('Erro ao excluir cliente:', error)
