@@ -72,7 +72,7 @@ const errorMessage = ref('')
 onMounted(() => {
   if (route.query.redirect) {
     redirectPath.value = route.query.redirect as string
-    if (!authStore.token) {
+    if (!authStore.isAuthenticated) {
       errorMessage.value = 'Por favor, faça login para acessar o sistema'
     }
   }
