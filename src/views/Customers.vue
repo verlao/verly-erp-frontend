@@ -186,6 +186,21 @@
       />
     </div>
 
+    <!-- Voltar ao topo (mobile, no scroll infinito) -->
+    <Transition name="fade">
+      <button
+        v-if="showBackToTop"
+        @click="scrollToTop"
+        class="fixed right-4 z-30 h-12 w-12 flex items-center justify-center rounded-full bg-blue-600 text-white shadow-lg active:scale-95 transition-transform"
+        style="bottom: calc(5rem + env(safe-area-inset-bottom))"
+        aria-label="Voltar ao topo"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="m18 15-6-6-6 6" />
+        </svg>
+      </button>
+    </Transition>
+
     <!-- Modal de Cliente -->
     <div v-if="showModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
       <div class="bg-white rounded-xl shadow-2xl w-full max-w-2xl mx-4 max-h-[90vh] overflow-y-auto">
@@ -451,7 +466,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue'
-import { useIntersectionObserver } from '@vueuse/core'
+import { useIntersectionObserver, useWindowScroll } from '@vueuse/core'
 import customerService from '../services/customer'
 import cepService from '../services/cep'
 import Pagination from '../components/ui/Pagination.vue'
@@ -489,6 +504,13 @@ const hasMore = computed(() => customers.value.length < totalItems.value)
 
 // Sentinela do scroll infinito (mobile)
 const loadMoreSentinel = ref<HTMLElement | null>(null)
+
+// Botão "voltar ao topo" (mobile): aparece depois de rolar um pouco
+const { y: scrollY } = useWindowScroll()
+const showBackToTop = computed(() => isMobile.value && scrollY.value > 500)
+function scrollToTop() {
+  window.scrollTo({ top: 0, behavior: 'smooth' })
+}
 
 const currentCustomer = ref<CustomerDTO>({
   name: '',
@@ -831,3 +853,14 @@ function handleReferenceInput(event: Event) {
   }
 }
 </script>
+
+<style scoped>
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.2s ease;
+}
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+}
+</style>
