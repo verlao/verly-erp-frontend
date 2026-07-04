@@ -65,7 +65,9 @@ jobs:
     name: Deploy to Swarm
     runs-on: self-hosted
     needs: build-and-deploy
-    environment: staging
+    environment:
+      name: staging
+      url: https://staging-painel.verlyvidracaria.com
 
     steps:
       - name: Deploy staging stack
@@ -96,4 +98,19 @@ jobs:
           done
           echo "Staging frontend deploy timeout"
           docker service logs --tail 30 "$SERVICE_NAME"
+          exit 1
+
+      - name: Smoke test public URL
+        run: |
+          URL="https://staging-painel.verlyvidracaria.com/"
+          for i in $(seq 1 12); do
+            CODE=$(curl -s -o /dev/null -w "%{http_code}" -m 10 "$URL" || true)
+            echo "[$i/12] GET $URL -> $CODE"
+            if [ "$CODE" = "200" ]; then
+              echo "Staging URL healthy ($URL)"
+              exit 0
+            fi
+            sleep 5
+          done
+          echo "Staging URL não respondeu 200"
           exit 1
