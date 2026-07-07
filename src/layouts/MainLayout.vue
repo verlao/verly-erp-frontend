@@ -28,7 +28,7 @@
         isMobile
           ? {
               paddingTop: 'calc(3.5rem + env(safe-area-inset-top))',
-              paddingBottom: 'calc(5rem + env(safe-area-inset-bottom))',
+              paddingBottom: 'calc(7rem + env(safe-area-inset-bottom))',
             }
           : {}
       "

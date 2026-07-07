@@ -62,12 +62,12 @@ const handleTabClick = (value: string) => {
     <div class="flex flex-col lg:flex-row gap-4">
       <!-- Tabs de Status -->
       <div class="flex-1">
-        <TabsList class="w-full">
+        <TabsList class="w-full justify-start overflow-x-auto">
           <TabsTrigger
             v-for="tab in tabs"
             :key="tab.value"
             :value="tab.value"
-            :class="statusFilter === tab.value ? 'bg-background' : ''"
+            :class="['shrink-0', statusFilter === tab.value ? 'bg-background' : '']"
             @click="handleTabClick(tab.value)"
           >
             <span class="flex items-center gap-2">

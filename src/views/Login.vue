@@ -1,5 +1,5 @@
 <template>
-  <div class="min-h-screen flex items-center justify-center bg-background">
+  <div class="min-h-screen flex items-center justify-center bg-background p-4">
     <div class="max-w-md w-full p-6 bg-card rounded-lg shadow-md border border-border">
       <div class="text-center mb-8">
         <h1 class="text-3xl font-bold text-foreground">Verly ERP</h1>
@@ -41,7 +41,7 @@
         <div>
           <button 
             type="submit" 
-            class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-primary-foreground bg-primary hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-ring disabled:opacity-50 disabled:cursor-not-allowed"
+            class="w-full flex justify-center py-2.5 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             :disabled="authStore.loading"
           >
             <span v-if="authStore.loading">Carregando...</span>
