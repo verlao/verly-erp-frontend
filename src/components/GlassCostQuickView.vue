@@ -1,16 +1,22 @@
 <template>
-  <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 w-full">
+  <div class="grid grid-cols-3 sm:grid-cols-6 gap-1.5 w-full">
     <div
       v-for="glass in displayedGlassCosts"
       :key="glass.id"
-      class="flex flex-col gap-1 px-3 py-2.5 rounded-lg border border-border bg-card/50 hover:bg-card hover:border-primary/50 hover:shadow-sm transition-all duration-200"
+      class="flex flex-col gap-0.5 px-2 py-2 rounded-lg border border-border bg-card/50 hover:bg-card hover:border-primary/50 hover:shadow-sm transition-all duration-200"
     >
       <!-- Linha 1: swatch + cor -->
-      <div class="flex items-center gap-1.5">
+      <div class="flex items-center gap-1">
         <span
           v-if="glass.color === 'CANELADO'"
-          class="w-2 h-3 rounded-sm flex-shrink-0"
+          class="w-1.5 h-3 rounded-sm flex-shrink-0"
           :style="caneladoSwatch"
+          aria-hidden="true"
+        ></span>
+        <span
+          v-else-if="glass.color === 'ESPELHO'"
+          class="w-1.5 h-3 rounded-sm flex-shrink-0"
+          :style="espelhoSwatch"
           aria-hidden="true"
         ></span>
         <span
@@ -25,24 +31,24 @@
           aria-hidden="true"
         ></span>
         <span
-          class="text-[10px] sm:text-xs font-medium text-muted-foreground uppercase tracking-wide truncate"
+          class="text-[9px] sm:text-[10px] font-medium text-muted-foreground uppercase tracking-wide truncate"
         >
           {{ glass.color }}
         </span>
       </div>
 
-      <!-- Linha 2: preço (editable, grande) -->
+      <!-- Linha 2: preço (editable) -->
       <EditableValue
         :model-value="glass.costPerSquareMeter"
         type="currency"
         @save="(value) => handleUpdate(glass.id!, glass.color, value)"
         variant="default"
         compact
-        class="text-sm font-semibold text-foreground"
+        class="text-xs sm:text-sm font-semibold text-foreground"
       />
 
       <!-- Linha 3: unidade -->
-      <span class="text-[10px] text-muted-foreground -mt-0.5">por m²</span>
+      <span class="text-[9px] text-muted-foreground -mt-0.5">por m²</span>
     </div>
   </div>
 </template>
@@ -57,15 +63,21 @@ const { success: showSuccess, error: showError } = useNotification()
 
 const glassCosts = ref<GlassCostDTO[]>([])
 
-// Cores prioritárias no display. CANELADO entra junto pra ficar editável
-// mesmo quando ainda não tem produto associado (per user spec).
-const priorityColors = ['INCOLOR', 'VERDE', 'FUME', 'CANELADO']
+// Tipos/cores prioritários no display. CANELADO e ESPELHO entram junto pra
+// ficarem editáveis mesmo sem produto associado (per user spec).
+const priorityColors = ['INCOLOR', 'VERDE', 'FUME', 'CANELADO', 'ESPELHO']
 
 // Swatch textura pra vidro canelado — listra diagonal sugerindo o
 // padrão ondulado da peça.
 const caneladoSwatch = {
   background:
     'repeating-linear-gradient(45deg, #94a3b8 0 2px, #cbd5e1 2px 4px)',
+}
+
+// Swatch pra espelho — gradiente metálico/reflexivo.
+const espelhoSwatch = {
+  background:
+    'linear-gradient(135deg, #e2e8f0 0%, #94a3b8 45%, #f8fafc 55%, #64748b 100%)',
 }
 
 const displayedGlassCosts = computed(() => {

@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia'
 import axios from 'axios'
+import { isTokenExpired } from '../lib/jwt'
 
 interface User {
   id: number
@@ -35,7 +36,7 @@ export const useAuthStore = defineStore('auth', {
     };
   },
   getters: {
-    isAuthenticated: (state) => !!state.token,
+    isAuthenticated: (state) => (state.token ? !isTokenExpired(state.token) : false),
     getUser: (state) => state.user,
     isAdmin: (state) => state.user?.roles.includes('ROLE_ADMIN') || false
   },
@@ -101,8 +102,11 @@ export const useAuthStore = defineStore('auth', {
     
     initializeAuth() {
       const token = localStorage.getItem('token')
-      if (token) {
+      if (token && !isTokenExpired(token)) {
         axios.defaults.headers.common['Authorization'] = `Bearer ${token}`
+      } else if (token) {
+        // Token expirado persistido no boot — limpa o estado (desloga).
+        this.logout()
       }
     }
   }

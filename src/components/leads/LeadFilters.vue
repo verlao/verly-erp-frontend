@@ -10,6 +10,7 @@ import Badge from '../ui/Badge.vue'
 const props = defineProps<{
   search?: string
   statusFilter?: string
+  tierFilter?: string
   counts?: {
     all: number
     new: number
@@ -23,12 +24,25 @@ const props = defineProps<{
 const emit = defineEmits<{
   'update:search': [value: string]
   'update:statusFilter': [value: string]
+  'update:tierFilter': [value: string]
   'clear': []
 }>()
 
 const hasActiveFilters = computed(() => {
-  return props.search || (props.statusFilter && props.statusFilter !== 'all')
+  return (
+    props.search ||
+    (props.statusFilter && props.statusFilter !== 'all') ||
+    (props.tierFilter && props.tierFilter !== 'all')
+  )
 })
+
+// V2_17: tier filter tabs — 4 buckets on top of status tabs
+const tierTabs = [
+  { value: 'all', label: 'Todos os tiers' },
+  { value: '$$$', label: '$$$ Alto', class: 'text-yellow-600' },
+  { value: '$$', label: '$$ Médio', class: 'text-blue-600' },
+  { value: '$', label: '$ Baixo', class: 'text-gray-600' },
+]
 
 const tabs = computed(() => [
   { value: 'all', label: 'Todos', count: props.counts?.all || 0 },
@@ -48,12 +62,12 @@ const handleTabClick = (value: string) => {
     <div class="flex flex-col lg:flex-row gap-4">
       <!-- Tabs de Status -->
       <div class="flex-1">
-        <TabsList class="w-full">
+        <TabsList class="w-full justify-start overflow-x-auto">
           <TabsTrigger
             v-for="tab in tabs"
             :key="tab.value"
             :value="tab.value"
-            :class="statusFilter === tab.value ? 'bg-background' : ''"
+            :class="['shrink-0', statusFilter === tab.value ? 'bg-background' : '']"
             @click="handleTabClick(tab.value)"
           >
             <span class="flex items-center gap-2">
@@ -88,6 +102,24 @@ const handleTabClick = (value: string) => {
           </Button>
         </div>
       </div>
+    </div>
+
+    <!-- V2_17: tier filter row -->
+    <div class="mt-3 flex flex-wrap gap-1.5">
+      <Button
+        v-for="tab in tierTabs"
+        :key="tab.value"
+        variant="ghost"
+        size="sm"
+        :class="[
+          'text-xs h-7 px-2.5',
+          (tierFilter || 'all') === tab.value ? 'bg-accent font-semibold' : '',
+          tab.class || '',
+        ]"
+        @click="emit('update:tierFilter', tab.value)"
+      >
+        {{ tab.label }}
+      </Button>
     </div>
   </div>
 </template>

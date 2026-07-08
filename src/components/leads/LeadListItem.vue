@@ -57,6 +57,37 @@ const priorityClass = computed(() => {
   if (priority.value === 'HIGH') return 'border-l-4 border-l-red-500'
   return ''
 })
+
+// V2_17: tier badge classes ($ / $$ / $$$)
+const tierClass = computed(() => {
+  const t = props.lead.tier
+  if (t === '$$$') return 'bg-yellow-500 text-white'
+  if (t === '$$') return 'bg-blue-500 text-white'
+  if (t === '$') return 'bg-gray-400 text-white'
+  return ''
+})
+
+// V2_17: compact items summary — "PORTA 200×80 (1x) + espelho (2x)"
+const itemsSummary = computed(() => {
+  const items = props.lead.items || []
+  if (items.length === 0) return ''
+  const parts = items.slice(0, 2).map((i) => {
+    const qty = i.quantity && i.quantity > 1 ? ` (${i.quantity}x)` : ''
+    const dims = i.widthCm && i.heightCm ? ` ${i.widthCm}×${i.heightCm}` : ''
+    return `${i.productType || 'ITEM'}${dims}${qty}`
+  })
+  const extra = items.length > 2 ? ` +${items.length - 2}` : ''
+  return parts.join(' + ') + extra
+})
+
+// Format R$ 1.240,00
+const brl = (n?: number) =>
+  n == null
+    ? null
+    : new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(n)
+
+const totalDisplay = computed(() => brl(props.lead.totalEstimatedValue))
+const profitDisplay = computed(() => brl(props.lead.totalEstimatedProfit))
 </script>
 
 <template>
@@ -95,6 +126,15 @@ const priorityClass = computed(() => {
               class="flex h-1.5 w-1.5 md:h-2 md:w-2 shrink-0 rounded-full bg-blue-500"
             />
 
+            <!-- V2_17: tier badge — $ / $$ / $$$ -->
+            <span
+              v-if="lead.tier"
+              :class="['inline-flex items-center px-1.5 py-0.5 rounded font-bold text-[10px] md:text-xs shrink-0', tierClass]"
+              :title="`Valor estimado: ${totalDisplay}`"
+            >
+              {{ lead.tier }}
+            </span>
+
             <h4 :class="['truncate text-xs md:text-sm', isUnread ? 'font-bold' : 'font-semibold']">
               {{ lead.name }}
             </h4>
@@ -122,8 +162,21 @@ const priorityClass = computed(() => {
           </span>
         </div>
 
+        <!-- V2_17: items compact list -->
+        <p v-if="itemsSummary" class="text-[11px] md:text-xs text-foreground font-medium truncate mb-0.5">
+          {{ itemsSummary }}
+        </p>
+
+        <!-- V2_17: total + profit line -->
+        <p v-if="totalDisplay" class="text-[11px] md:text-xs text-muted-foreground mb-0.5 md:mb-1">
+          {{ totalDisplay }}
+          <span v-if="profitDisplay" class="text-muted-foreground/70">
+            (lucro {{ profitDisplay }})
+          </span>
+        </p>
+
         <!-- Description preview - Hidden on very small screens -->
-        <p class="hidden sm:block text-xs text-muted-foreground line-clamp-2 mb-1 md:mb-2">
+        <p v-if="!itemsSummary" class="hidden sm:block text-xs text-muted-foreground line-clamp-2 mb-1 md:mb-2">
           {{ lead.description }}
         </p>
 

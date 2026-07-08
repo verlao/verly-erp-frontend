@@ -20,6 +20,7 @@
     <LeadFilters
       v-model:search="search"
       v-model:status-filter="statusFilter"
+      v-model:tier-filter="tierFilter"
       :counts="counts"
       @clear="clearFilters"
     />
@@ -132,6 +133,7 @@ const leads = ref<LeadDTO[]>([])
 const loading = ref(true)
 const search = ref('')
 const statusFilter = ref('all')
+const tierFilter = ref('all')
 const showMobilePreview = ref(false)
 const counts = ref({
   all: 0,
@@ -174,6 +176,11 @@ const filteredLeads = computed(() => {
     filtered = filtered.filter(lead =>
       (lead.status || 'NEW') === statusFilter.value
     )
+  }
+
+  // V2_17: Tier filter ($ / $$ / $$$)
+  if (tierFilter.value !== 'all') {
+    filtered = filtered.filter(lead => lead.tier === tierFilter.value)
   }
 
   // Search filter
@@ -376,6 +383,7 @@ const handleSendEmail = () => {
 const clearFilters = () => {
   search.value = ''
   statusFilter.value = 'all'
+  tierFilter.value = 'all'
 }
 
 const handlePageChange = (page: number) => {
@@ -418,7 +426,7 @@ useLeadKeyboard({
 })
 
 // Watch for filter changes
-watch([search, statusFilter], () => {
+watch([search, statusFilter, tierFilter], () => {
   if (currentPage.value !== 1) {
     currentPage.value = 1
   }
