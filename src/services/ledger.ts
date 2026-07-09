@@ -36,6 +36,7 @@ export interface LedgerResponseDTO {
   description: string
   documentType: string
   documentNumber?: string
+  paymentMethod?: string
   orderId?: number
   customerId?: number
   customerName?: string
@@ -61,6 +62,8 @@ export interface LedgerSummaryDTO {
   totalExpenses: number
   balance: number
   count: number
+  pixIn: number
+  pixOut: number
 }
 
 export interface PaginatedResponse<T> {

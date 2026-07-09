@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { Mail, Phone, MapPin, Calendar, Target, Monitor, ExternalLink, User, MessageSquare } from 'lucide-vue-next'
+import { useRouter } from 'vue-router'
+import { Mail, Phone, MapPin, Calendar, Target, Monitor, ExternalLink, User, MessageSquare, FileText } from 'lucide-vue-next'
 import Button from '../ui/Button.vue'
 import Badge from '../ui/Badge.vue'
 import Separator from '../ui/Separator.vue'
@@ -20,6 +21,12 @@ const emit = defineEmits<{
   openWhatsapp: []
   sendEmail: []
 }>()
+
+const router = useRouter()
+
+function goToQuote() {
+  if (props.lead?.id) router.push(`/leads/${props.lead.id}/orcamento`)
+}
 
 const statusConfig = computed(() => {
   if (!props.lead?.status) return { label: 'Novo', variant: 'info' as const }
@@ -264,6 +271,16 @@ function formatBrl(n?: number | null): string {
         class="border-t border-border bg-white p-3 md:p-4 space-y-2 shrink-0"
         :style="isMobile ? 'padding-bottom: calc(0.75rem + env(safe-area-inset-bottom))' : undefined"
       >
+        <Button
+          v-if="canConvert"
+          variant="default"
+          class="w-full"
+          @click="goToQuote"
+        >
+          <FileText class="w-4 h-4 mr-2" />
+          Gerar orçamento
+        </Button>
+
         <Button
           v-if="lead.phone"
           variant="default"

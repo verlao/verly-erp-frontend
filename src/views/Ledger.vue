@@ -4,8 +4,8 @@
       <!-- Header -->
       <div class="flex items-center justify-between mb-4 md:mb-8">
         <div>
-          <h1 class="text-xl md:text-2xl font-semibold text-foreground">Lançamentos</h1>
-          <p class="text-muted-foreground mt-1 hidden md:block">Registre pagamentos e despesas</p>
+          <h1 class="text-xl md:text-2xl font-semibold text-foreground">Financeiro</h1>
+          <p class="text-muted-foreground mt-1 hidden md:block">Entrada e saída de PIX e o saldo do período</p>
         </div>
         <!-- Mobile: icon buttons -->
         <div class="flex gap-2 md:hidden">
@@ -37,8 +37,8 @@
               <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22,7 13.5,15.5 8.5,10.5 2,17"/><polyline points="16,7 22,7 22,13"/></svg>
             </div>
             <div class="md:ml-4">
-              <h2 class="text-muted-foreground text-xs md:text-sm font-medium">Receitas</h2>
-              <p v-if="!loadingSummary" class="text-base md:text-2xl font-bold text-emerald-600">{{ currency.formatCurrency(summary.totalRevenue) }}</p>
+              <h2 class="text-muted-foreground text-xs md:text-sm font-medium">PIX Entrada</h2>
+              <p v-if="!loadingSummary" class="text-base md:text-2xl font-bold text-emerald-600">{{ currency.formatCurrency(summary.pixIn) }}</p>
               <Skeleton v-else class="h-5 md:h-7 w-16 md:w-28" />
             </div>
           </div>
@@ -50,8 +50,8 @@
               <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22,17 13.5,8.5 8.5,13.5 2,7"/><polyline points="16,17 22,17 22,11"/></svg>
             </div>
             <div class="md:ml-4">
-              <h2 class="text-muted-foreground text-xs md:text-sm font-medium">Despesas</h2>
-              <p v-if="!loadingSummary" class="text-base md:text-2xl font-bold text-red-600">{{ currency.formatCurrency(summary.totalExpenses) }}</p>
+              <h2 class="text-muted-foreground text-xs md:text-sm font-medium">PIX Saída</h2>
+              <p v-if="!loadingSummary" class="text-base md:text-2xl font-bold text-red-600">{{ currency.formatCurrency(summary.pixOut) }}</p>
               <Skeleton v-else class="h-5 md:h-7 w-16 md:w-28" />
             </div>
           </div>
@@ -425,7 +425,7 @@ const ledgers = ref<LedgerResponseDTO[]>([])
 const loading = ref(true)
 const loadingSummary = ref(true)
 const actionLoading = ref<number | null>(null)
-const summary = ref<LedgerSummaryDTO>({ totalRevenue: 0, totalExpenses: 0, balance: 0, count: 0 })
+const summary = ref<LedgerSummaryDTO>({ totalRevenue: 0, totalExpenses: 0, balance: 0, count: 0, pixIn: 0, pixOut: 0 })
 
 // Pagination
 const currentPage = ref(1)

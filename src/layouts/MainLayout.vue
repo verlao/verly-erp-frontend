@@ -140,7 +140,7 @@ const pageTitle = computed(() => {
   if (route.path.endsWith('new-quote')) return 'Novo Orçamento'
   if (route.path.endsWith('quotes')) return 'Orçamentos'
   if (route.path.endsWith('orders')) return 'Pedidos'
-  if (route.path.endsWith('ledger')) return 'Lançamentos Contábeis'
+  if (route.path.endsWith('ledger')) return 'Financeiro'
   if (route.path.endsWith('leads')) return 'Leads'
   if (route.path.endsWith('users')) return 'Usuários'
   return 'Verly ERP'
