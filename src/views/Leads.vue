@@ -1,10 +1,10 @@
 <template>
   <div>
-    <!-- Header inline (padrão do projeto) -->
-    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+    <!-- Título "Leads" já vem do MainLayout (MobileTopBar no mobile / header no desktop);
+         aqui fica só o subtítulo pra não duplicar. -->
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
       <div>
-        <h1 class="text-2xl font-semibold text-foreground">Leads</h1>
-        <p class="text-sm text-muted-foreground mt-1">Gerencie leads e converta em clientes</p>
+        <p class="text-sm text-muted-foreground">Gerencie leads e converta em clientes</p>
       </div>
 
       <!-- Ações em lote -->
@@ -57,8 +57,8 @@
         </div>
       </div>
 
-      <!-- Mobile: Lista Only -->
-      <div class="md:hidden max-h-[600px] overflow-y-auto">
+      <!-- Mobile: Lista Only (scroll infinito com a página) -->
+      <div class="md:hidden">
         <LeadList
           :leads="filteredLeads"
           :selected-id="selectedId"
@@ -68,60 +68,115 @@
           @toggle="toggleCheck"
           @toggle-all="toggleAll"
         />
+
+        <!-- Sentinela de scroll infinito (mobile) -->
+        <div ref="loadMoreSentinel" class="h-px"></div>
+        <div v-if="loadingMore" class="p-4 flex items-center justify-center gap-2 text-sm text-gray-500">
+          <svg class="animate-spin h-4 w-4 text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor" d="m4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+          </svg>
+          Carregando mais...
+        </div>
+        <div
+          v-else-if="!hasMore && filteredLeads.length > 0"
+          class="p-4 text-center text-xs text-gray-400"
+        >
+          Todos os leads carregados
+        </div>
       </div>
     </div>
 
-    <!-- Paginação -->
-    <div v-if="totalPages > 1" class="mt-4 flex justify-center">
-      <Pagination
-        :current-page="currentPage"
-        :total-pages="totalPages"
-        :total-items="totalItems"
-        :page-size="pageSize"
-        @page-changed="handlePageChange"
-        @page-size-changed="handlePageSizeChange"
-      />
-    </div>
+    <!-- Voltar ao topo (mobile, no scroll infinito) -->
+    <Transition name="fade">
+      <button
+        v-if="showBackToTop"
+        @click="scrollToTop"
+        class="fixed right-4 z-30 h-12 w-12 flex items-center justify-center rounded-full bg-blue-600 text-white shadow-lg active:scale-95 transition-transform"
+        style="bottom: calc(5rem + env(safe-area-inset-bottom))"
+        aria-label="Voltar ao topo"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="m18 15-6-6-6 6" />
+        </svg>
+      </button>
+    </Transition>
 
-    <!-- Mobile: Dialog Preview -->
-    <Dialog v-model:open="showMobilePreview">
-      <DialogHeader class="relative">
-        <DialogTitle>{{ selectedLead?.name || 'Detalhes do Lead' }}</DialogTitle>
-        <DialogClose @click="showMobilePreview = false" />
-      </DialogHeader>
-      <DialogContent>
-        <LeadPreview
-          v-if="selectedLead"
-          :lead="selectedLead"
-          :is-mobile="true"
-          @convert="handleConvert"
-          @mark-contacted="handleMarkContacted"
-          @mark-qualified="handleMarkQualified"
-          @mark-lost="handleMarkLost"
-          @open-whatsapp="handleOpenWhatsapp"
-          @send-email="handleSendEmail"
-        />
-      </DialogContent>
-    </Dialog>
+    <!-- Mobile: Bottom Sheet Preview -->
+    <Teleport to="body">
+      <Transition
+        enter-active-class="transition-opacity duration-200"
+        enter-from-class="opacity-0"
+        enter-to-class="opacity-100"
+        leave-active-class="transition-opacity duration-200"
+        leave-from-class="opacity-100"
+        leave-to-class="opacity-0"
+      >
+        <div
+          v-if="showMobilePreview"
+          class="fixed inset-0 z-50 bg-black/50 flex items-end md:hidden"
+          @click="showMobilePreview = false"
+        >
+          <Transition
+            enter-active-class="transition-transform duration-300 ease-out"
+            enter-from-class="translate-y-full"
+            enter-to-class="translate-y-0"
+            leave-active-class="transition-transform duration-200 ease-in"
+            leave-from-class="translate-y-0"
+            leave-to-class="translate-y-full"
+          >
+            <div
+              v-if="showMobilePreview"
+              class="w-full bg-background rounded-t-2xl shadow-2xl max-h-[85vh] flex flex-col overflow-hidden"
+              @click.stop
+            >
+              <!-- Handle + close -->
+              <div class="relative shrink-0 pt-2">
+                <div class="mx-auto h-1.5 w-10 rounded-full bg-gray-300"></div>
+                <button
+                  type="button"
+                  class="absolute right-2 top-1 min-w-[44px] min-h-[44px] flex items-center justify-center text-muted-foreground hover:text-foreground"
+                  aria-label="Fechar"
+                  @click="showMobilePreview = false"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M18 6 6 18M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+
+              <div class="flex-1 min-h-0 overflow-hidden">
+                <LeadPreview
+                  v-if="selectedLead"
+                  :lead="selectedLead"
+                  :is-mobile="true"
+                  @convert="handleConvert"
+                  @mark-contacted="handleMarkContacted"
+                  @mark-qualified="handleMarkQualified"
+                  @mark-lost="handleMarkLost"
+                  @open-whatsapp="handleOpenWhatsapp"
+                  @send-email="handleSendEmail"
+                />
+              </div>
+            </div>
+          </Transition>
+        </div>
+      </Transition>
+    </Teleport>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, watch } from 'vue'
-import { useWindowSize } from '@vueuse/core'
+import { ref, computed, onMounted } from 'vue'
+import { useWindowSize, useIntersectionObserver, useWindowScroll } from '@vueuse/core'
 import { useNotificationStore } from '../stores/notification'
 import LeadList from '../components/leads/LeadList.vue'
 import LeadPreview from '../components/leads/LeadPreview.vue'
 import LeadFilters from '../components/leads/LeadFilters.vue'
-import Pagination from '../components/ui/Pagination.vue'
 import Button from '../components/ui/Button.vue'
-import Dialog from '../components/ui/Dialog.vue'
-import DialogHeader from '../components/ui/DialogHeader.vue'
-import DialogContent from '../components/ui/DialogContent.vue'
-import DialogTitle from '../components/ui/DialogTitle.vue'
-import DialogClose from '../components/ui/DialogClose.vue'
 import leadService from '../services/lead'
 import type { LeadDTO, PaginatedResponse } from '../services/lead'
+import { buildWhatsAppUrl } from '../lib/whatsapp'
 import { useLeadSelection } from '../composables/useLeadSelection'
 import { useLeadKeyboard } from '../composables/useLeadKeyboard'
 
@@ -131,6 +186,7 @@ const notification = useNotificationStore()
 // State
 const leads = ref<LeadDTO[]>([])
 const loading = ref(true)
+const loadingMore = ref(false)
 const search = ref('')
 const statusFilter = ref('all')
 const tierFilter = ref('all')
@@ -167,6 +223,40 @@ const {
 const { width } = useWindowSize()
 const isMobile = computed(() => width.value < 768)
 
+// Scroll infinito (mobile): há mais páginas pra carregar?
+const hasMore = computed(() => currentPage.value < totalPages.value)
+
+// Sentinela do scroll infinito (mobile)
+const loadMoreSentinel = ref<HTMLElement | null>(null)
+
+async function loadMore() {
+  if (loading.value || loadingMore.value || !hasMore.value) return
+  try {
+    loadingMore.value = true
+    currentPage.value++
+    await fetchLeads(true)
+  } finally {
+    loadingMore.value = false
+  }
+}
+
+// Dispara o carregamento da próxima página quando a sentinela entra na
+// viewport. Só relevante no mobile (a sentinela vive dentro do bloco md:hidden).
+useIntersectionObserver(
+  loadMoreSentinel,
+  ([entry]) => {
+    if (entry?.isIntersecting) loadMore()
+  },
+  { rootMargin: '200px' }
+)
+
+// Botão "voltar ao topo" (mobile): aparece depois de rolar um pouco
+const { y } = useWindowScroll()
+const showBackToTop = computed(() => isMobile.value && y.value > 500)
+function scrollToTop() {
+  window.scrollTo({ top: 0, behavior: 'smooth' })
+}
+
 // Filtered leads
 const filteredLeads = computed(() => {
   let filtered = leads.value
@@ -197,10 +287,12 @@ const filteredLeads = computed(() => {
   return filtered
 })
 
-// Fetch leads
-const fetchLeads = async () => {
+// Fetch leads.
+// append=true acrescenta a página à lista (scroll infinito);
+// append=false substitui (carga inicial e troca de filtros).
+const fetchLeads = async (append = false) => {
   try {
-    loading.value = true
+    if (!append) loading.value = true
     const response: PaginatedResponse<LeadDTO> = await leadService.getAll({
       page: currentPage.value - 1,
       size: pageSize.value,
@@ -208,10 +300,10 @@ const fetchLeads = async () => {
     })
 
     if (response && typeof response === 'object' && 'content' in response) {
-      leads.value = response.content
+      leads.value = append ? [...leads.value, ...response.content] : response.content
       totalItems.value = response.totalElements
       totalPages.value = response.totalPages
-    } else {
+    } else if (!append) {
       const fallbackResponse = await leadService.getAllNonPaginated()
       leads.value = Array.isArray(fallbackResponse) ? fallbackResponse : []
       totalItems.value = leads.value.length
@@ -219,17 +311,19 @@ const fetchLeads = async () => {
     }
   } catch (error) {
     console.error('Erro ao carregar leads:', error)
-    try {
-      const fallbackResponse = await leadService.getAllNonPaginated()
-      leads.value = Array.isArray(fallbackResponse) ? fallbackResponse : []
-      totalItems.value = leads.value.length
-      totalPages.value = 1
-    } catch (fallbackError) {
-      console.error('Erro no fallback:', fallbackError)
-      leads.value = []
+    if (!append) {
+      try {
+        const fallbackResponse = await leadService.getAllNonPaginated()
+        leads.value = Array.isArray(fallbackResponse) ? fallbackResponse : []
+        totalItems.value = leads.value.length
+        totalPages.value = 1
+      } catch (fallbackError) {
+        console.error('Erro no fallback:', fallbackError)
+        leads.value = []
+      }
     }
   } finally {
-    loading.value = false
+    if (!append) loading.value = false
   }
 }
 
@@ -370,9 +464,17 @@ const handleMarkLost = async () => {
 }
 
 const handleOpenWhatsapp = () => {
-  if (!selectedLead.value?.phone) return
-  const phone = selectedLead.value.phone.replace(/\D/g, '')
-  window.open(`https://wa.me/55${phone}`, '_blank')
+  const lead = selectedLead.value
+  if (!lead?.phone) return
+  // Abre a conversa já com uma saudação — 1 toque, sem fricção (platform-aware:
+  // wa.me no mobile, web.whatsapp no desktop). Reutiliza lib/whatsapp.
+  const firstName = (lead.name || '').trim().split(' ')[0] || ''
+  const greeting = firstName ? `Olá ${firstName}! ` : 'Olá! '
+  const message =
+    `${greeting}Aqui é da Verly Vidraçaria 👋 ` +
+    'Recebemos seu contato sobre um orçamento e queremos te ajudar. ' +
+    'Podemos falar sobre os detalhes?'
+  window.open(buildWhatsAppUrl(lead.phone, message), '_blank', 'noopener,noreferrer')
 }
 
 const handleSendEmail = () => {
@@ -384,17 +486,6 @@ const clearFilters = () => {
   search.value = ''
   statusFilter.value = 'all'
   tierFilter.value = 'all'
-}
-
-const handlePageChange = (page: number) => {
-  currentPage.value = page
-  fetchLeads()
-}
-
-const handlePageSizeChange = (size: number) => {
-  pageSize.value = size
-  currentPage.value = 1
-  fetchLeads()
 }
 
 // Keyboard shortcuts
@@ -425,12 +516,8 @@ useLeadKeyboard({
   onShowQualified: () => statusFilter.value = 'QUALIFIED'
 })
 
-// Watch for filter changes
-watch([search, statusFilter, tierFilter], () => {
-  if (currentPage.value !== 1) {
-    currentPage.value = 1
-  }
-})
+// Filtros são aplicados client-side sobre os leads já carregados
+// (filteredLeads reage aos refs), então não há refetch nem reset de página aqui.
 
 // Init
 onMounted(async () => {
@@ -438,3 +525,14 @@ onMounted(async () => {
   await fetchCounts()
 })
 </script>
+
+<style scoped>
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.2s ease;
+}
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+}
+</style>
