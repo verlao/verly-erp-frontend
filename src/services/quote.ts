@@ -19,9 +19,35 @@ export interface QuoteDTO {
   daysUntilExpiration?: number
 }
 
+// Track 1 Fase 1: orçamento gerado a partir de um lead (sem cliente/CPF).
+export interface CreateQuoteFromLeadItem {
+  type: string
+  category?: string
+  pricingBasis?: string
+  color?: string
+  sheets?: number
+  width?: number
+  height?: number
+  areaM2?: number
+  quantity?: number
+}
+
+export interface CreateQuoteFromLeadPayload {
+  leadId: number
+  items: CreateQuoteFromLeadItem[]
+  discount?: number
+  finalPriceOverride?: number
+  observations?: string
+}
+
 const quoteService = {
   create: async (quote: QuoteDTO) => {
     const response = await api.post('/quotes', quote)
+    return response.data
+  },
+
+  createFromLead: async (payload: CreateQuoteFromLeadPayload) => {
+    const response = await api.post('/quotes/from-lead', payload)
     return response.data
   },
 

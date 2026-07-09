@@ -55,6 +55,11 @@ const routes = [
         component: () => import('../views/Leads.vue'),
       },
       {
+        path: 'leads/:id/orcamento',
+        name: 'LeadQuote',
+        component: () => import('../views/LeadQuote.vue'),
+      },
+      {
         path: 'users',
         name: 'Users',
         component: () => import('../views/Users.vue'),

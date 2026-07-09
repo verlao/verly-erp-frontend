@@ -221,7 +221,7 @@
               <path d="M8 11h8" />
             </svg>
           </span>
-          <span :class="{ 'sr-only': collapsed }">Lançamentos</span>
+          <span :class="{ 'sr-only': collapsed }">Financeiro</span>
         </Button>
       </router-link>
       <router-link
