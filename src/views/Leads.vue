@@ -296,8 +296,8 @@ const fetchLeads = async (append = false) => {
     if (!append) loading.value = true
     const response: PaginatedResponse<LeadDTO> = await leadService.getAll({
       page: currentPage.value - 1,
-      size: pageSize.value,
-      sort: 'createdDate,desc'
+      size: pageSize.value
+      // sem sort explícito → backend ordena por prioridade (maior lucro → mais recente)
     })
 
     if (response && typeof response === 'object' && 'content' in response) {
