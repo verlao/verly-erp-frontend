@@ -23,7 +23,9 @@ const creditCardCostService = {
   },
   
   update: async (creditCardCost: CreditCardCostDTO) => {
-    const response = await api.put(`/credit-card-costs/${creditCardCost.id}`, creditCardCost)
+    // Config singleton: o backend não retorna `id` no DTO, então usamos o endpoint
+    // sem id (editCost→edit). Antes usava /${id} → PUT /undefined → 400.
+    const response = await api.put('/credit-card-costs', creditCardCost)
     return response.data
   },
   
