@@ -90,7 +90,7 @@ function formatBrl(n?: number | null): string {
 </script>
 
 <template>
-  <div class="flex flex-col h-full bg-background">
+  <div class="flex flex-col h-full bg-white">
     <!-- Empty state -->
     <div v-if="!lead" class="flex flex-col items-center justify-center h-full p-8 text-center">
       <div class="w-16 h-16 mb-4 text-muted-foreground">
@@ -261,7 +261,7 @@ function formatBrl(n?: number | null): string {
       <!-- Sticky bottom CTA bar: WhatsApp em destaque, depois converter/status,
            e "marcar como perdido" como link discreto/destrutivo. -->
       <div
-        class="border-t border-border bg-background p-3 md:p-4 space-y-2 shrink-0"
+        class="border-t border-border bg-white p-3 md:p-4 space-y-2 shrink-0"
         :style="isMobile ? 'padding-bottom: calc(0.75rem + env(safe-area-inset-bottom))' : undefined"
       >
         <Button

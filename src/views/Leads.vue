@@ -114,7 +114,7 @@
       >
         <div
           v-if="showMobilePreview"
-          class="fixed inset-0 z-50 bg-black/50 flex items-end md:hidden"
+          class="fixed inset-0 z-[60] bg-black/50 flex items-end md:hidden"
           @click="showMobilePreview = false"
         >
           <Transition
@@ -127,7 +127,7 @@
           >
             <div
               v-if="showMobilePreview"
-              class="w-full bg-background rounded-t-2xl shadow-2xl max-h-[85vh] flex flex-col overflow-hidden"
+              class="w-full bg-white rounded-t-2xl shadow-2xl max-h-[85vh] flex flex-col overflow-hidden"
               @click.stop
             >
               <!-- Handle + close -->
