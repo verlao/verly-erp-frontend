@@ -93,6 +93,11 @@ const brl = (n?: number) =>
 
 const totalDisplay = computed(() => brl(props.lead.totalEstimatedValue))
 const profitDisplay = computed(() => brl(props.lead.totalEstimatedProfit))
+
+// Qtd total de produtos (soma das quantidades dos itens)
+const productCount = computed(() =>
+  (props.lead.items || []).reduce((s, i) => s + (i.quantity || 1), 0)
+)
 </script>
 
 <template>
@@ -150,10 +155,16 @@ const profitDisplay = computed(() => brl(props.lead.totalEstimatedProfit))
           {{ summaryLine }}
         </p>
 
-        <!-- Linha 3: valor + status + bairro + tempo -->
+        <!-- Linha 3: valor + lucro + qtd + status + bairro + tempo -->
         <div class="flex items-center flex-wrap gap-x-2 gap-y-1 text-[11px] md:text-xs">
           <span v-if="totalDisplay" class="font-bold text-foreground">
             {{ totalDisplay }}
+          </span>
+          <span v-if="profitDisplay" class="text-green-700 font-medium">
+            lucro {{ profitDisplay }}
+          </span>
+          <span v-if="productCount" class="text-muted-foreground">
+            · {{ productCount }} {{ productCount === 1 ? 'produto' : 'produtos' }}
           </span>
           <Badge :variant="statusConfig.variant" class="text-[10px] md:text-xs px-1.5 md:px-2 py-0.5">
             {{ statusConfig.label }}

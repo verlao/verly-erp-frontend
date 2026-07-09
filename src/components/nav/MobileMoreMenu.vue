@@ -40,7 +40,7 @@
 
         <!-- Overflow nav links (rotas que não couberam na bottom nav) -->
         <nav class="flex-1 overflow-y-auto py-2">
-          <router-link to="/leads" custom v-slot="{ navigate, isActive }">
+          <router-link to="/customers" custom v-slot="{ navigate, isActive }">
             <button
               @click="navAndClose(navigate)"
               :class="[
@@ -66,7 +66,7 @@
                 <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
                 <path d="M16 3.13a4 4 0 0 1 0 7.75" />
               </svg>
-              Leads
+              Clientes
             </button>
           </router-link>
           <router-link to="/orders" custom v-slot="{ navigate, isActive }">
