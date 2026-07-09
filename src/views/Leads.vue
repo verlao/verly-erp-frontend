@@ -284,6 +284,7 @@ const filteredLeads = computed(() => {
     )
   }
 
+  // Ordenação de prioridade (tier→tempo) vem do BACKEND (/leads/paginated).
   return filtered
 })
 
