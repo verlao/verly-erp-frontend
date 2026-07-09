@@ -129,7 +129,7 @@
                 <path d="M8 7h6" />
                 <path d="M8 11h8" />
               </svg>
-              Lançamentos
+              Financeiro
             </button>
           </router-link>
           <router-link
