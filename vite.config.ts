@@ -38,7 +38,24 @@ export default defineConfig({
       },
       workbox: {
         globPatterns: ['**/*.{js,css,html,svg,png,ico}'],
+        // Sempre servir o deploy mais novo: limpa caches de builds antigos e o SW
+        // novo assume o controle imediatamente (sem esperar todas as abas fecharem).
+        cleanupOutdatedCaches: true,
+        clientsClaim: true,
+        skipWaiting: true,
         runtimeCaching: [
+          {
+            // Navegação (o próprio HTML): network-first → um deploy novo aparece na
+            // hora quando online; o cache serve só como fallback offline. Isso evita
+            // o app shell velho ficar preso no cache (o bug do Cmd+Shift+R).
+            urlPattern: ({ request }) => request.mode === 'navigate',
+            handler: 'NetworkFirst',
+            options: {
+              cacheName: 'verly-html',
+              networkTimeoutSeconds: 3,
+              expiration: { maxEntries: 1 },
+            },
+          },
           {
             // API: network-first com fallback de cache curto pra resiliência
             urlPattern: /^https:\/\/(staging-)?api\.verlyvidracaria\.com\//,

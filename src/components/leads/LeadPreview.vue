@@ -9,6 +9,7 @@ import type { LeadDTO } from '../../services/lead'
 
 const props = defineProps<{
   lead?: LeadDTO
+  isMobile?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -89,7 +90,7 @@ function formatBrl(n?: number | null): string {
 </script>
 
 <template>
-  <div class="flex flex-col h-full bg-background">
+  <div class="flex flex-col h-full bg-white">
     <!-- Empty state -->
     <div v-if="!lead" class="flex flex-col items-center justify-center h-full p-8 text-center">
       <div class="w-16 h-16 mb-4 text-muted-foreground">
@@ -103,73 +104,86 @@ function formatBrl(n?: number | null): string {
 
     <!-- Lead details -->
     <div v-else class="flex flex-col h-full">
-      <!-- Header - More compact on mobile -->
-      <div class="p-4 md:p-6 border-b border-border">
-        <div class="flex items-start justify-between mb-3 md:mb-4">
-          <div class="flex items-start gap-2 md:gap-3 flex-1">
-            <Avatar :name="lead.name" class="h-10 w-10 md:h-12 md:w-12" />
-            <div class="flex-1 min-w-0">
-              <h2 class="text-lg md:text-2xl font-bold text-foreground truncate">{{ lead.name }}</h2>
-              <Badge :variant="statusConfig.variant" class="mt-1 md:mt-2">
+      <!-- Header compacto: nome + status -->
+      <div class="p-4 md:p-6 border-b border-border shrink-0">
+        <div class="flex items-start gap-2 md:gap-3">
+          <Avatar :name="lead.name" class="h-10 w-10 md:h-12 md:w-12 shrink-0" />
+          <div class="flex-1 min-w-0">
+            <h2 class="text-lg md:text-2xl font-bold text-foreground truncate">{{ lead.name }}</h2>
+            <div class="flex items-center gap-2 mt-1 md:mt-2">
+              <Badge :variant="statusConfig.variant">
                 {{ statusConfig.label }}
               </Badge>
+              <span
+                v-if="lead.tier"
+                :class="['inline-flex items-center px-2 py-0.5 rounded font-bold text-xs', tierBadgeClass]"
+              >
+                {{ lead.tier }}
+              </span>
             </div>
           </div>
         </div>
-
-        <!-- Quick actions - More compact on mobile -->
-        <div class="flex flex-wrap gap-1.5 md:gap-2">
-          <Button
-            v-if="canConvert"
-            variant="default"
-            size="sm"
-            @click="emit('convert')"
-          >
-            <User class="w-4 h-4 mr-2" />
-            Converter em Cliente
-          </Button>
-          <Button
-            v-if="canMarkContacted"
-            variant="outline"
-            size="sm"
-            @click="emit('markContacted')"
-          >
-            <MessageSquare class="w-4 h-4 mr-2" />
-            Marcar como Contatado
-          </Button>
-          <Button
-            v-if="canMarkQualified"
-            variant="outline"
-            size="sm"
-            @click="emit('markQualified')"
-          >
-            <Target class="w-4 h-4 mr-2" />
-            Marcar como Qualificado
-          </Button>
-          <Button
-            v-if="lead.phone"
-            variant="outline"
-            size="sm"
-            @click="emit('openWhatsapp')"
-          >
-            <Phone class="w-4 h-4 mr-2" />
-            WhatsApp
-          </Button>
-          <Button
-            v-if="lead.email"
-            variant="outline"
-            size="sm"
-            @click="emit('sendEmail')"
-          >
-            <Mail class="w-4 h-4 mr-2" />
-            Enviar Email
-          </Button>
-        </div>
       </div>
 
-      <!-- Content - More compact on mobile -->
+      <!-- Content: ordem de revisão-e-fechamento -->
       <div class="flex-1 overflow-y-auto p-4 md:p-6 space-y-4 md:space-y-6">
-        <!-- Contact info -->
+        <!-- 1. Resumo da IA -->
+        <section>
+          <div class="rounded-lg bg-muted/50 border border-border p-3 md:p-4">
+            <p class="text-xs md:text-sm text-foreground leading-relaxed whitespace-pre-wrap">
+              {{ lead.description || 'Sem descrição' }}
+            </p>
+            <p class="mt-2 text-[11px] md:text-xs text-muted-foreground flex items-start gap-1">
+              <span aria-hidden="true">ℹ️</span>
+              <span>Extraído automaticamente — confira antes de enviar</span>
+            </p>
+          </div>
+        </section>
+
+        <!-- 2. Produtos / itens estruturados -->
+        <section v-if="lead.items && lead.items.length > 0">
+          <h3 class="text-xs md:text-sm font-semibold text-foreground mb-2 md:mb-3">
+            Produtos ({{ lead.items.length }})
+          </h3>
+          <div class="space-y-1.5 text-xs md:text-sm">
+            <div
+              v-for="(item, idx) in lead.items"
+              :key="item.id ?? idx"
+              class="flex items-start justify-between gap-2 py-1 border-b border-border last:border-0"
+            >
+              <div class="flex-1 min-w-0">
+                <span class="font-medium">{{ item.quantity || 1 }}x</span>
+                <span class="ml-1">{{ item.productType || 'ITEM' }}</span>
+                <span v-if="item.widthCm && item.heightCm" class="text-muted-foreground">
+                  {{ item.widthCm }}cm × {{ item.heightCm }}cm
+                </span>
+                <span v-if="item.color && item.color !== 'INCOLOR'" class="ml-1 text-muted-foreground">
+                  {{ item.color }}
+                </span>
+              </div>
+              <span class="text-foreground font-mono shrink-0">{{ formatBrl(item.estimatedValue) }}</span>
+            </div>
+          </div>
+        </section>
+
+        <!-- 3. Total + lucro estimados -->
+        <section
+          v-if="lead.totalEstimatedValue != null || lead.totalEstimatedProfit != null"
+          class="rounded-lg border border-border p-3 md:p-4 text-sm space-y-1"
+        >
+          <div class="flex justify-between font-semibold text-base">
+            <span>Total estimado</span>
+            <span class="font-mono">{{ formatBrl(lead.totalEstimatedValue) }}</span>
+          </div>
+          <div v-if="lead.totalEstimatedProfit != null" class="flex justify-between text-muted-foreground">
+            <span>Lucro estimado</span>
+            <span class="font-mono">{{ formatBrl(lead.totalEstimatedProfit) }}</span>
+          </div>
+        </section>
+
+        <Separator />
+
+        <!-- 4. Contato -->
         <section>
           <h3 class="text-xs md:text-sm font-semibold text-foreground mb-2 md:mb-3">Informações de Contato</h3>
           <div class="space-y-1.5 md:space-y-2">
@@ -208,82 +222,27 @@ function formatBrl(n?: number | null): string {
           </div>
         </section>
 
-        <Separator />
-
-        <!-- V2_17: Product items (multi-item, aggregated with tier) -->
-        <section v-if="lead.items && lead.items.length > 0">
-          <div class="flex items-baseline justify-between mb-2 md:mb-3">
-            <h3 class="text-xs md:text-sm font-semibold text-foreground">
-              Produtos ({{ lead.items.length }})
-            </h3>
-            <span
-              v-if="lead.tier"
-              :class="['inline-flex items-center px-2 py-0.5 rounded font-bold text-xs', tierBadgeClass]"
-            >
-              {{ lead.tier }}
-            </span>
-          </div>
-          <div class="space-y-1.5 text-xs md:text-sm">
-            <div
-              v-for="(item, idx) in lead.items"
-              :key="item.id ?? idx"
-              class="flex items-start justify-between gap-2 py-1 border-b border-border last:border-0"
-            >
-              <div class="flex-1 min-w-0">
-                <span class="font-medium">{{ item.quantity || 1 }}x</span>
-                <span class="ml-1">{{ item.productType || 'ITEM' }}</span>
-                <span v-if="item.widthCm && item.heightCm" class="text-muted-foreground">
-                  {{ item.widthCm }}cm × {{ item.heightCm }}cm
-                </span>
-                <span v-if="item.color && item.color !== 'INCOLOR'" class="ml-1 text-muted-foreground">
-                  {{ item.color }}
-                </span>
-              </div>
-              <span class="text-foreground font-mono shrink-0">{{ formatBrl(item.estimatedValue) }}</span>
-            </div>
-          </div>
-          <div class="mt-2 pt-2 border-t border-border text-xs md:text-sm space-y-0.5">
-            <div class="flex justify-between font-semibold">
-              <span>Total estimado:</span>
-              <span class="font-mono">{{ formatBrl(lead.totalEstimatedValue) }}</span>
-            </div>
-            <div v-if="lead.totalEstimatedProfit != null" class="flex justify-between text-muted-foreground">
-              <span>Lucro estimado:</span>
-              <span class="font-mono">{{ formatBrl(lead.totalEstimatedProfit) }}</span>
-            </div>
-          </div>
-        </section>
-
-        <Separator v-if="lead.items && lead.items.length > 0" />
-
-        <!-- Description -->
-        <section>
-          <h3 class="text-xs md:text-sm font-semibold text-foreground mb-2 md:mb-3">Descrição</h3>
-          <p class="text-xs md:text-sm text-foreground leading-relaxed whitespace-pre-wrap">
-            {{ lead.description || 'Sem descrição' }}
-          </p>
-        </section>
-
-        <Separator />
-
-        <!-- Tracking info - Collapsible on mobile -->
-        <section v-if="lead.utmSource || lead.deviceType || lead.referrer">
-          <h3 class="text-xs md:text-sm font-semibold text-foreground mb-2 md:mb-3">Informações de Rastreamento</h3>
-          <div class="space-y-1.5 md:space-y-2">
-            <div v-if="lead.utmSource" class="flex items-start gap-2 md:gap-3 text-xs md:text-sm">
+        <!-- Rastreamento — colapsado / de-emphasized -->
+        <details v-if="lead.utmSource || lead.deviceType || lead.referrer" class="group">
+          <summary class="cursor-pointer text-xs text-muted-foreground hover:text-foreground select-none list-none flex items-center gap-1">
+            <span class="transition-transform group-open:rotate-90">›</span>
+            Informações de rastreamento
+          </summary>
+          <div class="mt-2 space-y-1.5 pl-3">
+            <div v-if="lead.utmSource" class="flex items-start gap-2 md:gap-3 text-xs">
               <span class="text-muted-foreground shrink-0 w-20 md:w-24">Origem:</span>
               <span class="text-foreground">{{ lead.utmSource }}</span>
             </div>
-            <div v-if="lead.utmMedium" class="flex items-start gap-2 md:gap-3 text-xs md:text-sm">
+            <div v-if="lead.utmMedium" class="flex items-start gap-2 md:gap-3 text-xs">
               <span class="text-muted-foreground shrink-0 w-20 md:w-24">Mídia:</span>
               <span class="text-foreground">{{ lead.utmMedium }}</span>
             </div>
-            <div v-if="lead.utmCampaign" class="flex items-start gap-2 md:gap-3 text-xs md:text-sm">
+            <div v-if="lead.utmCampaign" class="flex items-start gap-2 md:gap-3 text-xs">
               <span class="text-muted-foreground shrink-0 w-20 md:w-24">Campanha:</span>
               <span class="text-foreground">{{ lead.utmCampaign }}</span>
             </div>
-            <div v-if="lead.deviceType" class="flex items-start gap-2 md:gap-3 text-xs md:text-sm">
-              <Monitor class="w-3.5 h-3.5 md:w-4 md:h-4 text-muted-foreground shrink-0 mt-0.5" />
+            <div v-if="lead.deviceType" class="flex items-start gap-2 md:gap-3 text-xs">
+              <Monitor class="w-3.5 h-3.5 text-muted-foreground shrink-0 mt-0.5" />
               <span class="text-foreground">
                 {{ lead.deviceType }}
                 <span v-if="lead.screenWidth && lead.screenHeight" class="text-muted-foreground">
@@ -291,27 +250,82 @@ function formatBrl(n?: number | null): string {
                 </span>
               </span>
             </div>
-            <div v-if="lead.referrer" class="flex items-start gap-2 md:gap-3 text-xs md:text-sm">
+            <div v-if="lead.referrer" class="flex items-start gap-2 md:gap-3 text-xs">
               <span class="text-muted-foreground shrink-0 w-20 md:w-24">Referrer:</span>
               <span class="text-foreground break-all">{{ lead.referrer }}</span>
             </div>
           </div>
-        </section>
+        </details>
+      </div>
 
-        <Separator v-if="canConvert" />
+      <!-- Sticky bottom CTA bar: WhatsApp em destaque, depois converter/status,
+           e "marcar como perdido" como link discreto/destrutivo. -->
+      <div
+        class="border-t border-border bg-white p-3 md:p-4 space-y-2 shrink-0"
+        :style="isMobile ? 'padding-bottom: calc(0.75rem + env(safe-area-inset-bottom))' : undefined"
+      >
+        <Button
+          v-if="lead.phone"
+          variant="default"
+          class="w-full bg-green-600 hover:bg-green-700 text-white"
+          @click="emit('openWhatsapp')"
+        >
+          <Phone class="w-4 h-4 mr-2" />
+          WhatsApp — Abrir conversa
+        </Button>
 
-        <!-- Danger zone -->
-        <section v-if="canConvert">
-          <h3 class="text-xs md:text-sm font-semibold text-foreground mb-2 md:mb-3">Zona de Perigo</h3>
+        <div class="flex flex-wrap gap-2">
           <Button
-            variant="destructive"
+            v-if="canConvert"
+            variant="outline"
             size="sm"
-            class="w-full md:w-auto"
+            class="flex-1"
+            @click="emit('convert')"
+          >
+            <User class="w-4 h-4 mr-2" />
+            Converter em cliente
+          </Button>
+          <Button
+            v-if="canMarkContacted"
+            variant="outline"
+            size="sm"
+            class="flex-1"
+            @click="emit('markContacted')"
+          >
+            <MessageSquare class="w-4 h-4 mr-2" />
+            Contatado
+          </Button>
+          <Button
+            v-if="canMarkQualified"
+            variant="outline"
+            size="sm"
+            class="flex-1"
+            @click="emit('markQualified')"
+          >
+            <Target class="w-4 h-4 mr-2" />
+            Qualificado
+          </Button>
+          <Button
+            v-if="lead.email"
+            variant="outline"
+            size="sm"
+            class="flex-1"
+            @click="emit('sendEmail')"
+          >
+            <Mail class="w-4 h-4 mr-2" />
+            Email
+          </Button>
+        </div>
+
+        <div v-if="canConvert" class="text-center">
+          <button
+            type="button"
+            class="text-xs text-muted-foreground hover:text-destructive transition-colors underline underline-offset-2"
             @click="emit('markLost')"
           >
-            Marcar como Perdido
-          </Button>
-        </section>
+            Marcar como perdido
+          </button>
+        </div>
       </div>
     </div>
   </div>

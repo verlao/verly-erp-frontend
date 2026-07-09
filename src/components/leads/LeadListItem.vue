@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { MapPin, Clock, Phone, Mail, CheckCircle } from 'lucide-vue-next'
+import { MapPin, Phone, Mail, CheckCircle } from 'lucide-vue-next'
 import Badge from '../ui/Badge.vue'
 import Avatar from '../ui/Avatar.vue'
 import type { LeadDTO } from '../../services/lead'
@@ -42,9 +42,10 @@ const timeAgo = computed(() => {
     const diffHours = Math.floor(diffMins / 60)
     const diffDays = Math.floor(diffHours / 24)
 
-    if (diffMins < 60) return `${diffMins}min atrás`
-    if (diffHours < 24) return `${diffHours}h atrás`
-    if (diffDays < 7) return `${diffDays}d atrás`
+    if (diffMins < 1) return 'agora'
+    if (diffMins < 60) return `há ${diffMins}min`
+    if (diffHours < 24) return `há ${diffHours}h`
+    if (diffDays < 7) return `há ${diffDays} dia${diffDays > 1 ? 's' : ''}`
     return date.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })
   } catch {
     return ''
@@ -80,6 +81,10 @@ const itemsSummary = computed(() => {
   return parts.join(' + ') + extra
 })
 
+// One-line service/summary the shop owner scans: itens summary quando existe,
+// senão a descrição do lead truncada.
+const summaryLine = computed(() => itemsSummary.value || (props.lead.description || '').trim())
+
 // Format R$ 1.240,00
 const brl = (n?: number) =>
   n == null
@@ -94,101 +99,71 @@ const profitDisplay = computed(() => brl(props.lead.totalEstimatedProfit))
   <div
     :class="[
       'lead-item group relative cursor-pointer transition-all duration-200',
-      'border-b border-border hover:bg-accent/50',
+      'border-b border-border hover:bg-accent/50 active:bg-accent',
       selected ? 'bg-accent' : '',
       isUnread ? 'bg-blue-50/30' : '',
       priorityClass
     ]"
     @click="emit('select')"
   >
-    <div class="flex items-start gap-2 md:gap-3 p-2 md:p-3">
-      <!-- Checkbox -->
-      <div class="flex items-center pt-0.5 md:pt-1">
+    <div class="flex items-start gap-2 md:gap-3 p-3 md:p-3">
+      <!-- Checkbox — touch target ≥44px no mobile -->
+      <div class="flex items-center justify-center -m-2 p-2 min-w-[44px] min-h-[44px] md:min-w-0 md:min-h-0 md:m-0 md:p-0 md:pt-1">
         <input
           type="checkbox"
           :checked="checked"
-          class="h-3.5 w-3.5 md:h-4 md:w-4 rounded border-gray-300 text-primary focus:ring-2 focus:ring-primary focus:ring-offset-0"
+          class="h-4 w-4 rounded border-gray-300 text-primary focus:ring-2 focus:ring-primary focus:ring-offset-0"
           @click.stop
           @change="emit('toggle')"
         />
       </div>
 
       <!-- Avatar - Hidden on very small screens -->
-      <Avatar :name="lead.name" class="mt-0.5 md:mt-1 hidden xs:block h-8 w-8 md:h-10 md:w-10" />
+      <Avatar :name="lead.name" class="mt-0.5 md:mt-1 hidden xs:block h-9 w-9 md:h-10 md:w-10 shrink-0" />
 
       <!-- Main content -->
-      <div class="flex-1 min-w-0">
-        <div class="flex items-start justify-between gap-1.5 mb-0.5 md:mb-1">
-          <div class="flex items-center gap-1.5 md:gap-2 flex-1 min-w-0">
-            <!-- Unread dot -->
+      <div class="flex-1 min-w-0 space-y-1">
+        <!-- Linha 1: nome + tier + unread dot -->
+        <div class="flex items-start justify-between gap-2">
+          <div class="flex items-center gap-1.5 min-w-0">
             <span
               v-if="isUnread"
-              class="flex h-1.5 w-1.5 md:h-2 md:w-2 shrink-0 rounded-full bg-blue-500"
+              class="flex h-2 w-2 shrink-0 rounded-full bg-blue-500"
             />
-
-            <!-- V2_17: tier badge — $ / $$ / $$$ -->
-            <span
-              v-if="lead.tier"
-              :class="['inline-flex items-center px-1.5 py-0.5 rounded font-bold text-[10px] md:text-xs shrink-0', tierClass]"
-              :title="`Valor estimado: ${totalDisplay}`"
-            >
-              {{ lead.tier }}
-            </span>
-
-            <h4 :class="['truncate text-xs md:text-sm', isUnread ? 'font-bold' : 'font-semibold']">
+            <h4 :class="['truncate text-sm md:text-sm', isUnread ? 'font-bold' : 'font-semibold']">
               {{ lead.name }}
             </h4>
           </div>
 
-          <div class="flex items-center gap-1 md:gap-2 shrink-0">
-            <Badge :variant="statusConfig.variant" class="text-[10px] md:text-xs px-1.5 md:px-2.5 py-0.5">
-              {{ statusConfig.label }}
-            </Badge>
-            <span class="text-[10px] md:text-xs text-muted-foreground whitespace-nowrap">
-              {{ timeAgo }}
-            </span>
-          </div>
-        </div>
-
-        <!-- Contact info - More compact on mobile -->
-        <div class="flex items-center gap-2 md:gap-3 text-[10px] md:text-xs text-muted-foreground mb-0.5 md:mb-1">
-          <span v-if="lead.email" class="flex items-center gap-0.5 md:gap-1 truncate">
-            <Mail class="w-2.5 h-2.5 md:w-3 md:h-3 shrink-0" />
-            <span class="truncate hidden sm:inline">{{ lead.email }}</span>
-          </span>
-          <span v-if="lead.phone" class="flex items-center gap-0.5 md:gap-1">
-            <Phone class="w-2.5 h-2.5 md:w-3 md:h-3 shrink-0" />
-            <span class="hidden xs:inline">{{ lead.phone }}</span>
+          <!-- Tier badge proeminente à direita -->
+          <span
+            v-if="lead.tier"
+            :class="['inline-flex items-center px-2 py-0.5 rounded-md font-bold text-xs shrink-0', tierClass]"
+            :title="totalDisplay ? `Valor estimado: ${totalDisplay}` : undefined"
+          >
+            {{ lead.tier }}
           </span>
         </div>
 
-        <!-- V2_17: items compact list -->
-        <p v-if="itemsSummary" class="text-[11px] md:text-xs text-foreground font-medium truncate mb-0.5">
-          {{ itemsSummary }}
+        <!-- Linha 2: resumo do serviço em 1 linha (o que o dono escaneia) -->
+        <p v-if="summaryLine" class="text-xs md:text-sm text-foreground/80 truncate">
+          {{ summaryLine }}
         </p>
 
-        <!-- V2_17: total + profit line -->
-        <p v-if="totalDisplay" class="text-[11px] md:text-xs text-muted-foreground mb-0.5 md:mb-1">
-          {{ totalDisplay }}
-          <span v-if="profitDisplay" class="text-muted-foreground/70">
-            (lucro {{ profitDisplay }})
+        <!-- Linha 3: valor + status + bairro + tempo -->
+        <div class="flex items-center flex-wrap gap-x-2 gap-y-1 text-[11px] md:text-xs">
+          <span v-if="totalDisplay" class="font-bold text-foreground">
+            {{ totalDisplay }}
           </span>
-        </p>
-
-        <!-- Description preview - Hidden on very small screens -->
-        <p v-if="!itemsSummary" class="hidden sm:block text-xs text-muted-foreground line-clamp-2 mb-1 md:mb-2">
-          {{ lead.description }}
-        </p>
-
-        <!-- Location and meta - More compact on mobile -->
-        <div class="flex items-center gap-2 md:gap-3 text-[10px] md:text-xs text-muted-foreground">
-          <span v-if="lead.neighborhood" class="flex items-center gap-0.5 md:gap-1 truncate">
-            <MapPin class="w-2.5 h-2.5 md:w-3 md:h-3 shrink-0" />
+          <Badge :variant="statusConfig.variant" class="text-[10px] md:text-xs px-1.5 md:px-2 py-0.5">
+            {{ statusConfig.label }}
+          </Badge>
+          <span v-if="lead.neighborhood" class="flex items-center gap-0.5 text-muted-foreground truncate min-w-0">
+            <MapPin class="w-3 h-3 shrink-0" />
             <span class="truncate">{{ lead.neighborhood }}</span>
           </span>
-          <span v-if="lead.utmSource" class="hidden md:flex items-center gap-1">
-            <span class="text-muted-foreground/60">•</span>
-            {{ lead.utmSource }}
+          <span class="text-muted-foreground whitespace-nowrap ml-auto">
+            {{ timeAgo }}
           </span>
         </div>
       </div>
