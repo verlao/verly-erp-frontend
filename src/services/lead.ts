@@ -66,6 +66,20 @@ export interface LeadDTO {
   source?: string
 }
 
+// Leads colapsados por contato (telefone) + funil, tudo resolvido no backend.
+export interface LeadContactDTO {
+  phone: string
+  name: string
+  leadCount: number
+  totalEstimatedValue?: number
+  tier?: LeadTier
+  latestDate: string
+  hasNew: boolean
+  openQuotes: number
+  closedOrders: number
+  leads: LeadDTO[]
+}
+
 const leadService = {
   getAll: async (params?: PaginationParams) => {
     const queryParams = new URLSearchParams()
@@ -145,6 +159,20 @@ const leadService = {
 
   getCounts: async () => {
     const response = await api.get('/leads/counts')
+    return response.data
+  },
+
+  // Contatos colapsados (agrupados por telefone) + funil — heavy lifting no backend.
+  getContacts: async (
+    page: number,
+    size: number,
+    filters?: { status?: string; tier?: string; search?: string }
+  ): Promise<PaginatedResponse<LeadContactDTO>> => {
+    const qs = new URLSearchParams({ page: String(page), size: String(size) })
+    if (filters?.status && filters.status !== 'all') qs.append('status', filters.status)
+    if (filters?.tier && filters.tier !== 'all') qs.append('tier', filters.tier)
+    if (filters?.search) qs.append('search', filters.search)
+    const response = await api.get(`/leads/contacts?${qs.toString()}`)
     return response.data
   }
 }
