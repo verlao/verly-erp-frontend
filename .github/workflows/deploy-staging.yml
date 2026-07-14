@@ -9,10 +9,15 @@ env:
   REGISTRY: ghcr.io
   IMAGE_NAME: verlao/verly-erp-frontend
 
+# Runner self-hosted é a MESMA Pi de produção → serializa os runs.
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
 jobs:
   build-and-deploy:
     name: Build and Deploy Staging
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     permissions:
       contents: read
       packages: write
@@ -21,24 +26,17 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          cache: 'npm'
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Build staging application
-        env:
-          NODE_ENV: production
-          VITE_API_URL: https://staging-api.verlyvidracaria.com/verly-service
-          VITE_POST_LOGIN_REDIRECT: /products
-        run: npm run build
-
-      - name: Copy index.html to 404.html (SPA routing)
-        run: cp dist/index.html dist/404.html
+      # Opção A: build do front num container node efêmero (runner/Pi só precisa
+      # de Docker; nada de Node instalado no host). Limites pra não sufocar prod.
+      - name: Build staging application (node container)
+        run: |
+          docker run --rm -v "$PWD":/app -w /app \
+            --cpus 2 --memory 3g \
+            -e NODE_ENV=production \
+            -e VITE_API_URL=https://staging-api.verlyvidracaria.com/verly-service \
+            -e VITE_POST_LOGIN_REDIRECT=/products \
+            node:20 sh -c "npm ci && npm run build"
+          cp dist/index.html dist/404.html
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
