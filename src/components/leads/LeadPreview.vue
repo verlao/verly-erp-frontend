@@ -94,6 +94,57 @@ function formatBrl(n?: number | null): string {
   if (n == null) return '—'
   return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(n)
 }
+
+// --- Sinais + timeline (blob JSON em lead.data, gerado pelo bot) ---
+interface LeadSignals {
+  payment?: { detected?: boolean; quote?: string | null }
+  visit?: { detected?: boolean; date?: string | null; quote?: string | null }
+  closed?: { detected?: boolean; quote?: string | null }
+  objection?: { detected?: boolean; quote?: string | null }
+}
+interface TranscriptMsg { fromMe?: boolean; body?: string; at?: string | null }
+
+const parsedData = computed<{ signals?: LeadSignals; transcript?: TranscriptMsg[] } | null>(() => {
+  const raw = props.lead?.data
+  if (!raw) return null
+  try {
+    return JSON.parse(raw)
+  } catch {
+    return null
+  }
+})
+const signals = computed<LeadSignals | null>(() => parsedData.value?.signals ?? null)
+const transcript = computed<TranscriptMsg[]>(() => parsedData.value?.transcript ?? [])
+
+const signalChips = computed(() => {
+  const s = signals.value
+  if (!s) return [] as { key: string; label: string; cls: string }[]
+  const chips: { key: string; label: string; cls: string }[] = []
+  if (s.payment?.detected) chips.push({ key: 'payment', label: '💰 Pagou', cls: 'bg-emerald-100 text-emerald-800' })
+  if (s.visit?.detected) chips.push({ key: 'visit', label: `📅 Visita${s.visit.date ? ' ' + s.visit.date : ''}`, cls: 'bg-blue-100 text-blue-800' })
+  if (s.closed?.detected) chips.push({ key: 'closed', label: '✅ Fechou', cls: 'bg-green-100 text-green-800' })
+  if (s.objection?.detected) chips.push({ key: 'objection', label: '⚠️ Objeção', cls: 'bg-amber-100 text-amber-800' })
+  return chips
+})
+
+const nextAction = computed(() => {
+  const s = signals.value
+  if (!s) return ''
+  if (s.closed?.detected) return 'Cliente fechou → converter em cliente'
+  if (s.payment?.detected) return 'Pagamento sinalizado → confirmar comprovante no Financeiro'
+  if (s.visit?.detected) return `Visita combinada${s.visit.date ? ' (' + s.visit.date + ')' : ''} → confirmar agenda`
+  if (s.objection?.detected) return 'Objeção → fazer follow-up'
+  return ''
+})
+
+function fmtTime(at?: string | null): string {
+  if (!at) return ''
+  try {
+    return new Date(at).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })
+  } catch {
+    return ''
+  }
+}
 </script>
 
 <template>
@@ -260,6 +311,45 @@ function formatBrl(n?: number | null): string {
             <div v-if="lead.referrer" class="flex items-start gap-2 md:gap-3 text-xs">
               <span class="text-muted-foreground shrink-0 w-20 md:w-24">Referrer:</span>
               <span class="text-foreground break-all">{{ lead.referrer }}</span>
+            </div>
+          </div>
+        </details>
+      </div>
+
+      <!-- Sinais lidos da conversa + próxima ação + timeline (bot → lead.data) -->
+      <div v-if="signalChips.length || transcript.length" class="px-4 md:px-6 pb-4 space-y-3">
+        <div v-if="signalChips.length" class="flex flex-wrap gap-2">
+          <span
+            v-for="c in signalChips"
+            :key="c.key"
+            :class="c.cls"
+            class="px-2 py-0.5 text-xs font-medium rounded-full"
+          >{{ c.label }}</span>
+        </div>
+        <div v-if="nextAction" class="text-sm">
+          <span class="text-muted-foreground">Próxima ação: </span>
+          <span class="font-medium text-foreground">{{ nextAction }}</span>
+        </div>
+        <details v-if="transcript.length" class="text-sm">
+          <summary class="cursor-pointer text-muted-foreground hover:text-foreground select-none">
+            Ver conversa ({{ transcript.length }})
+          </summary>
+          <div class="mt-2 space-y-1.5 max-h-64 overflow-y-auto pr-1">
+            <div
+              v-for="(m, i) in transcript"
+              :key="i"
+              class="flex"
+              :class="m.fromMe ? 'justify-end' : 'justify-start'"
+            >
+              <div
+                class="max-w-[80%] rounded-lg px-3 py-1.5"
+                :class="m.fromMe ? 'bg-primary/10' : 'bg-muted'"
+              >
+                <p class="whitespace-pre-wrap break-words">{{ m.body }}</p>
+                <p class="text-[10px] text-muted-foreground mt-0.5">
+                  {{ m.fromMe ? 'Loja' : 'Cliente' }} · {{ fmtTime(m.at) }}
+                </p>
+              </div>
             </div>
           </div>
         </details>
