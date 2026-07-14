@@ -179,6 +179,9 @@ import type { LeadDTO, PaginatedResponse } from '../services/lead'
 import { buildWhatsAppUrl } from '../lib/whatsapp'
 import { useLeadSelection } from '../composables/useLeadSelection'
 import { useLeadKeyboard } from '../composables/useLeadKeyboard'
+import { useCelebration } from '../composables/useCelebration'
+
+const { celebrate } = useCelebration()
 
 // Notification store
 const notification = useNotificationStore()
@@ -404,9 +407,15 @@ const handleConvert = async () => {
 
   try {
     await leadService.convertToCustomer(selectedLead.value.id)
+    const value = selectedLead.value.totalEstimatedValue
     selectedLead.value.status = 'CONVERTED'
+    celebrate() // 🎉 momento de endorfina ao finalizar o lead
     await fetchCounts()
-    notification.success('Lead convertido em cliente com sucesso!')
+    notification.success(
+      value
+        ? `🎉 Lead fechado! +R$ ${value.toFixed(2).replace('.', ',')}`
+        : 'Lead convertido em cliente com sucesso!'
+    )
     if (isMobile.value) {
       showMobilePreview.value = false
     }
