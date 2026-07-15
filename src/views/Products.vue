@@ -163,8 +163,7 @@
                 </span>
               </div>
               <div class="text-xs text-muted-foreground">
-                {{ group.width }}×{{ group.height }}cm
-                <span v-if="group.measure">({{ group.measure.toFixed(2) }}m²)</span>
+                L {{ group.width }} × A {{ group.height }} cm
                 · {{ group.colorCount }} {{ group.colorCount > 1 ? 'cores' : 'cor' }}
               </div>
             </div>
@@ -287,7 +286,7 @@
                 </th>
                 <th class="px-3 py-2 text-left text-[10px] sm:text-xs font-medium text-muted-foreground uppercase tracking-wider">Tipo</th>
                 <th class="px-3 py-2 text-left text-[10px] sm:text-xs font-medium text-muted-foreground uppercase tracking-wider">Folhas</th>
-                <th class="px-3 py-2 text-left text-[10px] sm:text-xs font-medium text-muted-foreground uppercase tracking-wider">Dimensões</th>
+                <th class="px-3 py-2 text-left text-[10px] sm:text-xs font-medium text-muted-foreground uppercase tracking-wider">Dimensões (L × A)</th>
                 <th class="px-3 py-2 text-left text-[10px] sm:text-xs font-medium text-muted-foreground uppercase tracking-wider">Cor</th>
                 <th class="px-3 py-2 text-left text-[10px] sm:text-xs font-medium text-muted-foreground uppercase tracking-wider">Kit</th>
                 <th class="px-3 py-2 text-left text-[10px] sm:text-xs font-medium text-muted-foreground uppercase tracking-wider">Mão de Obra</th>
@@ -327,8 +326,9 @@
                   <td class="px-3 py-3 text-foreground text-xs sm:text-sm">{{ group.sheets ?? '-' }}</td>
                   <td class="px-3 py-3 text-foreground text-xs">
                     <div class="whitespace-nowrap">
-                      <div>{{ group.width ? group.width + 'cm' : '-' }} × {{ group.height ? group.height + 'cm' : '-' }}</div>
-                      <div class="text-muted-foreground">{{ group.measure ? group.measure.toFixed(2) + 'm²' : '-' }}</div>
+                      <span class="text-muted-foreground">L</span> {{ group.width ?? '-' }}
+                      <span class="text-muted-foreground">× A</span> {{ group.height ?? '-' }}
+                      <span class="text-muted-foreground">cm</span>
                     </div>
                   </td>
                   <td class="px-3 py-3 text-foreground text-xs sm:text-sm whitespace-nowrap">
