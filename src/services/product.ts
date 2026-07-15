@@ -15,9 +15,7 @@ export interface ProductDTO {
   weight?: number
   measure?: number // Calculated field from backend
   color?: string
-  // true/omitido = medida de catálogo (padrão); false = fora do catálogo
-  // (Calculadora Rápida) → backend usa o custo de vidro NÃO-padrão.
-  standard?: boolean
+  standard?: boolean // Calculated field from backend: true = usa preço de vidro padrão
   cost?: number // Calculated field from backend
   price?: number // Calculated field from backend (À vista dinheiro)
   profit?: number // Calculated field from backend
@@ -155,12 +153,7 @@ const productService = {
    * Usado pela calculadora rápida da página Products quando cliente pede
    * combinação tipo+cor+folhas+dims que não está cadastrada.
    */
-  calculate: async (
-    input: Pick<
-      ProductDTO,
-      'category' | 'type' | 'color' | 'sheets' | 'width' | 'height' | 'standard'
-    >
-  ) => {
+  calculate: async (input: Pick<ProductDTO, 'category' | 'type' | 'color' | 'sheets' | 'width' | 'height'>) => {
     const response = await api.post('/products/calculate', input)
     return normalizeProduct(response.data)
   }

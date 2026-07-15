@@ -267,8 +267,6 @@ async function calculate() {
       sheets: state.value.sheets,
       width: state.value.width,
       height: state.value.height,
-      // Dimensão fora do catálogo → custo de vidro NÃO-padrão.
-      standard: false,
     })
     result.value = calc
   } catch (err: any) {

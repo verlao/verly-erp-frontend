@@ -230,49 +230,147 @@
       </AccordionContent>
     </AccordionItem>
 
-    <!-- PVC (Forro) - custo por m² -->
+    <!-- Matriz de Preço do Vidro (padrão / não-padrão) -->
     <AccordionItem
-      value="pvc"
+      value="glassMatrix"
       class="border border-border shadow-sm hover:shadow-md transition-all duration-300"
     >
       <AccordionTrigger class="bg-card hover:bg-accent/50">
         <div class="flex items-center gap-3 flex-1">
           <div class="w-10 h-10 rounded-lg bg-muted flex items-center justify-center">
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-muted-foreground">
-              <path d="M3 3h18v18H3z"/>
-              <path d="M3 9h18M3 15h18M9 3v18M15 3v18"/>
+              <rect width="18" height="18" x="3" y="3" rx="2"/><path d="M3 9h18"/><path d="M3 15h18"/><path d="M9 3v18"/><path d="M15 3v18"/>
             </svg>
           </div>
           <div class="flex-1 text-left">
-            <h3 class="text-base md:text-lg font-bold text-foreground">Forro PVC — custo por m²</h3>
+            <h3 class="text-base md:text-lg font-bold text-foreground">Preço do Vidro por Padrão</h3>
             <p class="text-xs md:text-sm text-muted-foreground">
-              {{ pvcCost != null ? 'Custo por m² configurado' : 'Configure o custo do PVC por m²' }}
+              Preço do m² por cor, tipo e padrão/não-padrão
             </p>
           </div>
+          <Badge variant="outline" class="ml-auto mr-2">{{ glassMatrix.length }}</Badge>
         </div>
       </AccordionTrigger>
 
       <AccordionContent class="border-t border-border pt-6">
-        <div v-if="loading.pvc">
-          <Skeleton class="h-24 rounded-lg max-w-xs" />
+        <div v-if="loading.glassMatrix" class="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <Skeleton v-for="i in 6" :key="i" class="h-24 rounded-lg" />
         </div>
-        <Card
-          v-else
-          class="group relative border border-border bg-card hover:border-primary/50 hover:shadow-md transition-all duration-300 p-4 max-w-xs overflow-visible"
-        >
-          <label class="text-xs font-bold text-foreground flex items-center gap-2 mb-2">
-            <span class="w-1 h-4 bg-primary rounded-full flex-shrink-0"></span>
-            PVC (por m²)
-          </label>
-          <EditableValue
-            :model-value="pvcCost ?? 0"
-            type="currency"
-            @save="(value) => handlePvcUpdate(value)"
-            variant="default"
-            compact
-            class="text-sm font-semibold text-foreground"
-          />
-        </Card>
+        <div v-else-if="matrixByColor.length > 0" class="space-y-6">
+          <div v-for="group in matrixByColor" :key="group.color">
+            <h4 class="text-sm font-bold text-foreground mb-3 flex items-center gap-2 uppercase">
+              <span class="w-1 h-4 bg-primary rounded-full"></span>
+              {{ group.color }}
+            </h4>
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
+              <Card
+                v-for="cell in group.cells"
+                :key="cell.id"
+                class="group relative border border-border bg-card hover:border-primary/50 hover:shadow-md transition-all duration-300 p-4 overflow-visible"
+              >
+                <div class="flex flex-col gap-2">
+                  <label class="text-xs font-bold text-foreground flex items-center gap-2 truncate">
+                    <span class="w-1 h-4 rounded-full flex-shrink-0" :class="cell.standard ? 'bg-green-500' : 'bg-gray-400'"></span>
+                    <span class="truncate">{{ cell.type }} · {{ cell.standard ? 'Padrão' : 'Não-padrão' }}</span>
+                  </label>
+                  <EditableValue
+                    :model-value="cell.costPerM2"
+                    type="currency"
+                    @save="(value) => handleMatrixUpdate(cell, value)"
+                    variant="default"
+                    compact
+                  />
+                </div>
+              </Card>
+            </div>
+          </div>
+        </div>
+        <div v-else class="text-center py-6">
+          <p class="text-muted-foreground">Nenhum preço de vidro cadastrado na matriz</p>
+        </div>
+      </AccordionContent>
+    </AccordionItem>
+
+    <!-- Medidas Padrão -->
+    <AccordionItem
+      value="standardDims"
+      class="border border-border shadow-sm hover:shadow-md transition-all duration-300"
+    >
+      <AccordionTrigger class="bg-card hover:bg-accent/50">
+        <div class="flex items-center gap-3 flex-1">
+          <div class="w-10 h-10 rounded-lg bg-muted flex items-center justify-center">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-muted-foreground">
+              <path d="M21 3 3 21"/><path d="M3 3h6v6"/><path d="M15 15h6v6"/>
+            </svg>
+          </div>
+          <div class="flex-1 text-left">
+            <h3 class="text-base md:text-lg font-bold text-foreground">Medidas Padrão</h3>
+            <p class="text-xs md:text-sm text-muted-foreground">
+              Produtos que batem com estas medidas usam o preço padrão do vidro
+            </p>
+          </div>
+          <Badge variant="outline" class="ml-auto mr-2">{{ standardDimensions.length }}</Badge>
+        </div>
+      </AccordionTrigger>
+
+      <AccordionContent class="border-t border-border pt-6">
+        <!-- Formulário de adição -->
+        <div class="flex flex-wrap items-end gap-2 mb-4">
+          <div class="flex flex-col gap-1">
+            <label class="text-xs text-muted-foreground">Tipo</label>
+            <select v-model="newDim.type" class="border border-border rounded-md bg-background text-foreground text-sm px-2 py-1.5">
+              <option value="PORTA">PORTA</option>
+              <option value="JANELA">JANELA</option>
+              <option value="BOX">BOX</option>
+            </select>
+          </div>
+          <div class="flex flex-col gap-1">
+            <label class="text-xs text-muted-foreground">Folhas (opcional)</label>
+            <input v-model.number="newDim.sheets" type="number" min="1" placeholder="qualquer" class="w-24 border border-border rounded-md bg-background text-foreground text-sm px-2 py-1.5" />
+          </div>
+          <div class="flex flex-col gap-1">
+            <label class="text-xs text-muted-foreground">Largura (cm)</label>
+            <input v-model.number="newDim.width" type="number" min="1" class="w-24 border border-border rounded-md bg-background text-foreground text-sm px-2 py-1.5" />
+          </div>
+          <div class="flex flex-col gap-1">
+            <label class="text-xs text-muted-foreground">Altura (cm)</label>
+            <input v-model.number="newDim.height" type="number" min="1" class="w-24 border border-border rounded-md bg-background text-foreground text-sm px-2 py-1.5" />
+          </div>
+          <button
+            @click="addStandardDim"
+            class="bg-primary hover:bg-primary/90 text-primary-foreground px-4 py-2 rounded-lg transition-colors font-medium text-sm shadow-sm hover:shadow-md"
+          >
+            Adicionar
+          </button>
+        </div>
+
+        <div v-if="loading.standardDims" class="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <Skeleton v-for="i in 3" :key="i" class="h-20 rounded-lg" />
+        </div>
+        <div v-else-if="standardDimensions.length > 0" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
+          <Card
+            v-for="dim in standardDimensions"
+            :key="dim.id"
+            class="group relative border border-border bg-card p-4 overflow-visible flex items-center justify-between gap-2"
+          >
+            <div class="text-sm">
+              <div class="font-bold text-foreground">{{ dim.type }}</div>
+              <div class="text-muted-foreground text-xs">
+                {{ dim.width }}×{{ dim.height }}cm · {{ dim.sheets ?? 'qualquer' }} folha{{ dim.sheets && dim.sheets > 1 ? 's' : '' }}
+              </div>
+            </div>
+            <button
+              @click="deleteStandardDim(dim)"
+              class="text-red-600 hover:text-red-900 p-1 rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500"
+              aria-label="Remover medida padrão"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c0 1 1 2 1 2v2"/></svg>
+            </button>
+          </Card>
+        </div>
+        <div v-else class="text-center py-6">
+          <p class="text-muted-foreground">Nenhuma medida padrão cadastrada — todos os produtos são tratados como "não-padrão".</p>
+        </div>
       </AccordionContent>
     </AccordionItem>
   </div>
@@ -290,7 +388,8 @@ import EditableValue from './EditableValue.vue'
 import laborCostService, { type LaborCostDTO } from '../services/labor-cost'
 import gainService, { type GainDTO } from '../services/gain'
 import creditCardCostService, { type CreditCardCostDTO } from '../services/credit-card-cost'
-import glassCostService from '../services/glass-cost'
+import glassCostService, { type GlassPriceDTO } from '../services/glass-cost'
+import standardDimensionService, { type StandardDimensionDTO } from '../services/standard-dimension'
 import { useNotification } from '../composables/useNotification'
 
 const { success: showSuccess, error: showError } = useNotification()
@@ -298,13 +397,40 @@ const { success: showSuccess, error: showError } = useNotification()
 const laborCosts = ref<LaborCostDTO[]>([])
 const gains = ref<GainDTO[]>([])
 const creditCardCost = ref<CreditCardCostDTO | null>(null)
-const pvcCost = ref<number | null>(null)
+const glassMatrix = ref<GlassPriceDTO[]>([])
+const standardDimensions = ref<StandardDimensionDTO[]>([])
+
+const newDim = ref<{ type: string; sheets: number | null; width: number | null; height: number | null }>({
+  type: 'PORTA',
+  sheets: null,
+  width: null,
+  height: null
+})
 
 const loading = ref({
   labor: false,
   gain: false,
   creditCard: false,
-  pvc: false
+  glassMatrix: false,
+  standardDims: false
+})
+
+// Matriz agrupada por cor (padrão primeiro), para exibição.
+const matrixByColor = computed(() => {
+  const byColor = new Map<string, GlassPriceDTO[]>()
+  for (const cell of glassMatrix.value) {
+    if (!byColor.has(cell.color)) byColor.set(cell.color, [])
+    byColor.get(cell.color)!.push(cell)
+  }
+  return Array.from(byColor.entries())
+    .sort((a, b) => a[0].localeCompare(b[0]))
+    .map(([color, cells]) => ({
+      color,
+      cells: cells.sort(
+        (a, b) =>
+          a.type.localeCompare(b.type) || Number(b.standard) - Number(a.standard)
+      )
+    }))
 })
 
 const loadAllCosts = async () => {
@@ -312,8 +438,87 @@ const loadAllCosts = async () => {
     loadLaborCosts(),
     loadGains(),
     loadCreditCardCosts(),
-    loadPvcCost()
+    loadGlassMatrix(),
+    loadStandardDimensions()
   ])
+}
+
+const loadGlassMatrix = async () => {
+  loading.value.glassMatrix = true
+  try {
+    glassMatrix.value = await glassCostService.getMatrix()
+  } catch (error) {
+    console.error('Erro ao carregar matriz de preço do vidro:', error)
+    glassMatrix.value = []
+    showError('Erro', 'Não foi possível carregar a matriz de preço do vidro')
+  } finally {
+    loading.value.glassMatrix = false
+  }
+}
+
+const loadStandardDimensions = async () => {
+  loading.value.standardDims = true
+  try {
+    standardDimensions.value = await standardDimensionService.getAll()
+  } catch (error) {
+    console.error('Erro ao carregar medidas padrão:', error)
+    standardDimensions.value = []
+    showError('Erro', 'Não foi possível carregar as medidas padrão')
+  } finally {
+    loading.value.standardDims = false
+  }
+}
+
+const handleMatrixUpdate = async (cell: GlassPriceDTO, value: string | number) => {
+  const numericValue = typeof value === 'string' ? parseFloat(value) : value
+  if (numericValue === undefined || numericValue === null || isNaN(numericValue)) {
+    showError('Erro', 'Valor inválido')
+    return
+  }
+  try {
+    await glassCostService.updateMatrixPrice(cell.color, cell.type, cell.standard, numericValue)
+    showSuccess('Sucesso', 'Preço do vidro atualizado')
+    await loadGlassMatrix()
+  } catch (error) {
+    console.error('Erro ao atualizar matriz de preço:', error)
+    showError('Erro', 'Não foi possível atualizar o preço')
+    await loadGlassMatrix()
+  }
+}
+
+const addStandardDim = async () => {
+  const { type, sheets, width, height } = newDim.value
+  if (!type || !width || !height || width <= 0 || height <= 0) {
+    showError('Erro', 'Informe tipo, largura e altura válidos')
+    return
+  }
+  try {
+    await standardDimensionService.create({
+      type,
+      sheets: sheets || null,
+      width,
+      height,
+      active: true
+    })
+    showSuccess('Sucesso', 'Medida padrão adicionada')
+    newDim.value = { type, sheets: null, width: null, height: null }
+    await loadStandardDimensions()
+  } catch (error) {
+    console.error('Erro ao adicionar medida padrão:', error)
+    showError('Erro', 'Não foi possível adicionar a medida padrão')
+  }
+}
+
+const deleteStandardDim = async (dim: StandardDimensionDTO) => {
+  if (!dim.id) return
+  try {
+    await standardDimensionService.delete(dim.id)
+    showSuccess('Sucesso', 'Medida padrão removida')
+    await loadStandardDimensions()
+  } catch (error) {
+    console.error('Erro ao remover medida padrão:', error)
+    showError('Erro', 'Não foi possível remover a medida padrão')
+  }
 }
 
 const loadLaborCosts = async () => {
@@ -354,35 +559,6 @@ const loadCreditCardCosts = async () => {
     showError('Erro', 'Não foi possível carregar as taxas de cartão')
   } finally {
     loading.value.creditCard = false
-  }
-}
-
-const loadPvcCost = async () => {
-  loading.value.pvc = true
-  try {
-    pvcCost.value = await glassCostService.getPvcCost()
-  } catch (error) {
-    console.error('Erro ao carregar custo do PVC:', error)
-    pvcCost.value = null
-  } finally {
-    loading.value.pvc = false
-  }
-}
-
-const handlePvcUpdate = async (value: string | number) => {
-  const numericValue = typeof value === 'string' ? parseFloat(value) : value
-  if (numericValue === undefined || numericValue === null || isNaN(numericValue)) {
-    showError('Erro', 'Valor inválido')
-    return
-  }
-  try {
-    await glassCostService.updatePvcCost(numericValue)
-    showSuccess('Sucesso', 'Custo do PVC por m² atualizado')
-    await loadPvcCost()
-  } catch (error: any) {
-    console.error('Erro ao atualizar custo do PVC:', error)
-    showError('Erro', error.response?.data?.message || 'Não foi possível atualizar')
-    await loadPvcCost()
   }
 }
 

@@ -4,9 +4,6 @@ export interface GlassCostDTO {
   id?: number
   color: string
   costPerSquareMeter: number
-  // Custo por m² pra corte FORA do catálogo (não-padrão). Catálogo usa o padrão;
-  // a Calculadora Rápida (dimensão fora do catálogo) usa este.
-  costPerSquareMeterNaoPadrao?: number
   supplier?: string
   effectiveDate?: string
   expiryDate?: string
@@ -15,14 +12,37 @@ export interface GlassCostDTO {
   updatedAt?: string
 }
 
-export interface CostConfigDTO {
-  glassCosts: GlassCostDTO[]
-  pvcCostPerSquareMeter: number | null
+// Célula da matriz de preço do m² por (cor × tipo × padrão/não-padrão)
+export interface GlassPriceDTO {
+  id?: number
+  color: string
+  type: string
+  standard: boolean
+  costPerM2: number
+  active?: boolean
 }
 
 const glassCostService = {
   getAll: async (): Promise<GlassCostDTO[]> => {
     const response = await api.get('/api/glass-cost')
+    return response.data
+  },
+
+  // Matriz de preço por (cor × tipo × padrão/não-padrão)
+  getMatrix: async (): Promise<GlassPriceDTO[]> => {
+    const response = await api.get('/api/glass-cost/matrix')
+    return response.data
+  },
+
+  updateMatrixPrice: async (
+    color: string,
+    type: string,
+    standard: boolean,
+    newPrice: number
+  ): Promise<GlassPriceDTO> => {
+    const response = await api.put('/api/glass-cost/matrix', null, {
+      params: { color, type, standard, newPrice: newPrice.toFixed(2) }
+    })
     return response.data
   },
   
@@ -74,36 +94,9 @@ const glassCostService = {
     return response.data
   },
   
-  // Atualiza SÓ o custo não-padrão de uma cor: busca a linha atual e faz upsert
-  // (POST createOrUpdate) preservando o padrão. Não há endpoint dedicado /price.
-  updateNonStandardByColor: async (color: string, newPrice: number): Promise<void> => {
-    const current = await glassCostService.getByColor(color)
-    await api.post('/api/glass-cost', {
-      ...current,
-      costPerSquareMeterNaoPadrao: Number(newPrice.toFixed(2)),
-    })
-  },
-
-  // Painel de configuração consolidado: custos de vidro (padrão + não-padrão) + PVC/m².
-  getConfig: async (): Promise<CostConfigDTO> => {
-    const response = await api.get('/api/glass-cost/config')
-    return response.data
-  },
-
-  getPvcCost: async (): Promise<number | null> => {
-    const response = await api.get('/api/glass-cost/pvc')
-    return response.data?.costPerSquareMeter ?? null
-  },
-
-  updatePvcCost: async (costPerSquareMeter: number): Promise<void> => {
-    await api.put('/api/glass-cost/pvc', {
-      costPerSquareMeter: Number(costPerSquareMeter.toFixed(2)),
-    })
-  },
-
   delete: async (id: number): Promise<void> => {
     await api.delete(`/api/glass-cost/${id}`)
-  },
+  }
 }
 
 export default glassCostService

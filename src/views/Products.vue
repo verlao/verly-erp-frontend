@@ -1,7 +1,7 @@
 <template>
   <div class="min-h-screen bg-background">
-    <!-- Sem teto de largura: a tabela tem muitas colunas e usa a tela toda
-         (sidebar auto-colapsa em Produtos; wrapper overflow-x-auto cobre telas estreitas). -->
+    <!-- Sem teto de largura: a tabela de produtos tem muitas colunas e precisa da
+         tela cheia pra caber (o wrapper overflow-x-auto cobre telas estreitas). -->
     <div class="max-w-none mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <!-- Header -->
       <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
@@ -34,8 +34,11 @@
             <!-- Título -->
             <div>
               <h2 class="text-lg font-medium text-foreground">Lista de Produtos</h2>
+              <p class="text-xs text-muted-foreground mt-0.5">
+                Produtos agrupados por tipo, folhas e dimensões — expanda para ver as cores
+              </p>
             </div>
-            
+
             <!-- Custos de Vidro - Quick View -->
             <div class="flex items-center gap-2">
               <span class="text-xs font-medium text-muted-foreground uppercase tracking-wide hidden sm:inline">Custos de Vidro:</span>
@@ -122,7 +125,7 @@
           </div>
         </div>
 
-        <div v-else-if="filteredProducts.length === 0" class="text-center py-16">
+        <div v-else-if="filteredGroups.length === 0" class="text-center py-16">
           <div class="bg-muted rounded-full w-20 h-20 flex items-center justify-center mx-auto mb-4">
             <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-muted-foreground"><path d="m7.5 4.27 9 5.15"/><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/></svg>
           </div>
@@ -136,178 +139,139 @@
             Criar Primeiro Produto
           </button>
         </div>
-      <!-- Mobile: cards verticais com preço destacado -->
+
+      <!-- Mobile: card-pai expansível por cor -->
       <div v-else-if="isMobile" class="divide-y divide-border">
-        <div
-          v-for="product in filteredProducts"
-          :key="product.id || product.key"
-          class="p-4 space-y-3 active:bg-accent/30 transition-colors"
-        >
-          <!-- Header: badges tipo + cor + sheets -->
-          <div class="flex items-center gap-2 flex-wrap">
-            <span
-              class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium"
-              :class="{
-                'bg-blue-100 text-blue-800': product.type === 'PORTA',
-                'bg-green-100 text-green-800': product.type === 'JANELA',
-                'bg-purple-100 text-purple-800': product.type === 'SACADA',
-                'bg-orange-100 text-orange-800': product.type === 'BASCULANTE',
-                'bg-cyan-100 text-cyan-800': product.type === 'BOX',
-                'bg-gray-100 text-gray-800': product.type === 'FIXO',
-              }"
-            >
-              {{ product.type || '-' }}
-            </span>
-            <span class="text-xs text-muted-foreground">
-              {{ product.sheets }}F
-            </span>
-            <span
-              class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium"
-              :class="{
-                'bg-indigo-100 text-indigo-800': product.color === 'INCOLOR',
-                'bg-emerald-100 text-emerald-800': product.color === 'VERDE',
-                'bg-slate-100 text-slate-800': product.color === 'FUME',
-                'bg-yellow-100 text-yellow-800': product.color === 'BRONZE',
-              }"
-            >
-              {{ product.color || '-' }}
-            </span>
-            <span class="text-xs text-muted-foreground ml-auto">
-              {{ product.width }}×{{ product.height }}cm
-              <span v-if="product.measure">
-                ({{ product.measure.toFixed(2) }}m²)
-              </span>
-            </span>
-          </div>
-
-          <!-- Preço à vista (BIG, primário) -->
-          <div class="flex items-end justify-between gap-2">
-            <div>
-              <p class="text-xs text-muted-foreground uppercase tracking-wide">
-                À vista
-              </p>
-              <p class="text-2xl font-bold text-green-600 leading-tight">
-                R$ {{ product.price ? product.price.toFixed(2) : '0,00' }}
-              </p>
-            </div>
-            <div v-if="product.priceOptions" class="text-right text-xs space-y-0.5">
-              <div
-                v-if="product.priceOptions.installments4x"
-                class="text-muted-foreground"
-              >
-                4× R$
-                {{ (product.priceOptions.installments4x / 4).toFixed(2) }}
+        <div v-for="group in pagedGroups" :key="group.key">
+          <!-- Cabeçalho do grupo -->
+          <button
+            type="button"
+            @click="toggleGroup(group)"
+            class="w-full p-4 flex items-start justify-between gap-3 text-left active:bg-accent/30 transition-colors"
+          >
+            <div class="space-y-1.5 min-w-0">
+              <div class="flex items-center gap-2 flex-wrap">
+                <span
+                  class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium"
+                  :class="typeBadgeClass(group.type)"
+                >
+                  {{ group.type || '-' }}
+                </span>
+                <span class="text-xs text-muted-foreground">{{ group.sheets }}F</span>
+                <span v-if="group.standard !== undefined" class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium" :class="standardBadgeClass(group.standard)">
+                  {{ group.standard ? 'Padrão' : 'Não-padrão' }}
+                </span>
               </div>
-              <div
-                v-if="product.priceOptions.installments10x"
-                class="text-muted-foreground"
-              >
-                10× R$
-                {{ (product.priceOptions.installments10x / 10).toFixed(2) }}
-              </div>
-              <div
-                v-if="product.priceOptions.installments12x"
-                class="text-muted-foreground"
-              >
-                12× R$
-                {{ (product.priceOptions.installments12x / 12).toFixed(2) }}
+              <div class="text-xs text-muted-foreground">
+                {{ group.width }}×{{ group.height }}cm
+                <span v-if="group.measure">({{ group.measure.toFixed(2) }}m²)</span>
+                · {{ group.colorCount }} {{ group.colorCount > 1 ? 'cores' : 'cor' }}
               </div>
             </div>
-          </div>
+            <div class="flex items-center gap-2 shrink-0">
+              <div class="text-right">
+                <p class="text-[10px] text-muted-foreground uppercase tracking-wide">À vista</p>
+                <p class="text-sm font-bold text-green-600 leading-tight whitespace-nowrap">{{ priceRange(group) }}</p>
+              </div>
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                class="h-5 w-5 text-muted-foreground transition-transform"
+                :class="{ 'rotate-90': isExpanded(group) }"
+                viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+              >
+                <path d="m9 18 6-6-6-6" />
+              </svg>
+            </div>
+          </button>
 
-          <!-- Custo / Lucro (secundário) -->
-          <div class="flex justify-between text-xs pt-2 border-t border-border">
-            <span class="text-muted-foreground">
-              Custo
-              <span class="font-medium text-foreground">
-                R$ {{ product.cost ? product.cost.toFixed(2) : '0,00' }}
-              </span>
-            </span>
-            <span class="text-muted-foreground">
-              Lucro
-              <span class="font-medium text-purple-600">
-                R$ {{ calculateProfit(product) }}
-              </span>
-            </span>
-            <span v-if="product.gainValue" class="text-muted-foreground">
-              Margem
-              <span class="font-medium text-foreground">
-                {{ product.gainValue }}%
-              </span>
-            </span>
-          </div>
+          <!-- Variantes de cor -->
+          <div v-if="isExpanded(group)" class="bg-muted/20 divide-y divide-border">
+            <div
+              v-for="product in group.variants"
+              :key="product.id || product.key"
+              class="p-4 pl-6 space-y-3"
+            >
+              <div class="flex items-center gap-2 flex-wrap">
+                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium" :class="colorBadgeClass(product.color)">
+                  {{ product.color || '-' }}
+                </span>
+              </div>
 
-          <!-- Ações -->
-          <div class="flex justify-end gap-1 pt-1">
-            <button
-              v-if="product.id"
-              @click="toggleProduct(product.id)"
-              :class="[
-                'min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg active:scale-95 transition-transform',
-                selectedProductIds.has(product.id)
-                  ? 'text-blue-600 bg-blue-50'
-                  : 'text-muted-foreground hover:bg-accent',
-              ]"
-              :aria-label="selectedProductIds.has(product.id) ? 'Desselecionar' : 'Selecionar'"
-            >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                class="h-5 w-5"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-              >
-                <path v-if="selectedProductIds.has(product.id)" d="M20 6 9 17l-5-5" />
-                <rect v-else x="3" y="3" width="18" height="18" rx="2" />
-              </svg>
-            </button>
-            <button
-              @click="openModal(product)"
-              class="min-w-[44px] min-h-[44px] flex items-center justify-center text-blue-600 hover:bg-blue-50 rounded-lg active:scale-95 transition-transform"
-              aria-label="Editar produto"
-            >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                class="h-5 w-5"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-              >
-                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
-                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
-              </svg>
-            </button>
-            <button
-              @click="confirmDelete(product)"
-              class="min-w-[44px] min-h-[44px] flex items-center justify-center text-red-600 hover:bg-red-50 rounded-lg active:scale-95 transition-transform"
-              aria-label="Excluir produto"
-            >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                class="h-5 w-5"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-              >
-                <path d="M3 6h18" />
-                <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" />
-                <path d="M8 6V4c0-1 1-2 2-2h4c0 1 1 2 1 2v2" />
-              </svg>
-            </button>
+              <div class="flex items-end justify-between gap-2">
+                <div>
+                  <p class="text-xs text-muted-foreground uppercase tracking-wide">À vista</p>
+                  <p class="text-2xl font-bold text-green-600 leading-tight">
+                    R$ {{ product.price ? product.price.toFixed(2) : '0,00' }}
+                  </p>
+                </div>
+                <div v-if="product.priceOptions" class="text-right text-xs space-y-0.5">
+                  <div v-if="product.priceOptions.installments4x" class="text-muted-foreground">
+                    4× R$ {{ (product.priceOptions.installments4x / 4).toFixed(2) }}
+                  </div>
+                  <div v-if="product.priceOptions.installments10x" class="text-muted-foreground">
+                    10× R$ {{ (product.priceOptions.installments10x / 10).toFixed(2) }}
+                  </div>
+                  <div v-if="product.priceOptions.installments12x" class="text-muted-foreground">
+                    12× R$ {{ (product.priceOptions.installments12x / 12).toFixed(2) }}
+                  </div>
+                </div>
+              </div>
+
+              <div class="flex justify-between text-xs pt-2 border-t border-border">
+                <span class="text-muted-foreground">
+                  Custo <span class="font-medium text-foreground">R$ {{ product.cost ? product.cost.toFixed(2) : '0,00' }}</span>
+                </span>
+                <span class="text-muted-foreground">
+                  Lucro <span class="font-medium text-purple-600">{{ calculateProfit(product) }}</span>
+                </span>
+                <span v-if="product.gainValue" class="text-muted-foreground">
+                  Margem <span class="font-medium text-foreground">{{ product.gainValue }}%</span>
+                </span>
+              </div>
+
+              <div class="flex justify-end gap-1 pt-1">
+                <button
+                  v-if="product.id"
+                  @click="toggleProduct(product.id)"
+                  :class="[
+                    'min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg active:scale-95 transition-transform',
+                    selectedProductIds.has(product.id) ? 'text-blue-600 bg-blue-50' : 'text-muted-foreground hover:bg-accent',
+                  ]"
+                  :aria-label="selectedProductIds.has(product.id) ? 'Desselecionar' : 'Selecionar'"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path v-if="selectedProductIds.has(product.id)" d="M20 6 9 17l-5-5" />
+                    <rect v-else x="3" y="3" width="18" height="18" rx="2" />
+                  </svg>
+                </button>
+                <button
+                  @click="openModal(product)"
+                  class="min-w-[44px] min-h-[44px] flex items-center justify-center text-blue-600 hover:bg-blue-50 rounded-lg active:scale-95 transition-transform"
+                  aria-label="Editar produto"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                  </svg>
+                </button>
+                <button
+                  @click="confirmDelete(product)"
+                  class="min-w-[44px] min-h-[44px] flex items-center justify-center text-red-600 hover:bg-red-50 rounded-lg active:scale-95 transition-transform"
+                  aria-label="Excluir produto"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M3 6h18" />
+                    <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" />
+                    <path d="M8 6V4c0-1 1-2 2-2h4c0 1 1 2 1 2v2" />
+                  </svg>
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       </div>
 
-      <!-- Desktop: tabela tradicional -->
+      <!-- Desktop: tabela com linhas-pai expansíveis -->
       <div v-else class="overflow-x-auto">
           <table class="w-full">
             <thead class="bg-muted">
@@ -336,116 +300,147 @@
               </tr>
             </thead>
             <tbody class="bg-card divide-y divide-border">
-              <tr v-for="product in filteredProducts" :key="product.id || product.key" :data-product-id="product.id" :data-product-key="product.key" class="hover:bg-accent/50">
-              <td class="px-3 py-3 text-center">
-                <input
-                  type="checkbox"
-                  :checked="!!(product.id && selectedProductIds.has(product.id))"
-                  @change="toggleProduct(product.id)"
-                  class="w-4 h-4 text-blue-600 bg-background border-border rounded focus:ring-2 focus:ring-blue-500 cursor-pointer"
-                />
-              </td>
-              <td class="px-3 py-3 font-medium text-foreground text-xs sm:text-sm">
-                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium whitespace-nowrap" :class="{
-                  'bg-blue-100 text-blue-800': product.type === 'PORTA',
-                  'bg-green-100 text-green-800': product.type === 'JANELA',
-                  'bg-purple-100 text-purple-800': product.type === 'SACADA',
-                  'bg-orange-100 text-orange-800': product.type === 'BASCULANTE',
-                  'bg-cyan-100 text-cyan-800': product.type === 'BOX',
-                  'bg-gray-100 text-gray-800': product.type === 'FIXO',
-                  'bg-gray-100 text-gray-500': !product.type
-                }">
-                  {{ product.type || '-' }}
-                </span>
-              </td>
-              <td class="px-3 py-3 text-foreground text-xs sm:text-sm">{{ product.sheets || '-' }}</td>
-              <td class="px-3 py-3 text-foreground text-xs">
-                <div class="whitespace-nowrap">
-                  <div>{{ product.width ? product.width + 'cm' : '-' }} × {{ product.height ? product.height + 'cm' : '-' }}</div>
-                  <div class="text-muted-foreground">{{ product.measure ? product.measure.toFixed(2) + 'm²' : '-' }}</div>
-                </div>
-              </td>
-              <td class="px-3 py-3 text-foreground text-xs sm:text-sm">
-                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium whitespace-nowrap" :class="{
-                  'bg-indigo-100 text-indigo-800': product.color === 'INCOLOR',
-                  'bg-emerald-100 text-emerald-800': product.color === 'VERDE',
-                  'bg-slate-100 text-slate-800': product.color === 'FUME',
-                  'bg-yellow-100 text-yellow-800': product.color === 'BRONZE',
-                  'bg-gray-100 text-gray-500': !product.color
-                }">
-                  {{ product.color || '-' }}
-                </span>
-              </td>
-              <td class="px-3 py-3 text-gray-700 text-xs sm:text-sm whitespace-nowrap">
-                <EditableValue
-                  :model-value="product.accessory ?? product.kit ?? 0"
-                  type="currency"
-                  @save="(value) => handleKitSave(product, value)"
-                  compact
-                />
-              </td>
-              <td class="px-3 py-3 text-gray-700 text-xs sm:text-sm whitespace-nowrap">
-                <EditableValue
-                  :model-value="product.laborValue ?? 0"
-                  type="currency"
-                  @save="(value) => handleLaborSave(product, value)"
-                  compact
-                />
-              </td>
-              <td class="px-3 py-3 text-gray-700 text-xs sm:text-sm whitespace-nowrap">
-                <EditableValue
-                  :model-value="product.gainValue ?? 0"
-                  type="number"
-                  @save="(value) => handleGainSave(product, value)"
-                  compact
-                  suffix="%"
-                />
-              </td>
-              <td class="px-3 py-3 font-mono font-semibold text-foreground text-xs sm:text-sm whitespace-nowrap">{{ product.cost ? 'R$ ' + product.cost.toFixed(2) : '-' }}</td>
-              <td class="px-3 py-3 font-mono font-semibold text-green-600 text-xs sm:text-sm whitespace-nowrap">{{ product.price ? 'R$ ' + product.price.toFixed(2) : '-' }}</td>
-              <td class="px-3 py-3 text-xs sm:text-sm">
-                <div v-if="product.priceOptions" class="space-y-0.5">
-                  <div v-if="product.priceOptions.installments4x" class="whitespace-nowrap text-[10px] sm:text-xs text-muted-foreground">
-                    4x de R$ {{ (product.priceOptions.installments4x / 4).toFixed(2) }}
-                  </div>
-                  <div v-if="product.priceOptions.installments6x" class="whitespace-nowrap text-[10px] sm:text-xs text-muted-foreground">
-                    6x de R$ {{ (product.priceOptions.installments6x / 6).toFixed(2) }}
-                  </div>
-                  <div v-if="product.priceOptions.installments10x" class="whitespace-nowrap text-[10px] sm:text-xs text-muted-foreground">
-                    10x de R$ {{ (product.priceOptions.installments10x / 10).toFixed(2) }}
-                  </div>
-                  <div v-if="product.priceOptions.installments12x" class="whitespace-nowrap text-[10px] sm:text-xs text-muted-foreground">
-                    12x de R$ {{ (product.priceOptions.installments12x / 12).toFixed(2) }}
-                  </div>
-                </div>
-                <span v-else class="text-muted-foreground">-</span>
-              </td>
-              <td class="px-3 py-3 font-mono text-purple-600 font-semibold text-xs sm:text-sm whitespace-nowrap">{{ calculateProfit(product) }}</td>
-              <td class="px-3 py-3 whitespace-nowrap text-right text-xs sm:text-sm font-medium">
-                  <div class="flex justify-end space-x-1 sm:space-x-2">
-                    <button
-                      @click="openModal(product)"
-                      class="text-blue-600 hover:text-blue-900 p-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 rounded"
-                      title="Editar Produto"
-                      aria-label="Editar produto"
+              <template v-for="group in pagedGroups" :key="group.key">
+                <!-- Linha-pai -->
+                <tr class="bg-muted/30 hover:bg-accent/50 cursor-pointer" @click="toggleGroup(group)">
+                  <td class="px-3 py-3 text-center">
+                    <svg
+                      v-if="group.colorCount > 1"
+                      xmlns="http://www.w3.org/2000/svg"
+                      class="h-4 w-4 mx-auto text-muted-foreground transition-transform"
+                      :class="{ 'rotate-90': isExpanded(group) }"
+                      viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
                     >
-                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>
-                    </button>
-                    <button
-                      @click="confirmDelete(product)"
-                      class="text-red-600 hover:text-red-900 p-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500 rounded"
-                      title="Excluir Produto"
-                      aria-label="Excluir produto"
-                    >
-                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c-1 0 2 1 2 2v2"/></svg>
-                    </button>
-                  </div>
-                </td>
-            </tr>
+                      <path d="m9 18 6-6-6-6" />
+                    </svg>
+                  </td>
+                  <td class="px-3 py-3 font-medium text-foreground text-xs sm:text-sm">
+                    <div class="flex items-center gap-1.5 flex-wrap">
+                      <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium whitespace-nowrap" :class="typeBadgeClass(group.type)">
+                        {{ group.type || '-' }}
+                      </span>
+                      <span v-if="group.standard !== undefined" class="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-medium" :class="standardBadgeClass(group.standard)">
+                        {{ group.standard ? 'Padrão' : 'Não-padrão' }}
+                      </span>
+                    </div>
+                  </td>
+                  <td class="px-3 py-3 text-foreground text-xs sm:text-sm">{{ group.sheets ?? '-' }}</td>
+                  <td class="px-3 py-3 text-foreground text-xs">
+                    <div class="whitespace-nowrap">
+                      <div>{{ group.width ? group.width + 'cm' : '-' }} × {{ group.height ? group.height + 'cm' : '-' }}</div>
+                      <div class="text-muted-foreground">{{ group.measure ? group.measure.toFixed(2) + 'm²' : '-' }}</div>
+                    </div>
+                  </td>
+                  <td class="px-3 py-3 text-foreground text-xs sm:text-sm whitespace-nowrap">
+                    <span class="text-muted-foreground">{{ group.colorCount }} {{ group.colorCount > 1 ? 'cores' : 'cor' }}</span>
+                  </td>
+                  <td class="px-3 py-3 text-muted-foreground text-xs">—</td>
+                  <td class="px-3 py-3 text-muted-foreground text-xs">—</td>
+                  <td class="px-3 py-3 text-muted-foreground text-xs">—</td>
+                  <td class="px-3 py-3 text-muted-foreground text-xs">—</td>
+                  <td class="px-3 py-3 font-mono font-semibold text-green-600 text-xs sm:text-sm whitespace-nowrap">{{ priceRange(group) }}</td>
+                  <td class="px-3 py-3 text-muted-foreground text-xs">—</td>
+                  <td class="px-3 py-3 text-muted-foreground text-xs">—</td>
+                  <td class="px-3 py-3"></td>
+                </tr>
+
+                <!-- Variantes de cor -->
+                <template v-if="isExpanded(group)">
+                  <tr
+                    v-for="product in group.variants"
+                    :key="product.id || product.key"
+                    :data-product-id="product.id"
+                    :data-product-key="product.key"
+                    class="hover:bg-accent/50"
+                  >
+                    <td class="px-3 py-3 text-center">
+                      <input
+                        type="checkbox"
+                        :checked="!!(product.id && selectedProductIds.has(product.id))"
+                        @change="toggleProduct(product.id)"
+                        class="w-4 h-4 text-blue-600 bg-background border-border rounded focus:ring-2 focus:ring-blue-500 cursor-pointer"
+                      />
+                    </td>
+                    <td class="px-3 py-3"></td>
+                    <td class="px-3 py-3"></td>
+                    <td class="px-3 py-3"></td>
+                    <td class="px-3 py-3 text-foreground text-xs sm:text-sm">
+                      <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium whitespace-nowrap" :class="colorBadgeClass(product.color)">
+                        {{ product.color || '-' }}
+                      </span>
+                    </td>
+                    <td class="px-3 py-3 text-gray-700 text-xs sm:text-sm whitespace-nowrap">
+                      <EditableValue
+                        :model-value="product.accessory ?? product.kit ?? 0"
+                        type="currency"
+                        @save="(value) => handleKitSave(product, value)"
+                        compact
+                      />
+                    </td>
+                    <td class="px-3 py-3 text-gray-700 text-xs sm:text-sm whitespace-nowrap">
+                      <EditableValue
+                        :model-value="product.laborValue ?? 0"
+                        type="currency"
+                        @save="(value) => handleLaborSave(product, value)"
+                        compact
+                      />
+                    </td>
+                    <td class="px-3 py-3 text-gray-700 text-xs sm:text-sm whitespace-nowrap">
+                      <EditableValue
+                        :model-value="product.gainValue ?? 0"
+                        type="number"
+                        @save="(value) => handleGainSave(product, value)"
+                        compact
+                        suffix="%"
+                      />
+                    </td>
+                    <td class="px-3 py-3 font-mono font-semibold text-foreground text-xs sm:text-sm whitespace-nowrap">{{ product.cost ? 'R$ ' + product.cost.toFixed(2) : '-' }}</td>
+                    <td class="px-3 py-3 font-mono font-semibold text-green-600 text-xs sm:text-sm whitespace-nowrap">{{ product.price ? 'R$ ' + product.price.toFixed(2) : '-' }}</td>
+                    <td class="px-3 py-3 text-xs sm:text-sm">
+                      <div v-if="product.priceOptions" class="space-y-0.5">
+                        <div v-if="product.priceOptions.installments4x" class="whitespace-nowrap text-[10px] sm:text-xs text-muted-foreground">
+                          4x de R$ {{ (product.priceOptions.installments4x / 4).toFixed(2) }}
+                        </div>
+                        <div v-if="product.priceOptions.installments6x" class="whitespace-nowrap text-[10px] sm:text-xs text-muted-foreground">
+                          6x de R$ {{ (product.priceOptions.installments6x / 6).toFixed(2) }}
+                        </div>
+                        <div v-if="product.priceOptions.installments10x" class="whitespace-nowrap text-[10px] sm:text-xs text-muted-foreground">
+                          10x de R$ {{ (product.priceOptions.installments10x / 10).toFixed(2) }}
+                        </div>
+                        <div v-if="product.priceOptions.installments12x" class="whitespace-nowrap text-[10px] sm:text-xs text-muted-foreground">
+                          12x de R$ {{ (product.priceOptions.installments12x / 12).toFixed(2) }}
+                        </div>
+                      </div>
+                      <span v-else class="text-muted-foreground">-</span>
+                    </td>
+                    <td class="px-3 py-3 font-mono text-purple-600 font-semibold text-xs sm:text-sm whitespace-nowrap">{{ calculateProfit(product) }}</td>
+                    <td class="px-3 py-3 whitespace-nowrap text-right text-xs sm:text-sm font-medium">
+                      <div class="flex justify-end space-x-1 sm:space-x-2">
+                        <button
+                          @click="openModal(product)"
+                          class="text-blue-600 hover:text-blue-900 p-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 rounded"
+                          title="Editar Produto"
+                          aria-label="Editar produto"
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>
+                        </button>
+                        <button
+                          @click="confirmDelete(product)"
+                          class="text-red-600 hover:text-red-900 p-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500 rounded"
+                          title="Excluir Produto"
+                          aria-label="Excluir produto"
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c-1 0 2 1 2 2v2"/></svg>
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                </template>
+              </template>
           </tbody>
         </table>
       </div>
-      
+
         <!-- Paginação -->
         <div v-if="totalPages > 1" class="flex items-center justify-between px-6 py-3 bg-card border-t border-border">
           <div class="flex-1 flex justify-between sm:hidden">
@@ -475,7 +470,7 @@
                 <span class="font-medium">{{ Math.min(currentPage * pageSize, totalItems) }}</span>
                 de
                 <span class="font-medium">{{ totalItems }}</span>
-                resultados
+                grupos
               </p>
               <PageSizeSelector
                 v-model="pageSize"
@@ -563,11 +558,9 @@
 import { ref, onMounted, computed, watch } from 'vue'
 import productService from '../services/product'
 import type { ProductDTO } from '../services/product'
-import type { PaginatedResponse } from '../services/order'
 import laborCostService from '../services/labor-cost'
 import accessoryCostService from '../services/accessory-cost'
 import gainService from '../services/gain'
-import FilterBar from '../components/FilterBar.vue'
 import PageSizeSelector from '../components/PageSizeSelector.vue'
 import ProductModal from '../components/ProductModal.vue'
 import DeleteConfirmDialog from '../components/DeleteConfirmDialog.vue'
@@ -585,6 +578,21 @@ const { isMobile } = useBreakpoint()
 const notification = useNotification()
 const { formatCurrency } = useCurrency()
 
+// Um grupo agrega as variantes de cor de um mesmo produto (tipo+folhas+dimensões).
+interface ProductGroup {
+  key: string
+  type?: string
+  sheets?: number
+  width?: number
+  height?: number
+  measure?: number
+  standard?: boolean
+  variants: ProductDTO[]
+  colorCount: number
+  priceMin: number
+  priceMax: number
+}
+
 const products = ref<ProductDTO[]>([])
 const loading = ref(true)
 const showModal = ref(false)
@@ -593,15 +601,16 @@ const isEditing = ref(false)
 const saving = ref(false)
 const searchQuery = ref('')
 
+// Grupos expandidos (por key). Grupos de 1 cor são sempre exibidos.
+const expandedKeys = ref<Set<string>>(new Set())
+
 // Seleção em massa para orçamento
 const selectedProductIds = ref<Set<number>>(new Set())
 const showQuoteModal = ref(false)
 
-// Paginação
+// Paginação client-side (por grupo)
 const currentPage = ref(1)
 const pageSize = ref(10)
-const totalItems = ref(0)
-const totalPages = ref(0)
 
 const currentProduct = ref<ProductDTO>({
   id: undefined,
@@ -609,8 +618,8 @@ const currentProduct = ref<ProductDTO>({
   category: '',
   type: '',
   sheets: 0,
-  accessory: 0,  // New field name
-  kit: 0,        // Backward compatibility alias
+  accessory: 0,
+  kit: 0,
   width: 0,
   height: 0,
   weight: 0,
@@ -626,9 +635,72 @@ const currentProduct = ref<ProductDTO>({
 
 const productToDelete = ref<ProductDTO | null>(null)
 
-// Computed property para produtos filtrados (agora a filtragem é feita no backend)
-const filteredProducts = computed(() => {
-  return products.value
+// Agrupa os produtos por tipo+folhas+dimensões, com as cores como variantes.
+const allGroups = computed<ProductGroup[]>(() => {
+  const map = new Map<string, ProductGroup>()
+  for (const p of products.value) {
+    const key = `${p.type}|${p.sheets}|${p.width}|${p.height}`
+    let g = map.get(key)
+    if (!g) {
+      g = {
+        key,
+        type: p.type,
+        sheets: p.sheets,
+        width: p.width,
+        height: p.height,
+        measure: p.measure,
+        standard: p.standard,
+        variants: [],
+        colorCount: 0,
+        priceMin: Infinity,
+        priceMax: 0
+      }
+      map.set(key, g)
+    }
+    g.variants.push(p)
+    if (typeof p.price === 'number') {
+      g.priceMin = Math.min(g.priceMin, p.price)
+      g.priceMax = Math.max(g.priceMax, p.price)
+    }
+  }
+  const groups = Array.from(map.values())
+  for (const g of groups) {
+    g.variants.sort((a, b) => (a.color || '').localeCompare(b.color || ''))
+    g.colorCount = g.variants.length
+    if (g.priceMin === Infinity) g.priceMin = 0
+  }
+  groups.sort(
+    (a, b) =>
+      (a.type || '').localeCompare(b.type || '') ||
+      (a.sheets || 0) - (b.sheets || 0) ||
+      (a.width || 0) - (b.width || 0) ||
+      (a.height || 0) - (b.height || 0)
+  )
+  return groups
+})
+
+// Busca client-side por tipo, cor ou dimensões.
+const filteredGroups = computed<ProductGroup[]>(() => {
+  const q = searchQuery.value.trim().toLowerCase()
+  if (!q) return allGroups.value
+  return allGroups.value.filter(
+    g =>
+      (g.type || '').toLowerCase().includes(q) ||
+      g.variants.some(v => (v.color || '').toLowerCase().includes(q)) ||
+      `${g.width}x${g.height}`.includes(q)
+  )
+})
+
+const totalItems = computed(() => filteredGroups.value.length)
+const totalPages = computed(() => Math.max(1, Math.ceil(filteredGroups.value.length / pageSize.value)))
+const pagedGroups = computed<ProductGroup[]>(() => {
+  const start = (currentPage.value - 1) * pageSize.value
+  return filteredGroups.value.slice(start, start + pageSize.value)
+})
+
+// Mantém a página válida quando os filtros reduzem o total.
+watch([filteredGroups, pageSize], () => {
+  if (currentPage.value > totalPages.value) currentPage.value = 1
 })
 
 // Computed para seleção em massa
@@ -639,47 +711,83 @@ const selectedProducts = computed(() => {
 })
 
 const isAllSelected = computed(() => {
-  const currentPageIds = products.value
-    .filter(p => p.id)
-    .map(p => p.id!)
-  return currentPageIds.length > 0 && 
-         currentPageIds.every(id => selectedProductIds.value.has(id))
+  const ids = products.value.filter(p => p.id).map(p => p.id!)
+  return ids.length > 0 && ids.every(id => selectedProductIds.value.has(id))
 })
 
-// Watcher para recarregar automaticamente quando a busca mudar
-watch(searchQuery, () => {
-  currentPage.value = 1 // Reset para primeira página quando a busca mudar
-  loadProducts()
-})
+function isExpanded(group: ProductGroup): boolean {
+  return group.colorCount === 1 || expandedKeys.value.has(group.key)
+}
+
+function toggleGroup(group: ProductGroup) {
+  if (group.colorCount === 1) return
+  const next = new Set(expandedKeys.value)
+  if (next.has(group.key)) next.delete(group.key)
+  else next.add(group.key)
+  expandedKeys.value = next
+}
+
+function priceRange(group: ProductGroup): string {
+  if (!group.priceMin && !group.priceMax) return '-'
+  if (group.priceMin === group.priceMax) return formatCurrency(group.priceMax)
+  return `${formatCurrency(group.priceMin)} – ${formatCurrency(group.priceMax)}`
+}
+
+function typeBadgeClass(type?: string): Record<string, boolean> {
+  return {
+    'bg-blue-100 text-blue-800': type === 'PORTA',
+    'bg-green-100 text-green-800': type === 'JANELA',
+    'bg-purple-100 text-purple-800': type === 'SACADA',
+    'bg-orange-100 text-orange-800': type === 'BASCULANTE',
+    'bg-cyan-100 text-cyan-800': type === 'BOX',
+    'bg-gray-100 text-gray-800': type === 'FIXO',
+    'bg-gray-100 text-gray-500': !type
+  }
+}
+
+function colorBadgeClass(color?: string): Record<string, boolean> {
+  return {
+    'bg-indigo-100 text-indigo-800': color === 'INCOLOR',
+    'bg-emerald-100 text-emerald-800': color === 'VERDE',
+    'bg-slate-100 text-slate-800': color === 'FUME',
+    'bg-yellow-100 text-yellow-800': color === 'BRONZE',
+    'bg-gray-100 text-gray-500': !color
+  }
+}
+
+function standardBadgeClass(standard?: boolean): Record<string, boolean> {
+  return {
+    'bg-green-100 text-green-700': standard === true,
+    'bg-gray-100 text-gray-600': standard === false
+  }
+}
 
 function handlePageChange(page: number) {
   currentPage.value = page
-  loadProducts()
 }
 
 function handlePageSizeChange(size: number) {
   pageSize.value = size
-  currentPage.value = 1 // Reset para primeira página
-  loadProducts()
+  currentPage.value = 1
 }
 
 function getVisiblePages() {
   const maxVisible = 5
   const totalPagesValue = totalPages.value
   const currentPageValue = currentPage.value
-  
+
   if (totalPagesValue <= maxVisible) {
     return Array.from({ length: totalPagesValue }, (_, i) => i + 1)
   }
-  
+
   const half = Math.floor(maxVisible / 2)
   let start = Math.max(1, currentPageValue - half)
-  let end = Math.min(totalPagesValue, start + maxVisible - 1)
-  
+  const end = Math.min(totalPagesValue, start + maxVisible - 1)
+
   if (end - start + 1 < maxVisible) {
     start = Math.max(1, end - maxVisible + 1)
   }
-  
+
   return Array.from({ length: end - start + 1 }, (_, i) => start + i)
 }
 
@@ -690,40 +798,16 @@ onMounted(async () => {
 async function loadProducts() {
   try {
     loading.value = true
-    const params: any = {
-      page: currentPage.value - 1, // API usa índice baseado em 0
-      size: pageSize.value
-    }
-    
-    let response
-    
-    // Se há uma query de busca, usar o endpoint de search
-    if (searchQuery.value.trim()) {
-      params.query = searchQuery.value.trim()
-      response = await productService.search(params)
-    } else {
-      response = await productService.getAll(params)
-    }
-    
-    // Verificar se a resposta é paginada
-    if (response && typeof response === 'object' && 'content' in response) {
-      const paginatedResponse = response as PaginatedResponse<ProductDTO>
-      products.value = paginatedResponse.content
-      totalItems.value = paginatedResponse.totalElements
-      totalPages.value = paginatedResponse.totalPages
-    } else {
-      // Fallback para API não paginada
-      products.value = Array.isArray(response) ? response : []
-      totalItems.value = products.value.length
-      totalPages.value = 1
-    }
+    // Catálogo completo (não paginado) para agrupar por produto no cliente.
+    const response = await productService.getAllNonPaginated()
+    products.value = Array.isArray(response) ? response : response?.content ?? []
   } catch (error) {
     console.error('Erro ao carregar produtos:', error)
+    products.value = []
   } finally {
     loading.value = false
   }
 }
-
 
 function calculateProfit(product: ProductDTO): string {
   if (!product.price || !product.cost) return '-'
@@ -731,16 +815,10 @@ function calculateProfit(product: ProductDTO): string {
   return `R$ ${profit.toFixed(2)}`
 }
 
-function applyFilters() {
-  // Recarregar produtos com os novos filtros
-  loadProducts()
-}
-
 function openModal(product?: ProductDTO) {
   if (product) {
     currentProduct.value = { ...product }
 
-    // Sync accessory and kit for backward compatibility
     if (product.accessory !== undefined) {
       currentProduct.value.kit = product.accessory
     } else if (product.kit !== undefined) {
@@ -778,14 +856,12 @@ async function saveProduct(product: ProductDTO) {
   try {
     saving.value = true
 
-    // Sync accessory with kit value before saving
     if (product.kit !== undefined) {
       product.accessory = product.kit
     } else if (product.accessory !== undefined) {
       product.kit = product.accessory
     }
 
-    // Use id or key for updates
     const identifier = product.id?.toString() || product.key
 
     if (isEditing.value && identifier) {
@@ -813,24 +889,25 @@ async function saveProduct(product: ProductDTO) {
 // Funções de seleção em massa
 function toggleProduct(productId: number | undefined) {
   if (!productId) return
-  if (selectedProductIds.value.has(productId)) {
-    selectedProductIds.value.delete(productId)
-  } else {
-    selectedProductIds.value.add(productId)
-  }
+  const next = new Set(selectedProductIds.value)
+  if (next.has(productId)) next.delete(productId)
+  else next.add(productId)
+  selectedProductIds.value = next
 }
 
 function toggleSelectAll() {
   const allIds = products.value.filter(p => p.id).map(p => p.id!)
+  const next = new Set(selectedProductIds.value)
   if (isAllSelected.value) {
-    allIds.forEach(id => selectedProductIds.value.delete(id))
+    allIds.forEach(id => next.delete(id))
   } else {
-    allIds.forEach(id => selectedProductIds.value.add(id))
+    allIds.forEach(id => next.add(id))
   }
+  selectedProductIds.value = next
 }
 
 function clearSelection() {
-  selectedProductIds.value.clear()
+  selectedProductIds.value = new Set()
 }
 
 function openQuoteModal() {
@@ -880,7 +957,6 @@ async function handleKitSave(product: ProductDTO, value: number | string) {
       return
     }
 
-    // Use inline endpoint - updates all products with same type+sheets+width+height
     await accessoryCostService.updateInline(
       product.type,
       product.sheets,
@@ -903,31 +979,25 @@ async function handleKitSave(product: ProductDTO, value: number | string) {
 async function handleLaborSave(product: ProductDTO, value: number | string) {
   try {
     const numericValue = typeof value === 'string' ? parseFloat(value) : value
-    
-    // Validar que o valor não seja undefined ou null ou NaN
+
     if (numericValue === undefined || numericValue === null || isNaN(numericValue)) {
       notification.error('Erro', 'Valor inválido')
       return
     }
 
-    // Validar que o produto tem type e sheets
     if (!product.type || product.sheets === undefined) {
       notification.error('Erro', 'Produto precisa ter tipo e número de folhas definidos')
       return
     }
 
-    // Usar o endpoint inline que atualiza por type e sheets
     await laborCostService.updateInline(product.type, product.sheets, numericValue)
 
     notification.success('Sucesso', 'Mão de obra atualizada com sucesso')
-    
-    // Reload products to get all updated values (cost, price, profit, etc)
     await loadProducts()
   } catch (error: any) {
     console.error('Erro ao salvar mão de obra:', error)
     const errorMessage = error.response?.data?.message || 'Erro ao atualizar mão de obra. Tente novamente.'
     notification.error('Erro', errorMessage)
-    // Reload products to revert changes
     await loadProducts()
   }
 }
@@ -957,7 +1027,6 @@ async function handleGainSave(product: ProductDTO, value: number | string) {
     await loadProducts()
   }
 }
-
 </script>
 
 <style scoped>

@@ -123,18 +123,11 @@ const onSidebarToggle = (value: boolean) => {
   isManuallyToggled.value = true
 }
 
-// Auto-collapse no breakpoint <1024 (tablet) se user não tiver mexido manualmente
-const autoCollapseTablet = computed(() => {
-  if (isManuallyToggled.value || isMobile.value) return null
-  return window.innerWidth < 1024
-})
-// Aplica auto-collapse uma vez ao iniciar
-if (autoCollapseTablet.value !== null) {
-  sidebarCollapsed.value = autoCollapseTablet.value
-}
-
-// Produtos: colapsa a sidebar por padrão (a tabela tem muitas colunas e usa a
-// largura toda). Sem esconder o nav — só colapsar. Ao sair, reaplica o default.
+// Define o estado padrão da sidebar por rota:
+// - /products -> colapsada (default da página)
+// - demais telas -> expandida, respeitando auto-collapse de tablet (<1024px)
+// O toggle manual é respeitado enquanto o usuário fica na tela; ao trocar de
+// rota cada página reaplica o seu default.
 watch(
   () => route.path,
   (path) => {
@@ -142,7 +135,7 @@ watch(
     if (isMobile.value) return
     if (path.endsWith('products')) {
       sidebarCollapsed.value = true
-    } else if (autoCollapseTablet.value !== null) {
+    } else {
       sidebarCollapsed.value = window.innerWidth < 1024
     }
   },
