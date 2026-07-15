@@ -852,7 +852,7 @@ function openModal(product?: ProductDTO) {
   showModal.value = true
 }
 
-async function saveProduct(product: ProductDTO) {
+async function saveProduct(product: ProductDTO, colors?: string[]) {
   try {
     saving.value = true
 
@@ -868,12 +868,18 @@ async function saveProduct(product: ProductDTO) {
       await productService.update(identifier, product)
       notification.success('Sucesso', 'Produto atualizado com sucesso')
     } else {
-      const response = await productService.create(product)
-      if (response && (response.id || response.key)) {
-        product.id = response.id
-        product.key = response.key || response.id?.toString()
+      // Cadastro color-agnostic: cria 1 produto por cor marcada (fallback = a
+      // cor do form). O backend calcula preço/custo/lucro por cor.
+      const targetColors = colors && colors.length ? colors : [product.color || '']
+      for (const color of targetColors) {
+        await productService.create({ ...product, id: undefined, key: '', color })
       }
-      notification.success('Sucesso', 'Produto criado com sucesso')
+      notification.success(
+        'Sucesso',
+        targetColors.length > 1
+          ? `Produto cadastrado em ${targetColors.length} cores`
+          : 'Produto criado com sucesso'
+      )
     }
 
     showModal.value = false

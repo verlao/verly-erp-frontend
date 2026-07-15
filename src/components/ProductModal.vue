@@ -67,20 +67,42 @@
               />
             </div>
 
-            <!-- Color -->
+            <!-- Color(s) -->
             <div>
-              <Label for="color" class="mb-2">Cor</Label>
+              <Label class="mb-2">{{ isEditing ? 'Cor' : 'Cores' }}</Label>
+
+              <!-- Editando: cor única (uma variante existente) -->
               <Select
+                v-if="isEditing"
                 v-model="formData.color"
                 id="color"
                 placeholder="Selecione a cor"
               >
                 <SelectItem value="">Selecione a cor</SelectItem>
-                <SelectItem value="INCOLOR">Incolor</SelectItem>
-                <SelectItem value="VERDE">Verde</SelectItem>
-                <SelectItem value="FUME">Fumê</SelectItem>
-                <SelectItem value="BRONZE">Bronze</SelectItem>
+                <SelectItem v-for="c in PRODUCT_COLORS" :key="c.value" :value="c.value">
+                  {{ c.label }}
+                </SelectItem>
               </Select>
+
+              <!-- Criando: multi-cor (cria uma vez, vale pra todas marcadas) -->
+              <template v-else>
+                <div class="flex flex-wrap gap-2">
+                  <label
+                    v-for="c in PRODUCT_COLORS"
+                    :key="c.value"
+                    class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border cursor-pointer text-sm transition-colors"
+                    :class="selectedColors.includes(c.value)
+                      ? 'border-blue-500 bg-blue-50 text-blue-700'
+                      : 'border-border text-muted-foreground hover:bg-accent'"
+                  >
+                    <input type="checkbox" class="h-4 w-4" :value="c.value" v-model="selectedColors" />
+                    {{ c.label }}
+                  </label>
+                </div>
+                <p class="mt-1.5 text-xs text-muted-foreground">
+                  O produto é cadastrado uma vez e vale para todas as cores marcadas.
+                </p>
+              </template>
             </div>
 
             <!-- Kit -->
@@ -258,8 +280,19 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   'update:open': [value: boolean]
-  'save': [product: ProductDTO]
+  'save': [product: ProductDTO, colors?: string[]]
 }>()
+
+// Cores de produto disponíveis. No cadastro (create) o produto é criado uma
+// vez por cor marcada; na edição mexe-se numa variante única.
+const PRODUCT_COLORS = [
+  { value: 'INCOLOR', label: 'Incolor' },
+  { value: 'VERDE', label: 'Verde' },
+  { value: 'FUME', label: 'Fumê' },
+  { value: 'BRONZE', label: 'Bronze' },
+]
+const DEFAULT_COLORS = ['INCOLOR', 'VERDE', 'FUME']
+const selectedColors = ref<string[]>([...DEFAULT_COLORS])
 
 const { formatCurrency } = useCurrency()
 
@@ -320,7 +353,8 @@ watch(() => props.product, (newProduct) => {
       accessory: newProduct.accessory ?? newProduct.kit ?? 0
     }
   } else {
-    // Reset form
+    // Reset form (create): volta as cores pro default
+    selectedColors.value = [...DEFAULT_COLORS]
     formData.value = {
       id: undefined,
       key: '',
@@ -362,9 +396,11 @@ provide('select-close', () => {
   // Close functionality is handled by Select component
 })
 
-// Form validation
+// Form validation: tipo obrigatório; no cadastro, pelo menos 1 cor marcada.
 const isFormValid = computed(() => {
-  return !!formData.value.type
+  if (!formData.value.type) return false
+  if (!isEditing.value && selectedColors.value.length === 0) return false
+  return true
 })
 
 const handleSubmit = async () => {
@@ -375,7 +411,9 @@ const handleSubmit = async () => {
     // Sync accessory with kit value
     formData.value.accessory = formData.value.kit
 
-    emit('save', formData.value)
+    // Create: manda as cores marcadas pro pai criar 1 produto por cor.
+    // Edit: cor única já em formData.color.
+    emit('save', formData.value, isEditing.value ? undefined : [...selectedColors.value])
   } finally {
     saving.value = false
   }
