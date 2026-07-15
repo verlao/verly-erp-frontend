@@ -37,7 +37,7 @@
         </span>
       </div>
 
-      <!-- Linha 2: preço (editable) -->
+      <!-- Linha 2: preço PADRÃO (catálogo) -->
       <EditableValue
         :model-value="glass.costPerSquareMeter"
         type="currency"
@@ -46,9 +46,18 @@
         compact
         class="text-xs sm:text-sm font-semibold text-foreground"
       />
+      <span class="text-[9px] text-muted-foreground -mt-0.5">padrão/m²</span>
 
-      <!-- Linha 3: unidade -->
-      <span class="text-[9px] text-muted-foreground -mt-0.5">por m²</span>
+      <!-- Linha 3: preço NÃO-PADRÃO (fora do catálogo / corte) -->
+      <EditableValue
+        :model-value="glass.costPerSquareMeterNaoPadrao ?? glass.costPerSquareMeter"
+        type="currency"
+        @save="(value) => handleUpdateNonStandard(glass.color, value)"
+        variant="default"
+        compact
+        class="text-[10px] sm:text-xs font-medium text-muted-foreground"
+      />
+      <span class="text-[9px] text-muted-foreground -mt-0.5">fora do padrão/m²</span>
     </div>
   </div>
 </template>
@@ -111,7 +120,7 @@ const handleUpdate = async (
 
   try {
     await glassCostService.updatePriceByColor(color, numericValue)
-    showSuccess('Sucesso', `Custo de ${color} atualizado`)
+    showSuccess('Sucesso', `Custo padrão de ${color} atualizado`)
     await loadGlassCosts()
   } catch (error: any) {
     console.error('Erro ao atualizar custo de vidro:', error)
@@ -119,6 +128,25 @@ const handleUpdate = async (
       'Erro',
       error.response?.data?.message || 'Não foi possível atualizar'
     )
+    await loadGlassCosts()
+  }
+}
+
+const handleUpdateNonStandard = async (color: string, value: string | number) => {
+  const numericValue = typeof value === 'string' ? parseFloat(value) : value
+
+  if (numericValue === undefined || numericValue === null || isNaN(numericValue)) {
+    showError('Erro', 'Valor inválido')
+    return
+  }
+
+  try {
+    await glassCostService.updateNonStandardByColor(color, numericValue)
+    showSuccess('Sucesso', `Custo não-padrão de ${color} atualizado`)
+    await loadGlassCosts()
+  } catch (error: any) {
+    console.error('Erro ao atualizar custo não-padrão:', error)
+    showError('Erro', error.response?.data?.message || 'Não foi possível atualizar')
     await loadGlassCosts()
   }
 }

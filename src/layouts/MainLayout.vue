@@ -96,7 +96,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 import { useBreakpoint } from '../composables/useBreakpoint'
@@ -132,6 +132,22 @@ const autoCollapseTablet = computed(() => {
 if (autoCollapseTablet.value !== null) {
   sidebarCollapsed.value = autoCollapseTablet.value
 }
+
+// Produtos: colapsa a sidebar por padrão (a tabela tem muitas colunas e usa a
+// largura toda). Sem esconder o nav — só colapsar. Ao sair, reaplica o default.
+watch(
+  () => route.path,
+  (path) => {
+    isManuallyToggled.value = false
+    if (isMobile.value) return
+    if (path.endsWith('products')) {
+      sidebarCollapsed.value = true
+    } else if (autoCollapseTablet.value !== null) {
+      sidebarCollapsed.value = window.innerWidth < 1024
+    }
+  },
+  { immediate: true },
+)
 
 const pageTitle = computed(() => {
   if (route.path.endsWith('dashboard')) return 'Dashboard'
