@@ -129,10 +129,10 @@ const onSidebarToggle = (value: boolean) => {
 // O toggle manual é respeitado enquanto o usuário fica na tela; ao trocar de
 // rota cada página reaplica o seu default.
 watch(
-  () => route.path,
-  (path) => {
+  [() => route.path, isMobile],
+  ([path, mobile]) => {
     isManuallyToggled.value = false
-    if (isMobile.value) return
+    if (mobile) return
     if (path.endsWith('products')) {
       sidebarCollapsed.value = true
     } else {
