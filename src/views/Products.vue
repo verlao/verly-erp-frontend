@@ -296,7 +296,6 @@
                 <th class="px-3 py-2 text-left text-[10px] sm:text-xs font-medium text-muted-foreground uppercase tracking-wider">Preço à Vista</th>
                 <th class="px-3 py-2 text-left text-[10px] sm:text-xs font-medium text-muted-foreground uppercase tracking-wider">Preço Parcelado</th>
                 <th class="px-3 py-2 text-left text-[10px] sm:text-xs font-medium text-muted-foreground uppercase tracking-wider">Lucro</th>
-                <th class="px-3 py-2 text-center text-[10px] sm:text-xs font-medium text-muted-foreground uppercase tracking-wider">Ações</th>
               </tr>
             </thead>
             <tbody class="bg-card divide-y divide-border">
@@ -341,7 +340,6 @@
                   <td class="px-3 py-3 font-mono font-semibold text-green-600 text-xs sm:text-sm whitespace-nowrap">{{ priceRange(group) }}</td>
                   <td class="px-3 py-3 text-muted-foreground text-xs">—</td>
                   <td class="px-3 py-3 text-muted-foreground text-xs">—</td>
-                  <td class="px-3 py-3"></td>
                 </tr>
 
                 <!-- Variantes de cor -->
@@ -414,26 +412,6 @@
                       <span v-else class="text-muted-foreground">-</span>
                     </td>
                     <td class="px-3 py-3 font-mono text-purple-600 font-semibold text-xs sm:text-sm whitespace-nowrap">{{ calculateProfit(product) }}</td>
-                    <td class="px-3 py-3 whitespace-nowrap text-right text-xs sm:text-sm font-medium">
-                      <div class="flex justify-end space-x-1 sm:space-x-2">
-                        <button
-                          @click="openModal(product)"
-                          class="text-blue-600 hover:text-blue-900 p-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 rounded"
-                          title="Editar Produto"
-                          aria-label="Editar produto"
-                        >
-                          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>
-                        </button>
-                        <button
-                          @click="confirmDelete(product)"
-                          class="text-red-600 hover:text-red-900 p-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500 rounded"
-                          title="Excluir Produto"
-                          aria-label="Excluir produto"
-                        >
-                          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c-1 0 2 1 2 2v2"/></svg>
-                        </button>
-                      </div>
-                    </td>
                   </tr>
                 </template>
               </template>
