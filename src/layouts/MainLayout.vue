@@ -96,7 +96,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 import { useBreakpoint } from '../composables/useBreakpoint'
@@ -123,15 +123,24 @@ const onSidebarToggle = (value: boolean) => {
   isManuallyToggled.value = true
 }
 
-// Auto-collapse no breakpoint <1024 (tablet) se user não tiver mexido manualmente
-const autoCollapseTablet = computed(() => {
-  if (isManuallyToggled.value || isMobile.value) return null
-  return window.innerWidth < 1024
-})
-// Aplica auto-collapse uma vez ao iniciar
-if (autoCollapseTablet.value !== null) {
-  sidebarCollapsed.value = autoCollapseTablet.value
-}
+// Define o estado padrão da sidebar por rota:
+// - /products -> colapsada (default da página)
+// - demais telas -> expandida, respeitando auto-collapse de tablet (<1024px)
+// O toggle manual é respeitado enquanto o usuário fica na tela; ao trocar de
+// rota cada página reaplica o seu default.
+watch(
+  [() => route.path, isMobile],
+  ([path, mobile]) => {
+    isManuallyToggled.value = false
+    if (mobile) return
+    if (path.endsWith('products')) {
+      sidebarCollapsed.value = true
+    } else {
+      sidebarCollapsed.value = window.innerWidth < 1024
+    }
+  },
+  { immediate: true },
+)
 
 const pageTitle = computed(() => {
   if (route.path.endsWith('dashboard')) return 'Dashboard'

@@ -15,6 +15,7 @@ export interface ProductDTO {
   weight?: number
   measure?: number // Calculated field from backend
   color?: string
+  standard?: boolean // Calculated field from backend: true = usa preço de vidro padrão
   cost?: number // Calculated field from backend
   price?: number // Calculated field from backend (À vista dinheiro)
   profit?: number // Calculated field from backend
