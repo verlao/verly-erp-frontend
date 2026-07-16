@@ -373,6 +373,52 @@
         </div>
       </AccordionContent>
     </AccordionItem>
+
+    <!-- PVC (Forro) - custo por m² -->
+    <AccordionItem
+      value="pvc"
+      class="border border-border shadow-sm hover:shadow-md transition-all duration-300"
+    >
+      <AccordionTrigger class="bg-card hover:bg-accent/50">
+        <div class="flex items-center gap-3 flex-1">
+          <div class="w-10 h-10 rounded-lg bg-muted flex items-center justify-center">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-muted-foreground">
+              <path d="M3 3h18v18H3z"/>
+              <path d="M3 9h18M3 15h18M9 3v18M15 3v18"/>
+            </svg>
+          </div>
+          <div class="flex-1 text-left">
+            <h3 class="text-base md:text-lg font-bold text-foreground">Forro PVC — custo por m²</h3>
+            <p class="text-xs md:text-sm text-muted-foreground">
+              {{ pvcCost != null ? 'Custo por m² configurado' : 'Configure o custo do PVC por m²' }}
+            </p>
+          </div>
+        </div>
+      </AccordionTrigger>
+
+      <AccordionContent class="border-t border-border pt-6">
+        <div v-if="loading.pvc">
+          <Skeleton class="h-24 rounded-lg max-w-xs" />
+        </div>
+        <Card
+          v-else
+          class="group relative border border-border bg-card hover:border-primary/50 hover:shadow-md transition-all duration-300 p-4 max-w-xs overflow-visible"
+        >
+          <label class="text-xs font-bold text-foreground flex items-center gap-2 mb-2">
+            <span class="w-1 h-4 bg-primary rounded-full flex-shrink-0"></span>
+            PVC (por m²)
+          </label>
+          <EditableValue
+            :model-value="pvcCost ?? 0"
+            type="currency"
+            @save="(value) => handlePvcUpdate(value)"
+            variant="default"
+            compact
+            class="text-sm font-semibold text-foreground"
+          />
+        </Card>
+      </AccordionContent>
+    </AccordionItem>
   </div>
 </template>
 
@@ -399,6 +445,7 @@ const gains = ref<GainDTO[]>([])
 const creditCardCost = ref<CreditCardCostDTO | null>(null)
 const glassMatrix = ref<GlassPriceDTO[]>([])
 const standardDimensions = ref<StandardDimensionDTO[]>([])
+const pvcCost = ref<number | null>(null)
 
 const newDim = ref<{ type: string; sheets: number | null; width: number | null; height: number | null }>({
   type: 'PORTA',
@@ -412,7 +459,8 @@ const loading = ref({
   gain: false,
   creditCard: false,
   glassMatrix: false,
-  standardDims: false
+  standardDims: false,
+  pvc: false
 })
 
 // Matriz agrupada por cor (padrão primeiro), para exibição.
@@ -439,7 +487,8 @@ const loadAllCosts = async () => {
     loadGains(),
     loadCreditCardCosts(),
     loadGlassMatrix(),
-    loadStandardDimensions()
+    loadStandardDimensions(),
+    loadPvcCost()
   ])
 }
 
@@ -559,6 +608,35 @@ const loadCreditCardCosts = async () => {
     showError('Erro', 'Não foi possível carregar as taxas de cartão')
   } finally {
     loading.value.creditCard = false
+  }
+}
+
+const loadPvcCost = async () => {
+  loading.value.pvc = true
+  try {
+    pvcCost.value = await glassCostService.getPvcCost()
+  } catch (error) {
+    console.error('Erro ao carregar custo do PVC:', error)
+    pvcCost.value = null
+  } finally {
+    loading.value.pvc = false
+  }
+}
+
+const handlePvcUpdate = async (value: string | number) => {
+  const numericValue = typeof value === 'string' ? parseFloat(value) : value
+  if (numericValue === undefined || numericValue === null || isNaN(numericValue)) {
+    showError('Erro', 'Valor inválido')
+    return
+  }
+  try {
+    await glassCostService.updatePvcCost(numericValue)
+    showSuccess('Sucesso', 'Custo do PVC por m² atualizado')
+    await loadPvcCost()
+  } catch (error: any) {
+    console.error('Erro ao atualizar custo do PVC:', error)
+    showError('Erro', error.response?.data?.message || 'Não foi possível atualizar')
+    await loadPvcCost()
   }
 }
 
