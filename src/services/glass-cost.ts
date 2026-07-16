@@ -15,6 +15,17 @@ export interface GlassCostDTO {
   updatedAt?: string
 }
 
+// Célula da matriz de preço do m² por (cor × tipo × padrão/não-padrão)
+export interface GlassPriceDTO {
+  id?: number
+  color: string
+  type: string
+  standard: boolean
+  costPerM2: number
+  active?: boolean
+}
+
+// Painel de configuração consolidado: custos de vidro + PVC/m².
 export interface CostConfigDTO {
   glassCosts: GlassCostDTO[]
   pvcCostPerSquareMeter: number | null
@@ -23,6 +34,24 @@ export interface CostConfigDTO {
 const glassCostService = {
   getAll: async (): Promise<GlassCostDTO[]> => {
     const response = await api.get('/api/glass-cost')
+    return response.data
+  },
+
+  // Matriz de preço por (cor × tipo × padrão/não-padrão)
+  getMatrix: async (): Promise<GlassPriceDTO[]> => {
+    const response = await api.get('/api/glass-cost/matrix')
+    return response.data
+  },
+
+  updateMatrixPrice: async (
+    color: string,
+    type: string,
+    standard: boolean,
+    newPrice: number
+  ): Promise<GlassPriceDTO> => {
+    const response = await api.put('/api/glass-cost/matrix', null, {
+      params: { color, type, standard, newPrice: newPrice.toFixed(2) }
+    })
     return response.data
   },
   
