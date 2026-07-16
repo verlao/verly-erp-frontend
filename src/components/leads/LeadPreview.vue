@@ -7,6 +7,7 @@ import Badge from '../ui/Badge.vue'
 import Separator from '../ui/Separator.vue'
 import Avatar from '../ui/Avatar.vue'
 import type { LeadDTO } from '../../services/lead'
+import { useLeadSignals, fmtTime } from '../../composables/useLeadSignals'
 
 const props = defineProps<{
   lead?: LeadDTO
@@ -95,56 +96,8 @@ function formatBrl(n?: number | null): string {
   return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(n)
 }
 
-// --- Sinais + timeline (blob JSON em lead.data, gerado pelo bot) ---
-interface LeadSignals {
-  payment?: { detected?: boolean; quote?: string | null }
-  visit?: { detected?: boolean; date?: string | null; quote?: string | null }
-  closed?: { detected?: boolean; quote?: string | null }
-  objection?: { detected?: boolean; quote?: string | null }
-}
-interface TranscriptMsg { fromMe?: boolean; body?: string; at?: string | null }
-
-const parsedData = computed<{ signals?: LeadSignals; transcript?: TranscriptMsg[] } | null>(() => {
-  const raw = props.lead?.data
-  if (!raw) return null
-  try {
-    return JSON.parse(raw)
-  } catch {
-    return null
-  }
-})
-const signals = computed<LeadSignals | null>(() => parsedData.value?.signals ?? null)
-const transcript = computed<TranscriptMsg[]>(() => parsedData.value?.transcript ?? [])
-
-const signalChips = computed(() => {
-  const s = signals.value
-  if (!s) return [] as { key: string; label: string; cls: string }[]
-  const chips: { key: string; label: string; cls: string }[] = []
-  if (s.payment?.detected) chips.push({ key: 'payment', label: '💰 Pagou', cls: 'bg-emerald-100 text-emerald-800' })
-  if (s.visit?.detected) chips.push({ key: 'visit', label: `📅 Visita${s.visit.date ? ' ' + s.visit.date : ''}`, cls: 'bg-blue-100 text-blue-800' })
-  if (s.closed?.detected) chips.push({ key: 'closed', label: '✅ Fechou', cls: 'bg-green-100 text-green-800' })
-  if (s.objection?.detected) chips.push({ key: 'objection', label: '⚠️ Objeção', cls: 'bg-amber-100 text-amber-800' })
-  return chips
-})
-
-const nextAction = computed(() => {
-  const s = signals.value
-  if (!s) return ''
-  if (s.closed?.detected) return 'Cliente fechou → converter em cliente'
-  if (s.payment?.detected) return 'Pagamento sinalizado → confirmar comprovante no Financeiro'
-  if (s.visit?.detected) return `Visita combinada${s.visit.date ? ' (' + s.visit.date + ')' : ''} → confirmar agenda`
-  if (s.objection?.detected) return 'Objeção → fazer follow-up'
-  return ''
-})
-
-function fmtTime(at?: string | null): string {
-  if (!at) return ''
-  try {
-    return new Date(at).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })
-  } catch {
-    return ''
-  }
-}
+// Sinais + timeline (blob JSON em lead.data) — fonte única no composable.
+const { transcript, signalChips, nextAction } = useLeadSignals(() => props.lead)
 </script>
 
 <template>

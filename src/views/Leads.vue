@@ -43,9 +43,16 @@
           />
         </div>
 
-        <!-- Preview (60%) -->
+        <!-- Preview (60%) — command center quando nada selecionado -->
         <div class="flex-1 overflow-y-auto bg-muted/30">
+          <LeadsOverview
+            v-if="!selectedLead"
+            :leads="leads"
+            :counts="counts"
+            @select="handleSelectLead"
+          />
           <LeadPreview
+            v-else
             :lead="selectedLead"
             @convert="handleConvert"
             @mark-contacted="handleMarkContacted"
@@ -172,6 +179,7 @@ import { useWindowSize, useIntersectionObserver, useWindowScroll } from '@vueuse
 import { useNotificationStore } from '../stores/notification'
 import LeadList from '../components/leads/LeadList.vue'
 import LeadPreview from '../components/leads/LeadPreview.vue'
+import LeadsOverview from '../components/leads/LeadsOverview.vue'
 import LeadFilters from '../components/leads/LeadFilters.vue'
 import Button from '../components/ui/Button.vue'
 import leadService from '../services/lead'
