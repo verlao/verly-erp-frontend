@@ -26,3 +26,7 @@ coverage
 *.njsproj
 *.sln
 *.sw?
+
+# Local env (nunca versionar) — VITE_API_URL é build-time
+.env
+.env.local

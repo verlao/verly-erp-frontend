@@ -4,6 +4,7 @@ import { MapPin, Phone, Mail, CheckCircle } from 'lucide-vue-next'
 import Badge from '../ui/Badge.vue'
 import Avatar from '../ui/Avatar.vue'
 import type { LeadDTO } from '../../services/lead'
+import { isHotLead, parseLeadData, getNextAction } from '../../composables/useLeadSignals'
 
 const props = defineProps<{
   lead: LeadDTO
@@ -98,6 +99,10 @@ const profitDisplay = computed(() => brl(props.lead.totalEstimatedProfit))
 const productCount = computed(() =>
   (props.lead.items || []).reduce((s, i) => s + (i.quantity || 1), 0)
 )
+
+// Lead quente (sinal de compra ou alto valor) + próxima ação sugerida
+const hot = computed(() => isHotLead(props.lead))
+const nextAction = computed(() => getNextAction(parseLeadData(props.lead.data)?.signals))
 </script>
 
 <template>
@@ -138,6 +143,7 @@ const productCount = computed(() =>
             <h4 :class="['truncate text-sm md:text-sm', isUnread ? 'font-bold' : 'font-semibold']">
               {{ lead.name }}
             </h4>
+            <span v-if="hot" class="shrink-0" title="Lead quente — sinal de compra ou alto valor">🔥</span>
           </div>
 
           <!-- Tier badge proeminente à direita -->
@@ -153,6 +159,12 @@ const productCount = computed(() =>
         <!-- Linha 2: resumo do serviço em 1 linha (o que o dono escaneia) -->
         <p v-if="summaryLine" class="text-xs md:text-sm text-foreground/80 truncate">
           {{ summaryLine }}
+        </p>
+
+        <!-- Próxima ação sugerida (dos sinais da conversa) -->
+        <p v-if="nextAction" class="flex items-center gap-1 text-[11px] md:text-xs text-amber-700 font-medium truncate">
+          <span aria-hidden="true">→</span>
+          <span class="truncate">{{ nextAction }}</span>
         </p>
 
         <!-- Linha 3: valor + lucro + qtd + status + bairro + tempo -->
