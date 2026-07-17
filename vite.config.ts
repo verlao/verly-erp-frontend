@@ -11,7 +11,12 @@ export default defineConfig({
     vue(),
     tailwindcss(),
     VitePWA({
-      registerType: 'autoUpdate',
+      // 'prompt': o SW novo AGUARDA e a gente mostra um aviso "Atualizar" (o
+      // usuário decide quando recarregar — sem susto no meio de um orçamento).
+      // A UI vive em PwaUpdatePrompt.vue via useRegisterSW; injectRegister:null
+      // evita registro duplicado (só o composable registra).
+      registerType: 'prompt',
+      injectRegister: null,
       includeAssets: ['icon.svg', 'favicon.ico', 'apple-touch-icon-180x180.png'],
       manifest: {
         name: 'Verly ERP - Vidraçaria',
@@ -42,7 +47,9 @@ export default defineConfig({
         // novo assume o controle imediatamente (sem esperar todas as abas fecharem).
         cleanupOutdatedCaches: true,
         clientsClaim: true,
-        skipWaiting: true,
+        // false: o SW novo espera o clique em "Atualizar" (fluxo prompt) em vez
+        // de assumir o controle sozinho.
+        skipWaiting: false,
         runtimeCaching: [
           {
             // Navegação (o próprio HTML): network-first → um deploy novo aparece na
