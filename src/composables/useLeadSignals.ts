@@ -1,7 +1,7 @@
 // Sinais + timeline que o bot grava no blob JSON `lead.data`.
 // Fonte única (DRY) usada por LeadPreview, LeadListItem e LeadsOverview.
 import { computed, toValue, type MaybeRefOrGetter } from 'vue'
-import type { LeadDTO } from '../services/lead'
+import type { LeadDTO, LeadItemDTO } from '../services/lead'
 
 export interface LeadSignals {
   payment?: { detected?: boolean; quote?: string | null }
@@ -67,6 +67,54 @@ export function hotReason(lead?: LeadDTO | null): string {
   if (lead.tier === '$$$') return 'orçamento de alto valor'
   return 'novo lead'
 }
+
+// ── Resposta sugerida (next-best-question) ────────────────────────────────
+// Espelho no cliente do LeadCompletion.java (backend PR #39 ainda não mergeado).
+// Escada de slots, mais bloqueante de orçamento primeiro: produto → medida →
+// cor → endereço. Nunca pede nome (pushname do WhatsApp já vem ~98%).
+const blank = (s?: string | null): boolean => !s || !s.trim()
+const hasProduct = (items?: LeadItemDTO[]): boolean => !!items?.some((i) => !blank(i.productType))
+const hasMeasure = (items?: LeadItemDTO[]): boolean =>
+  !!items?.some((i) => (i.widthCm ?? 0) > 0 && (i.heightCm ?? 0) > 0)
+const hasColor = (items?: LeadItemDTO[]): boolean => !!items?.some((i) => !blank(i.color))
+const firstProduct = (items?: LeadItemDTO[]): string | undefined =>
+  items?.find((i) => !blank(i.productType))?.productType
+
+export type MissingField = 'product' | 'measure' | 'color' | 'address'
+
+export function getMissingFields(lead?: LeadDTO | null): MissingField[] {
+  if (!lead) return []
+  const m: MissingField[] = []
+  if (!hasProduct(lead.items)) m.push('product')
+  if (!hasMeasure(lead.items)) m.push('measure')
+  if (!hasColor(lead.items)) m.push('color')
+  if (blank(lead.neighborhood)) m.push('address')
+  return m
+}
+
+// A pergunta que o dono deve mandar a seguir (o slot vazio de maior prioridade),
+// ou '' quando nada essencial falta. Uma pergunta por vez.
+export function getSuggestedReply(lead?: LeadDTO | null): string {
+  if (!lead) return ''
+  const items = lead.items
+  if (!hasProduct(items)) return 'O que você precisa? (box, janela, porta, espelho, tampo…)'
+  if (!hasMeasure(items)) {
+    const p = firstProduct(items)
+    const forWhat = blank(p) ? '' : ` do ${p!.toLowerCase()}`
+    return `Pra fechar o orçamento${forWhat}, me passa a largura × altura?`
+  }
+  if (!hasColor(items)) return 'O vidro é incolor, fumê ou verde? E qual a espessura (6/8/10mm)?'
+  if (blank(lead.neighborhood)) return 'Pra agendar a medição/entrega, qual o endereço (rua, número e bairro)?'
+  return ''
+}
+
+const MISSING_LABEL: Record<MissingField, string> = {
+  product: 'produto',
+  measure: 'medida',
+  color: 'cor/espessura',
+  address: 'endereço',
+}
+export const missingLabel = (f: MissingField): string => MISSING_LABEL[f]
 
 export function fmtTime(at?: string | null): string {
   if (!at) return ''

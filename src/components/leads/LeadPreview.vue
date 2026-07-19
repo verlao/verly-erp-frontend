@@ -1,13 +1,13 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { Mail, Phone, MapPin, Calendar, Target, Monitor, ExternalLink, User, MessageSquare, FileText } from 'lucide-vue-next'
+import { Mail, Phone, MapPin, Calendar, Target, Monitor, ExternalLink, User, MessageSquare, FileText, Copy, Check } from 'lucide-vue-next'
 import Button from '../ui/Button.vue'
 import Badge from '../ui/Badge.vue'
 import Separator from '../ui/Separator.vue'
 import Avatar from '../ui/Avatar.vue'
 import type { LeadDTO } from '../../services/lead'
-import { useLeadSignals, fmtTime } from '../../composables/useLeadSignals'
+import { useLeadSignals, fmtTime, getSuggestedReply, getMissingFields, missingLabel } from '../../composables/useLeadSignals'
 
 const props = defineProps<{
   lead?: LeadDTO
@@ -98,6 +98,21 @@ function formatBrl(n?: number | null): string {
 
 // Sinais + timeline (blob JSON em lead.data) — fonte única no composable.
 const { transcript, signalChips, nextAction } = useLeadSignals(() => props.lead)
+
+// Resposta sugerida (next-best-question) + o que ainda falta pra fechar orçamento.
+const suggestedReply = computed(() => getSuggestedReply(props.lead))
+const missingFields = computed(() => getMissingFields(props.lead))
+const copied = ref(false)
+async function copyReply() {
+  if (!suggestedReply.value) return
+  try {
+    await navigator.clipboard.writeText(suggestedReply.value)
+    copied.value = true
+    setTimeout(() => (copied.value = false), 1500)
+  } catch {
+    /* clipboard bloqueado (http/permite) — dono seleciona manualmente */
+  }
+}
 </script>
 
 <template>
@@ -149,6 +164,35 @@ const { transcript, signalChips, nextAction } = useLeadSignals(() => props.lead)
               <span>Extraído automaticamente — confira antes de enviar</span>
             </p>
           </div>
+        </section>
+
+        <!-- 1b. Resposta sugerida (next-best-question, human-in-the-loop) -->
+        <section v-if="suggestedReply" class="rounded-lg border border-indigo-200 bg-indigo-50/60 p-3 md:p-4">
+          <div class="flex items-center justify-between gap-2 mb-1.5">
+            <h3 class="flex items-center gap-1.5 text-xs md:text-sm font-semibold text-indigo-900">
+              <span aria-hidden="true">💬</span> Próxima pergunta
+            </h3>
+            <button
+              type="button"
+              class="inline-flex items-center gap-1 text-[11px] md:text-xs font-medium text-indigo-700 hover:text-indigo-900 transition-colors"
+              @click="copyReply"
+            >
+              <component :is="copied ? Check : Copy" class="w-3.5 h-3.5" />
+              {{ copied ? 'Copiado' : 'Copiar' }}
+            </button>
+          </div>
+          <p class="text-sm md:text-base text-indigo-950 leading-snug">{{ suggestedReply }}</p>
+          <div v-if="missingFields.length" class="mt-2 flex flex-wrap items-center gap-1.5">
+            <span class="text-[11px] text-indigo-700/80">Falta:</span>
+            <span
+              v-for="f in missingFields"
+              :key="f"
+              class="px-1.5 py-0.5 text-[10px] md:text-[11px] font-medium rounded bg-indigo-100 text-indigo-800"
+            >{{ missingLabel(f) }}</span>
+          </div>
+          <p class="mt-2 text-[10px] md:text-[11px] text-indigo-700/70">
+            Copie e envie você mesmo no WhatsApp (o bot não envia — evita bloqueio do número).
+          </p>
         </section>
 
         <!-- 2. Produtos / itens estruturados -->

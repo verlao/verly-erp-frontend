@@ -4,7 +4,7 @@ import { MapPin, Phone, Mail, CheckCircle } from 'lucide-vue-next'
 import Badge from '../ui/Badge.vue'
 import Avatar from '../ui/Avatar.vue'
 import type { LeadDTO } from '../../services/lead'
-import { isHotLead, parseLeadData, getNextAction } from '../../composables/useLeadSignals'
+import { isHotLead, parseLeadData, getNextAction, getSuggestedReply } from '../../composables/useLeadSignals'
 
 const props = defineProps<{
   lead: LeadDTO
@@ -103,6 +103,9 @@ const productCount = computed(() =>
 // Lead quente (sinal de compra ou alto valor) + próxima ação sugerida
 const hot = computed(() => isHotLead(props.lead))
 const nextAction = computed(() => getNextAction(parseLeadData(props.lead.data)?.signals))
+// Resposta sugerida (o que perguntar pra completar o orçamento). Só mostra quando
+// não há uma ação de sinal mais quente, pra não poluir.
+const suggestedReply = computed(() => (nextAction.value ? '' : getSuggestedReply(props.lead)))
 </script>
 
 <template>
@@ -165,6 +168,12 @@ const nextAction = computed(() => getNextAction(parseLeadData(props.lead.data)?.
         <p v-if="nextAction" class="flex items-center gap-1 text-[11px] md:text-xs text-amber-700 font-medium truncate">
           <span aria-hidden="true">→</span>
           <span class="truncate">{{ nextAction }}</span>
+        </p>
+
+        <!-- Resposta sugerida: pergunta pra completar o orçamento (human-in-the-loop) -->
+        <p v-else-if="suggestedReply" class="flex items-center gap-1 text-[11px] md:text-xs text-indigo-700 font-medium truncate">
+          <span aria-hidden="true">💬</span>
+          <span class="truncate">{{ suggestedReply }}</span>
         </p>
 
         <!-- Linha 3: valor + lucro + qtd + status + bairro + tempo -->

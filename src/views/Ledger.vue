@@ -30,7 +30,20 @@
       </div>
 
       <!-- Cards de Resumo -->
-      <div class="grid grid-cols-3 gap-2 md:gap-4 mb-4 md:mb-6">
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-4 mb-4 md:mb-6">
+        <Card class="bg-card border-border p-3 md:p-6 hover:shadow-lg transition-shadow duration-200">
+          <div class="flex items-center">
+            <div class="p-3 rounded-full bg-emerald-500/10 text-emerald-600 hidden md:flex">
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+            </div>
+            <div class="md:ml-4">
+              <h2 class="text-muted-foreground text-xs md:text-sm font-medium">Lucro</h2>
+              <p v-if="!loadingSummary" class="text-base md:text-2xl font-bold text-emerald-700">{{ currency.formatCurrency((summary.totalRevenue || 0) - (summary.totalExpenses || 0)) }}</p>
+              <span v-if="!loadingSummary && summary.totalRevenue" class="text-[10px] md:text-xs text-muted-foreground">margem {{ Math.round((((summary.totalRevenue || 0) - (summary.totalExpenses || 0)) / summary.totalRevenue) * 100) }}%</span>
+              <Skeleton v-else-if="loadingSummary" class="h-5 md:h-7 w-16 md:w-28" />
+            </div>
+          </div>
+        </Card>
         <Card class="bg-card border-border p-3 md:p-6 hover:shadow-lg transition-shadow duration-200">
           <div class="flex items-center">
             <div class="p-3 rounded-full bg-emerald-500/10 text-emerald-600 hidden md:flex">
