@@ -268,15 +268,15 @@ async function copySuggestedReply() {
 
       <!-- Próxima pergunta sugerida (ladder deterministico do backend) + copiar -->
       <div v-if="lead.suggestedReply" class="px-4 md:px-6 pb-4">
-        <div class="flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm">
+        <div class="flex items-start gap-2 rounded-lg border border-warning/30 bg-warning/10 p-3 text-sm">
           <span aria-hidden="true">💬</span>
           <div class="flex-1 min-w-0">
-            <span class="text-amber-700 font-medium">Próxima pergunta: </span>
+            <span class="text-warning font-medium">Próxima pergunta: </span>
             <span class="text-foreground">{{ lead.suggestedReply }}</span>
           </div>
           <button
             type="button"
-            class="shrink-0 inline-flex items-center gap-1 rounded px-2 py-1 text-xs font-medium text-amber-700 hover:bg-amber-100 transition-colors"
+            class="shrink-0 inline-flex items-center gap-1 rounded px-2 py-1 text-xs font-medium text-warning hover:bg-warning/20 transition-colors"
             :aria-label="copied ? 'Copiado' : 'Copiar pergunta'"
             @click="copySuggestedReply"
           >
