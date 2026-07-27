@@ -1,12 +1,13 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { Mail, Phone, MapPin, Calendar, Target, Monitor, ExternalLink, User, MessageSquare, FileText } from 'lucide-vue-next'
+import { Mail, Phone, MapPin, Calendar, Target, Monitor, ExternalLink, User, MessageSquare, FileText, Copy, Check } from 'lucide-vue-next'
 import Button from '../ui/Button.vue'
 import Badge from '../ui/Badge.vue'
 import Separator from '../ui/Separator.vue'
 import Avatar from '../ui/Avatar.vue'
 import type { LeadDTO } from '../../services/lead'
+import { useLeadSignals, fmtTime, statusBadgeConfig, tierBadgeClass as tierBadgeClassFor } from '../../composables/useLeadSignals'
 
 const props = defineProps<{
   lead?: LeadDTO
@@ -28,18 +29,7 @@ function goToQuote() {
   if (props.lead?.id) router.push(`/leads/${props.lead.id}/orcamento`)
 }
 
-const statusConfig = computed(() => {
-  if (!props.lead?.status) return { label: 'Novo', variant: 'info' as const }
-
-  const configs = {
-    NEW: { label: 'Novo', variant: 'info' as const },
-    CONTACTED: { label: 'Contatado', variant: 'warning' as const },
-    QUALIFIED: { label: 'Qualificado', variant: 'success' as const },
-    CONVERTED: { label: 'Convertido', variant: 'default' as const },
-    LOST: { label: 'Perdido', variant: 'secondary' as const }
-  }
-  return configs[props.lead.status] || configs.NEW
-})
+const statusConfig = computed(() => statusBadgeConfig(props.lead?.status))
 
 const formattedDate = computed(() => {
   if (!props.lead?.createdDate) return ''
@@ -81,74 +71,34 @@ const canMarkQualified = computed(() => {
   return props.lead?.status === 'CONTACTED'
 })
 
-// V2_17: tier badge color
-const tierBadgeClass = computed(() => {
-  const t = props.lead?.tier
-  if (t === '$$$') return 'bg-yellow-500 text-white'
-  if (t === '$$') return 'bg-blue-500 text-white'
-  if (t === '$') return 'bg-gray-400 text-white'
-  return ''
-})
+// V2_17: tier badge color — fonte única no composable
+const tierBadgeClass = computed(() => tierBadgeClassFor(props.lead?.tier))
 
 function formatBrl(n?: number | null): string {
   if (n == null) return '—'
   return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(n)
 }
 
-// --- Sinais + timeline (blob JSON em lead.data, gerado pelo bot) ---
-interface LeadSignals {
-  payment?: { detected?: boolean; quote?: string | null }
-  visit?: { detected?: boolean; date?: string | null; quote?: string | null }
-  closed?: { detected?: boolean; quote?: string | null }
-  objection?: { detected?: boolean; quote?: string | null }
-}
-interface TranscriptMsg { fromMe?: boolean; body?: string; at?: string | null }
+// Sinais + timeline (blob JSON em lead.data) — fonte única no composable.
+const { transcript, signalChips, nextAction } = useLeadSignals(() => props.lead)
 
-const parsedData = computed<{ signals?: LeadSignals; transcript?: TranscriptMsg[] } | null>(() => {
-  const raw = props.lead?.data
-  if (!raw) return null
+// Próxima pergunta sugerida (ladder deterministico vindo do backend) — a loja envia manualmente.
+const copied = ref(false)
+async function copySuggestedReply() {
+  const text = props.lead?.suggestedReply
+  if (!text) return
   try {
-    return JSON.parse(raw)
+    await navigator.clipboard.writeText(text)
+    copied.value = true
+    setTimeout(() => { copied.value = false }, 1500)
   } catch {
-    return null
-  }
-})
-const signals = computed<LeadSignals | null>(() => parsedData.value?.signals ?? null)
-const transcript = computed<TranscriptMsg[]>(() => parsedData.value?.transcript ?? [])
-
-const signalChips = computed(() => {
-  const s = signals.value
-  if (!s) return [] as { key: string; label: string; cls: string }[]
-  const chips: { key: string; label: string; cls: string }[] = []
-  if (s.payment?.detected) chips.push({ key: 'payment', label: '💰 Pagou', cls: 'bg-emerald-100 text-emerald-800' })
-  if (s.visit?.detected) chips.push({ key: 'visit', label: `📅 Visita${s.visit.date ? ' ' + s.visit.date : ''}`, cls: 'bg-blue-100 text-blue-800' })
-  if (s.closed?.detected) chips.push({ key: 'closed', label: '✅ Fechou', cls: 'bg-green-100 text-green-800' })
-  if (s.objection?.detected) chips.push({ key: 'objection', label: '⚠️ Objeção', cls: 'bg-amber-100 text-amber-800' })
-  return chips
-})
-
-const nextAction = computed(() => {
-  const s = signals.value
-  if (!s) return ''
-  if (s.closed?.detected) return 'Cliente fechou → converter em cliente'
-  if (s.payment?.detected) return 'Pagamento sinalizado → confirmar comprovante no Financeiro'
-  if (s.visit?.detected) return `Visita combinada${s.visit.date ? ' (' + s.visit.date + ')' : ''} → confirmar agenda`
-  if (s.objection?.detected) return 'Objeção → fazer follow-up'
-  return ''
-})
-
-function fmtTime(at?: string | null): string {
-  if (!at) return ''
-  try {
-    return new Date(at).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })
-  } catch {
-    return ''
+    /* clipboard bloqueado (sem HTTPS/permissão) → falha silenciosa */
   }
 }
 </script>
 
 <template>
-  <div class="flex flex-col h-full bg-white">
+  <div class="flex flex-col h-full bg-card">
     <!-- Empty state -->
     <div v-if="!lead" class="flex flex-col items-center justify-center h-full p-8 text-center">
       <div class="w-16 h-16 mb-4 text-muted-foreground">
@@ -198,7 +148,66 @@ function fmtTime(at?: string | null): string {
           </div>
         </section>
 
-        <!-- 2. Produtos / itens estruturados -->
+        <!-- 2. Próxima pergunta sugerida (ladder deterministico do backend) + copiar -->
+        <section v-if="lead.suggestedReply">
+          <div class="flex items-start gap-2 rounded-lg border border-warning/30 bg-warning/10 p-3 text-sm">
+            <span aria-hidden="true">💬</span>
+            <div class="flex-1 min-w-0">
+              <span class="text-warning font-medium">Próxima pergunta: </span>
+              <span class="text-foreground">{{ lead.suggestedReply }}</span>
+            </div>
+            <button
+              type="button"
+              class="shrink-0 inline-flex items-center gap-1 rounded px-2 py-1 text-xs font-medium text-warning hover:bg-warning/20 transition-colors"
+              :aria-label="copied ? 'Copiado' : 'Copiar pergunta'"
+              @click="copySuggestedReply"
+            >
+              <component :is="copied ? Check : Copy" class="w-3.5 h-3.5" aria-hidden="true" />
+              {{ copied ? 'Copiado' : 'Copiar' }}
+            </button>
+          </div>
+        </section>
+
+        <!-- 3. Sinais lidos da conversa + próxima ação + timeline (bot → lead.data) -->
+        <section v-if="signalChips.length || transcript.length" class="space-y-3">
+          <div v-if="signalChips.length" class="flex flex-wrap gap-2">
+            <span
+              v-for="c in signalChips"
+              :key="c.key"
+              :class="c.cls"
+              class="px-2 py-0.5 text-xs font-medium rounded-full"
+            >{{ c.label }}</span>
+          </div>
+          <div v-if="nextAction" class="text-sm">
+            <span class="text-muted-foreground">Próxima ação: </span>
+            <span class="font-medium text-foreground">{{ nextAction }}</span>
+          </div>
+          <details v-if="transcript.length" class="text-sm">
+            <summary class="cursor-pointer text-muted-foreground hover:text-foreground select-none">
+              Ver conversa ({{ transcript.length }})
+            </summary>
+            <div class="mt-2 space-y-1.5 max-h-64 overflow-y-auto pr-1">
+              <div
+                v-for="(m, i) in transcript"
+                :key="i"
+                class="flex"
+                :class="m.fromMe ? 'justify-end' : 'justify-start'"
+              >
+                <div
+                  class="max-w-[80%] rounded-lg px-3 py-1.5"
+                  :class="m.fromMe ? 'bg-primary/10' : 'bg-muted'"
+                >
+                  <p class="whitespace-pre-wrap break-words">{{ m.body }}</p>
+                  <p class="text-[10px] text-muted-foreground mt-0.5">
+                    {{ m.fromMe ? 'Loja' : 'Cliente' }} · {{ fmtTime(m.at) }}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </details>
+        </section>
+
+        <!-- 4. Produtos / itens estruturados -->
         <section v-if="lead.items && lead.items.length > 0">
           <h3 class="text-xs md:text-sm font-semibold text-foreground mb-2 md:mb-3">
             Produtos ({{ lead.items.length }})
@@ -224,7 +233,7 @@ function fmtTime(at?: string | null): string {
           </div>
         </section>
 
-        <!-- 3. Total + lucro estimados -->
+        <!-- 5. Total + lucro estimados -->
         <section
           v-if="lead.totalEstimatedValue != null || lead.totalEstimatedProfit != null"
           class="rounded-lg border border-border p-3 md:p-4 text-sm space-y-1"
@@ -241,7 +250,7 @@ function fmtTime(at?: string | null): string {
 
         <Separator />
 
-        <!-- 4. Contato -->
+        <!-- 6. Contato -->
         <section>
           <h3 class="text-xs md:text-sm font-semibold text-foreground mb-2 md:mb-3">Informações de Contato</h3>
           <div class="space-y-1.5 md:space-y-2">
@@ -316,49 +325,10 @@ function fmtTime(at?: string | null): string {
         </details>
       </div>
 
-      <!-- Sinais lidos da conversa + próxima ação + timeline (bot → lead.data) -->
-      <div v-if="signalChips.length || transcript.length" class="px-4 md:px-6 pb-4 space-y-3">
-        <div v-if="signalChips.length" class="flex flex-wrap gap-2">
-          <span
-            v-for="c in signalChips"
-            :key="c.key"
-            :class="c.cls"
-            class="px-2 py-0.5 text-xs font-medium rounded-full"
-          >{{ c.label }}</span>
-        </div>
-        <div v-if="nextAction" class="text-sm">
-          <span class="text-muted-foreground">Próxima ação: </span>
-          <span class="font-medium text-foreground">{{ nextAction }}</span>
-        </div>
-        <details v-if="transcript.length" class="text-sm">
-          <summary class="cursor-pointer text-muted-foreground hover:text-foreground select-none">
-            Ver conversa ({{ transcript.length }})
-          </summary>
-          <div class="mt-2 space-y-1.5 max-h-64 overflow-y-auto pr-1">
-            <div
-              v-for="(m, i) in transcript"
-              :key="i"
-              class="flex"
-              :class="m.fromMe ? 'justify-end' : 'justify-start'"
-            >
-              <div
-                class="max-w-[80%] rounded-lg px-3 py-1.5"
-                :class="m.fromMe ? 'bg-primary/10' : 'bg-muted'"
-              >
-                <p class="whitespace-pre-wrap break-words">{{ m.body }}</p>
-                <p class="text-[10px] text-muted-foreground mt-0.5">
-                  {{ m.fromMe ? 'Loja' : 'Cliente' }} · {{ fmtTime(m.at) }}
-                </p>
-              </div>
-            </div>
-          </div>
-        </details>
-      </div>
-
       <!-- Sticky bottom CTA bar: WhatsApp em destaque, depois converter/status,
            e "marcar como perdido" como link discreto/destrutivo. -->
       <div
-        class="border-t border-border bg-white p-3 md:p-4 space-y-2 shrink-0"
+        class="border-t border-border bg-card p-3 md:p-4 space-y-2 shrink-0"
         :style="isMobile ? 'padding-bottom: calc(0.75rem + env(safe-area-inset-bottom))' : undefined"
       >
         <Button
@@ -374,7 +344,7 @@ function fmtTime(at?: string | null): string {
         <Button
           v-if="lead.phone"
           variant="default"
-          class="w-full bg-green-600 hover:bg-green-700 text-white"
+          class="w-full bg-success hover:bg-success/90 text-success-foreground"
           @click="emit('openWhatsapp')"
         >
           <Phone class="w-4 h-4 mr-2" />

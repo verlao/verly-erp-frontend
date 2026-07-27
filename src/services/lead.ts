@@ -64,6 +64,11 @@ export interface LeadDTO {
   tier?: LeadTier
   sourceExtractionId?: number
   source?: string
+
+  // Suggested next-best-question (deterministic ladder, computed on the backend).
+  // suggestedReply is null when nothing essential is missing.
+  suggestedReply?: string | null
+  missingFields?: string[]
 }
 
 // Leads colapsados por contato (telefone) + funil, tudo resolvido no backend.

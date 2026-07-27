@@ -45,3 +45,41 @@ export function buildQuoteMessage(args: QuoteMessageArgs): string {
     `\n\n*Total: R$ ${totalFormatted}*\n\nQualquer dúvida estou à disposição.`
   )
 }
+
+interface RichQuoteMessageArgs {
+  customerName: string
+  quoteId: number | string
+  items: Array<{ qty: number; label: string; lineTotal: number }>
+  total: number
+  discount?: number
+  validityDays?: number
+}
+
+const brl = (n: number) =>
+  new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(n)
+
+/**
+ * Mensagem "comercial" do orçamento conferido (tela de conferência do lead):
+ * itens com preço por linha, total em destaque, validade e fechamento com CTA.
+ * Markdown leve compatível com WhatsApp (* = negrito).
+ */
+export function buildRichQuoteMessage(args: RichQuoteMessageArgs): string {
+  const firstName = args.customerName.trim().split(' ')[0] || args.customerName
+  const divider = '━━━━━━━━━━━━━━━'
+  const lines = args.items.map(i => `▫ ${i.qty}× ${i.label} — ${brl(i.lineTotal)}`)
+  const discountLine = args.discount && args.discount > 0 ? `Desconto: ${brl(args.discount)}\n` : ''
+
+  return (
+    `*ORÇAMENTO #${args.quoteId} — Verly Vidraçaria* 🏷️\n\n` +
+    `Olá ${firstName}! Conferimos as medidas da nossa conversa e preparamos seu orçamento:\n\n` +
+    `${divider}\n` +
+    lines.join('\n') +
+    `\n${divider}\n` +
+    discountLine +
+    `💰 *TOTAL: ${brl(args.total)}*\n\n` +
+    `✅ Vidro temperado com garantia\n` +
+    `📅 Orçamento válido por ${args.validityDays ?? 7} dias\n` +
+    `💳 Parcelamos no cartão\n\n` +
+    `Podemos agendar a instalação?`
+  )
+}

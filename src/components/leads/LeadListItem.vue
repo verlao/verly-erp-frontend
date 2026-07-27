@@ -3,7 +3,9 @@ import { computed } from 'vue'
 import { MapPin, Phone, Mail, CheckCircle } from 'lucide-vue-next'
 import Badge from '../ui/Badge.vue'
 import Avatar from '../ui/Avatar.vue'
+import Checkbox from '../ui/Checkbox.vue'
 import type { LeadDTO } from '../../services/lead'
+import { isHotLead, parseLeadData, getNextAction, statusBadgeConfig, tierBadgeClass } from '../../composables/useLeadSignals'
 
 const props = defineProps<{
   lead: LeadDTO
@@ -17,17 +19,7 @@ const emit = defineEmits<{
   quickAction: [action: string]
 }>()
 
-const statusConfig = computed(() => {
-  const status = props.lead.status || 'NEW'
-  const configs = {
-    NEW: { label: 'Novo', variant: 'info' as const, dot: true },
-    CONTACTED: { label: 'Contatado', variant: 'warning' as const, dot: false },
-    QUALIFIED: { label: 'Qualificado', variant: 'success' as const, dot: false },
-    CONVERTED: { label: 'Convertido', variant: 'default' as const, dot: false },
-    LOST: { label: 'Perdido', variant: 'secondary' as const, dot: false }
-  }
-  return configs[status] || configs.NEW
-})
+const statusConfig = computed(() => statusBadgeConfig(props.lead.status))
 
 const isUnread = computed(() => !props.lead.isRead)
 
@@ -55,18 +47,12 @@ const timeAgo = computed(() => {
 const priority = computed(() => props.lead.priority || 'MEDIUM')
 
 const priorityClass = computed(() => {
-  if (priority.value === 'HIGH') return 'border-l-4 border-l-red-500'
+  if (priority.value === 'HIGH') return 'border-l-4 border-l-destructive'
   return ''
 })
 
-// V2_17: tier badge classes ($ / $$ / $$$)
-const tierClass = computed(() => {
-  const t = props.lead.tier
-  if (t === '$$$') return 'bg-yellow-500 text-white'
-  if (t === '$$') return 'bg-blue-500 text-white'
-  if (t === '$') return 'bg-gray-400 text-white'
-  return ''
-})
+// V2_17: tier badge classes ($ / $$ / $$$) — fonte única no composable
+const tierClass = computed(() => tierBadgeClass(props.lead.tier))
 
 // V2_17: compact items summary — "PORTA 200×80 (1x) + espelho (2x)"
 const itemsSummary = computed(() => {
@@ -98,6 +84,10 @@ const profitDisplay = computed(() => brl(props.lead.totalEstimatedProfit))
 const productCount = computed(() =>
   (props.lead.items || []).reduce((s, i) => s + (i.quantity || 1), 0)
 )
+
+// Lead quente (sinal de compra ou alto valor) + próxima ação sugerida
+const hot = computed(() => isHotLead(props.lead))
+const nextAction = computed(() => getNextAction(parseLeadData(props.lead.data)?.signals))
 </script>
 
 <template>
@@ -106,7 +96,7 @@ const productCount = computed(() =>
       'lead-item group relative cursor-pointer transition-all duration-200',
       'border-b border-border hover:bg-accent/50 active:bg-accent',
       selected ? 'bg-accent' : '',
-      isUnread ? 'bg-blue-50/30' : '',
+      isUnread ? 'bg-info/5' : '',
       priorityClass
     ]"
     @click="emit('select')"
@@ -114,12 +104,10 @@ const productCount = computed(() =>
     <div class="flex items-start gap-2 md:gap-3 p-3 md:p-3">
       <!-- Checkbox — touch target ≥44px no mobile -->
       <div class="flex items-center justify-center -m-2 p-2 min-w-[44px] min-h-[44px] md:min-w-0 md:min-h-0 md:m-0 md:p-0 md:pt-1">
-        <input
-          type="checkbox"
-          :checked="checked"
-          class="h-4 w-4 rounded border-gray-300 text-primary focus:ring-2 focus:ring-primary focus:ring-offset-0"
+        <Checkbox
+          :model-value="checked"
+          @update:model-value="emit('toggle')"
           @click.stop
-          @change="emit('toggle')"
         />
       </div>
 
@@ -133,11 +121,12 @@ const productCount = computed(() =>
           <div class="flex items-center gap-1.5 min-w-0">
             <span
               v-if="isUnread"
-              class="flex h-2 w-2 shrink-0 rounded-full bg-blue-500"
+              class="flex h-2 w-2 shrink-0 rounded-full bg-info"
             />
             <h4 :class="['truncate text-sm md:text-sm', isUnread ? 'font-bold' : 'font-semibold']">
               {{ lead.name }}
             </h4>
+            <span v-if="hot" class="shrink-0" title="Lead quente — sinal de compra ou alto valor">🔥</span>
           </div>
 
           <!-- Tier badge proeminente à direita -->
@@ -155,12 +144,18 @@ const productCount = computed(() =>
           {{ summaryLine }}
         </p>
 
+        <!-- Próxima ação sugerida (dos sinais da conversa) -->
+        <p v-if="nextAction" class="flex items-center gap-1 text-[11px] md:text-xs text-warning font-medium truncate">
+          <span aria-hidden="true">→</span>
+          <span class="truncate">{{ nextAction }}</span>
+        </p>
+
         <!-- Linha 3: valor + lucro + qtd + status + bairro + tempo -->
         <div class="flex items-center flex-wrap gap-x-2 gap-y-1 text-[11px] md:text-xs">
           <span v-if="totalDisplay" class="font-bold text-foreground">
             {{ totalDisplay }}
           </span>
-          <span v-if="profitDisplay" class="text-green-700 font-medium">
+          <span v-if="profitDisplay" class="text-success font-medium">
             lucro {{ profitDisplay }}
           </span>
           <span v-if="productCount" class="text-muted-foreground">
@@ -209,12 +204,3 @@ const productCount = computed(() =>
     </div>
   </div>
 </template>
-
-<style scoped>
-.line-clamp-2 {
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-}
-</style>

@@ -1,34 +1,35 @@
 <template>
   <div>
-    <!-- Título "Leads" já vem do MainLayout (MobileTopBar no mobile / header no desktop);
-         aqui fica só o subtítulo pra não duplicar. -->
-    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
-      <div>
-        <p class="text-sm text-muted-foreground">Gerencie leads e converta em clientes</p>
-      </div>
-
-      <!-- Ações em lote -->
-      <div v-if="checkedIds.length > 0" class="flex items-center gap-2">
-        <span class="text-sm text-muted-foreground">{{ checkedIds.length }} selecionado(s)</span>
-        <Button variant="outline" size="sm" @click="clearSelection">
-          Limpar Seleção
-        </Button>
-      </div>
+    <!-- Ações em lote: só ocupa espaço quando há seleção -->
+    <div v-if="checkedIds.length > 0" class="flex items-center justify-end gap-2 mb-3">
+      <span class="text-sm text-muted-foreground">{{ checkedIds.length }} selecionado(s)</span>
+      <Button variant="outline" size="sm" @click="clearSelection">
+        Limpar Seleção
+      </Button>
     </div>
+
+    <!-- Toolbar: busca + CTA principal -->
+    <LeadsToolbar
+      v-model:search="search"
+      :has-active-filters="hasActiveFilters"
+      class="mb-3"
+      @clear="clearFilters"
+    />
+
+    <!-- Stats strip compacta -->
+    <LeadStats :leads="leads" :counts="counts" :loading="loading" class="mb-3" />
 
     <!-- Filtros inline -->
     <LeadFilters
-      v-model:search="search"
       v-model:status-filter="statusFilter"
       v-model:tier-filter="tierFilter"
       :counts="counts"
-      @clear="clearFilters"
     />
 
     <!-- Conteúdo Principal: Card com Split View -->
     <div class="bg-card rounded-lg shadow-sm border border-border overflow-hidden">
       <!-- Desktop: Split View -->
-      <div class="hidden md:flex" style="height: calc(100vh - 360px)">
+      <div class="hidden md:flex h-[max(420px,calc(100vh-22rem))]">
         <!-- Lista Leads (40%) -->
         <div class="w-2/5 border-r border-border overflow-y-auto">
           <LeadList
@@ -43,9 +44,16 @@
           />
         </div>
 
-        <!-- Preview (60%) -->
+        <!-- Preview (60%) — command center quando nada selecionado -->
         <div class="flex-1 overflow-y-auto bg-muted/30">
+          <LeadsOverview
+            v-if="!selectedLead"
+            :leads="leads"
+            :counts="counts"
+            @select="handleSelectLead"
+          />
           <LeadPreview
+            v-else
             :lead="selectedLead"
             @convert="handleConvert"
             @mark-contacted="handleMarkContacted"
@@ -71,8 +79,8 @@
 
         <!-- Sentinela de scroll infinito (mobile) -->
         <div ref="loadMoreSentinel" class="h-px"></div>
-        <div v-if="loadingMore" class="p-4 flex items-center justify-center gap-2 text-sm text-gray-500">
-          <svg class="animate-spin h-4 w-4 text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+        <div v-if="loadingMore" class="p-4 flex items-center justify-center gap-2 text-sm text-muted-foreground">
+          <svg class="animate-spin h-4 w-4 text-muted-foreground" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
             <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
             <path class="opacity-75" fill="currentColor" d="m4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
           </svg>
@@ -80,7 +88,7 @@
         </div>
         <div
           v-else-if="!hasMore && filteredLeads.length > 0"
-          class="p-4 text-center text-xs text-gray-400"
+          class="p-4 text-center text-xs text-muted-foreground"
         >
           Todos os leads carregados
         </div>
@@ -92,7 +100,7 @@
       <button
         v-if="showBackToTop"
         @click="scrollToTop"
-        class="fixed right-4 z-30 h-12 w-12 flex items-center justify-center rounded-full bg-blue-600 text-white shadow-lg active:scale-95 transition-transform"
+        class="fixed right-4 z-30 h-12 w-12 flex items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg active:scale-95 transition-transform"
         style="bottom: calc(5rem + env(safe-area-inset-bottom))"
         aria-label="Voltar ao topo"
       >
@@ -127,12 +135,12 @@
           >
             <div
               v-if="showMobilePreview"
-              class="w-full bg-white rounded-t-2xl shadow-2xl max-h-[85vh] flex flex-col overflow-hidden"
+              class="w-full bg-card rounded-t-2xl shadow-2xl max-h-[85vh] flex flex-col overflow-hidden"
               @click.stop
             >
               <!-- Handle + close -->
               <div class="relative shrink-0 pt-2">
-                <div class="mx-auto h-1.5 w-10 rounded-full bg-gray-300"></div>
+                <div class="mx-auto h-1.5 w-10 rounded-full bg-muted-foreground/30"></div>
                 <button
                   type="button"
                   class="absolute right-2 top-1 min-w-[44px] min-h-[44px] flex items-center justify-center text-muted-foreground hover:text-foreground"
@@ -172,7 +180,10 @@ import { useWindowSize, useIntersectionObserver, useWindowScroll } from '@vueuse
 import { useNotificationStore } from '../stores/notification'
 import LeadList from '../components/leads/LeadList.vue'
 import LeadPreview from '../components/leads/LeadPreview.vue'
+import LeadsOverview from '../components/leads/LeadsOverview.vue'
 import LeadFilters from '../components/leads/LeadFilters.vue'
+import LeadsToolbar from '../components/leads/LeadsToolbar.vue'
+import LeadStats from '../components/leads/LeadStats.vue'
 import Button from '../components/ui/Button.vue'
 import leadService from '../services/lead'
 import type { LeadDTO, PaginatedResponse } from '../services/lead'
@@ -228,6 +239,11 @@ const isMobile = computed(() => width.value < 768)
 
 // Scroll infinito (mobile): há mais páginas pra carregar?
 const hasMore = computed(() => currentPage.value < totalPages.value)
+
+// Botão "limpar filtros" na toolbar aparece se qualquer filtro estiver ativo.
+const hasActiveFilters = computed(() =>
+  Boolean(search.value || statusFilter.value !== 'all' || tierFilter.value !== 'all')
+)
 
 // Sentinela do scroll infinito (mobile)
 const loadMoreSentinel = ref<HTMLElement | null>(null)

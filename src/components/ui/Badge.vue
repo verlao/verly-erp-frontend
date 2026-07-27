@@ -16,11 +16,11 @@ const variantClasses = computed(() => {
     case 'outline':
       return 'border border-input bg-background hover:bg-accent'
     case 'success':
-      return 'bg-green-500 text-white hover:bg-green-600'
+      return 'bg-success text-success-foreground hover:bg-success/90'
     case 'warning':
-      return 'bg-yellow-500 text-white hover:bg-yellow-600'
+      return 'bg-warning text-warning-foreground hover:bg-warning/90'
     case 'info':
-      return 'bg-blue-500 text-white hover:bg-blue-600'
+      return 'bg-info text-info-foreground hover:bg-info/90'
     default:
       return 'bg-primary text-primary-foreground hover:bg-primary/80'
   }
