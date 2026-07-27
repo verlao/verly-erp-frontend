@@ -12,6 +12,9 @@ export interface OrderDTO {
   profit: number
 }
 
+// Set canônico pós-V2_29 (coluna segue string; tolerante a legados)
+export type OrderStatus = 'PENDENTE' | 'EM_ANDAMENTO' | 'CONCLUIDO' | 'CANCELADO' | string
+
 export interface PaginatedResponse<T> {
   content: T[]
   totalElements: number
@@ -64,6 +67,12 @@ const orderService = {
   
   update: async (id: number, order: OrderDTO) => {
     const response = await api.put(`/orders/${id}`, order)
+    return response.data
+  },
+
+  // V2_29: transição de status validada pelo backend (400 em valor inválido)
+  updateStatus: async (id: number, status: OrderStatus) => {
+    const response = await api.patch(`/orders/${id}/status`, { status })
     return response.data
   },
   

@@ -41,6 +41,8 @@ export interface LedgerResponseDTO {
   customerId?: number
   customerName?: string
   orderReference?: string
+  leadId?: number
+  source?: 'WHATSAPP' | string
   totalAmount: number
   status: 'PENDING' | 'POSTED' | 'REVERSED' | 'CANCELLED'
   reversedById?: number
@@ -129,6 +131,25 @@ const ledgerService = {
 
   cancel: async (id: number): Promise<void> => {
     await api.post(`/ledgers/${id}/cancel`)
+  },
+
+  /**
+   * Lançamentos PENDING por origem (ex.: WHATSAPP). Fallback: se o backend ainda
+   * não expõe /ledgers/pending (404), filtra client-side os últimos 30 dias.
+   */
+  getPendingBySource: async (source: string): Promise<LedgerResponseDTO[]> => {
+    try {
+      const response = await api.get(`/ledgers/pending?source=${encodeURIComponent(source)}`)
+      return response.data
+    } catch (e: any) {
+      if (e?.response?.status !== 404) throw e
+      const end = new Date()
+      const start = new Date()
+      start.setDate(start.getDate() - 30)
+      const iso = (d: Date) => d.toISOString().slice(0, 10)
+      const all = await ledgerService.getByDateRange(iso(start), iso(end))
+      return all.filter(l => l.status === 'PENDING' && l.source === source)
+    }
   },
 
   getSummary: async (startDate: string, endDate: string): Promise<LedgerSummaryDTO> => {

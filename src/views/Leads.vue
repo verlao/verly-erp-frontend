@@ -175,7 +175,8 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
+import { useRoute } from 'vue-router'
 import { useWindowSize, useIntersectionObserver, useWindowScroll } from '@vueuse/core'
 import { useNotificationStore } from '../stores/notification'
 import LeadList from '../components/leads/LeadList.vue'
@@ -545,10 +546,36 @@ useLeadKeyboard({
 // Filtros são aplicados client-side sobre os leads já carregados
 // (filteredLeads reage aos refs), então não há refetch nem reset de página aqui.
 
+// Deep-link: /leads?leadId=X seleciona o lead (vindo do Financeiro/kanban).
+// Se não está na página carregada, busca direto e insere no topo.
+const route = useRoute()
+
+async function applyLeadIdFromQuery() {
+  const id = Number(route.query.leadId)
+  if (!id) return
+  let lead = leads.value.find(l => l.id === id)
+  if (!lead) {
+    try {
+      lead = await leadService.getById(id)
+      if (lead) leads.value.unshift(lead)
+    } catch {
+      return
+    }
+  }
+  if (!lead) return
+  selectLead(lead)
+  if (isMobile.value) {
+    showMobilePreview.value = true
+  }
+}
+
+watch(() => route.query.leadId, applyLeadIdFromQuery)
+
 // Init
 onMounted(async () => {
   await fetchLeads()
   await fetchCounts()
+  await applyLeadIdFromQuery()
 })
 </script>
 
