@@ -42,7 +42,12 @@ export interface LedgerResponseDTO {
   customerName?: string
   orderReference?: string
   leadId?: number
-  source?: 'WHATSAPP' | string
+  source?: 'WHATSAPP' | 'MANUAL' | string
+  counterpartyType?: 'CUSTOMER' | 'SUPPLIER' | 'EMPLOYEE' | 'OTHER' | 'UNKNOWN' | string
+  directionConfidence?: number
+  // Enriquecidos pelo backend (cadeia lead→orçamento→pedido)
+  quoteId?: number
+  leadName?: string
   totalAmount: number
   status: 'PENDING' | 'POSTED' | 'REVERSED' | 'CANCELLED'
   reversedById?: number
@@ -59,6 +64,24 @@ export interface ReverseEntryDTO {
   createdBy: string
 }
 
+export interface MethodFlowDTO {
+  paymentMethod: string
+  in: number
+  out: number
+}
+
+export interface CounterpartyFlowDTO {
+  counterpartyType: string
+  in: number
+  out: number
+}
+
+export interface DailyFlowDTO {
+  date: string // YYYY-MM-DD
+  in: number
+  out: number
+}
+
 export interface LedgerSummaryDTO {
   totalRevenue: number
   totalExpenses: number
@@ -66,6 +89,11 @@ export interface LedgerSummaryDTO {
   count: number
   pixIn: number
   pixOut: number
+  // Campos novos do tracker — opcionais (backend antigo não os manda)
+  pendingCount?: number
+  pendingAmount?: number
+  byMethod?: MethodFlowDTO[]
+  byCounterparty?: CounterpartyFlowDTO[]
 }
 
 export interface PaginatedResponse<T> {
@@ -149,6 +177,17 @@ const ledgerService = {
       const iso = (d: Date) => d.toISOString().slice(0, 10)
       const all = await ledgerService.getByDateRange(iso(start), iso(end))
       return all.filter(l => l.status === 'PENDING' && l.source === source)
+    }
+  },
+
+  /** Série diária de fluxo. 404 (backend antigo) → [] e o gráfico se esconde. */
+  getDailySeries: async (startDate: string, endDate: string): Promise<DailyFlowDTO[]> => {
+    try {
+      const response = await api.get(`/ledgers/daily?startDate=${startDate}&endDate=${endDate}`)
+      return response.data ?? []
+    } catch (e: any) {
+      if (e?.response?.status === 404) return []
+      throw e
     }
   },
 
