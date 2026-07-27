@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { Mail, Phone, MapPin, Calendar, Target, Monitor, ExternalLink, User, MessageSquare, FileText } from 'lucide-vue-next'
+import { Mail, Phone, MapPin, Calendar, Target, Monitor, ExternalLink, User, MessageSquare, FileText, Copy, Check } from 'lucide-vue-next'
 import Button from '../ui/Button.vue'
 import Badge from '../ui/Badge.vue'
 import Separator from '../ui/Separator.vue'
@@ -81,6 +81,20 @@ function formatBrl(n?: number | null): string {
 
 // Sinais + timeline (blob JSON em lead.data) — fonte única no composable.
 const { transcript, signalChips, nextAction } = useLeadSignals(() => props.lead)
+
+// Próxima pergunta sugerida (ladder deterministico vindo do backend) — a loja envia manualmente.
+const copied = ref(false)
+async function copySuggestedReply() {
+  const text = props.lead?.suggestedReply
+  if (!text) return
+  try {
+    await navigator.clipboard.writeText(text)
+    copied.value = true
+    setTimeout(() => { copied.value = false }, 1500)
+  } catch {
+    /* clipboard bloqueado (sem HTTPS/permissão) → falha silenciosa */
+  }
+}
 </script>
 
 <template>
@@ -250,6 +264,26 @@ const { transcript, signalChips, nextAction } = useLeadSignals(() => props.lead)
             </div>
           </div>
         </details>
+      </div>
+
+      <!-- Próxima pergunta sugerida (ladder deterministico do backend) + copiar -->
+      <div v-if="lead.suggestedReply" class="px-4 md:px-6 pb-4">
+        <div class="flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm">
+          <span aria-hidden="true">💬</span>
+          <div class="flex-1 min-w-0">
+            <span class="text-amber-700 font-medium">Próxima pergunta: </span>
+            <span class="text-foreground">{{ lead.suggestedReply }}</span>
+          </div>
+          <button
+            type="button"
+            class="shrink-0 inline-flex items-center gap-1 rounded px-2 py-1 text-xs font-medium text-amber-700 hover:bg-amber-100 transition-colors"
+            :aria-label="copied ? 'Copiado' : 'Copiar pergunta'"
+            @click="copySuggestedReply"
+          >
+            <component :is="copied ? Check : Copy" class="w-3.5 h-3.5" aria-hidden="true" />
+            {{ copied ? 'Copiado' : 'Copiar' }}
+          </button>
+        </div>
       </div>
 
       <!-- Sinais lidos da conversa + próxima ação + timeline (bot → lead.data) -->
