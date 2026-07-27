@@ -45,6 +45,7 @@
         :action-loading="actionLoading"
         @post="postLedger"
         @cancel="cancelLedger"
+        @receipt="openReceiptDialog"
       />
 
       <!-- Período -->
@@ -84,6 +85,7 @@
             @post="postLedger"
             @cancel="cancelLedger"
             @reverse="openReverseDialog"
+            @receipt="openReceiptDialog"
           />
         </div>
 
@@ -103,6 +105,7 @@
     <RegisterPaymentDialog v-model:open="showPaymentModal" @saved="reloadAll" />
     <RegisterExpenseDialog v-model:open="showExpenseModal" @saved="reloadAll" />
     <ReverseDialog v-model:open="showReverseDialog" :ledger="ledgerToReverse" @reversed="reloadAll" />
+    <ReceiptDialog v-model:open="showReceiptDialog" :ledger="ledgerForReceipt" />
   </div>
 </template>
 
@@ -119,6 +122,7 @@ import TransactionRow from '../components/ledger/TransactionRow.vue'
 import RegisterPaymentDialog from '../components/ledger/RegisterPaymentDialog.vue'
 import RegisterExpenseDialog from '../components/ledger/RegisterExpenseDialog.vue'
 import ReverseDialog from '../components/ledger/ReverseDialog.vue'
+import ReceiptDialog from '../components/ledger/ReceiptDialog.vue'
 import ledgerService from '../services/ledger'
 import type { DailyFlowDTO, LedgerResponseDTO, LedgerSummaryDTO } from '../services/ledger'
 import { fillMissingDays } from '../lib/dailySeries'
@@ -163,6 +167,8 @@ const showPaymentModal = ref(false)
 const showExpenseModal = ref(false)
 const showReverseDialog = ref(false)
 const ledgerToReverse = ref<LedgerResponseDTO | null>(null)
+const showReceiptDialog = ref(false)
+const ledgerForReceipt = ref<LedgerResponseDTO | null>(null)
 
 // Loads
 async function loadLedgers() {
@@ -273,6 +279,11 @@ async function cancelLedger(ledger: LedgerResponseDTO) {
 function openReverseDialog(ledger: LedgerResponseDTO) {
   ledgerToReverse.value = ledger
   showReverseDialog.value = true
+}
+
+function openReceiptDialog(ledger: LedgerResponseDTO) {
+  ledgerForReceipt.value = ledger
+  showReceiptDialog.value = true
 }
 
 onMounted(reloadAll)
