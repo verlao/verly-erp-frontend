@@ -32,11 +32,38 @@ export function parseLeadData(raw?: string): { signals?: LeadSignals; transcript
 export function getSignalChips(signals?: LeadSignals | null): SignalChip[] {
   if (!signals) return []
   const chips: SignalChip[] = []
-  if (signals.payment?.detected) chips.push({ key: 'payment', label: '💰 Pagou', cls: 'bg-emerald-100 text-emerald-800' })
-  if (signals.visit?.detected) chips.push({ key: 'visit', label: `📅 Visita${signals.visit.date ? ' ' + signals.visit.date : ''}`, cls: 'bg-blue-100 text-blue-800' })
-  if (signals.closed?.detected) chips.push({ key: 'closed', label: '✅ Fechou', cls: 'bg-green-100 text-green-800' })
-  if (signals.objection?.detected) chips.push({ key: 'objection', label: '⚠️ Objeção', cls: 'bg-amber-100 text-amber-800' })
+  if (signals.payment?.detected) chips.push({ key: 'payment', label: '💰 Pagou', cls: 'bg-success/15 text-success' })
+  if (signals.visit?.detected) chips.push({ key: 'visit', label: `📅 Visita${signals.visit.date ? ' ' + signals.visit.date : ''}`, cls: 'bg-info/15 text-info' })
+  if (signals.closed?.detected) chips.push({ key: 'closed', label: '✅ Fechou', cls: 'bg-success/15 text-success' })
+  if (signals.objection?.detected) chips.push({ key: 'objection', label: '⚠️ Objeção', cls: 'bg-warning/15 text-warning' })
   return chips
+}
+
+// Badge de status do lead — mapa único usado por LeadListItem e LeadPreview.
+export interface StatusBadgeConfig {
+  label: string
+  variant: 'default' | 'secondary' | 'success' | 'warning' | 'info'
+  dot: boolean
+}
+
+const STATUS_BADGES: Record<string, StatusBadgeConfig> = {
+  NEW: { label: 'Novo', variant: 'info', dot: true },
+  CONTACTED: { label: 'Contatado', variant: 'warning', dot: false },
+  QUALIFIED: { label: 'Qualificado', variant: 'success', dot: false },
+  CONVERTED: { label: 'Convertido', variant: 'default', dot: false },
+  LOST: { label: 'Perdido', variant: 'secondary', dot: false },
+}
+
+export function statusBadgeConfig(status?: string | null): StatusBadgeConfig {
+  return STATUS_BADGES[status ?? 'NEW'] ?? STATUS_BADGES.NEW
+}
+
+// Badge de tier ($ / $$ / $$$) — classes token-driven, único lugar que as define.
+export function tierBadgeClass(tier?: string | null): string {
+  if (tier === '$$$') return 'bg-warning text-warning-foreground'
+  if (tier === '$$') return 'bg-info text-info-foreground'
+  if (tier === '$') return 'bg-muted text-muted-foreground'
+  return ''
 }
 
 export function getNextAction(signals?: LeadSignals | null): string {

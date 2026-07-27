@@ -7,7 +7,7 @@ import Badge from '../ui/Badge.vue'
 import Separator from '../ui/Separator.vue'
 import Avatar from '../ui/Avatar.vue'
 import type { LeadDTO } from '../../services/lead'
-import { useLeadSignals, fmtTime } from '../../composables/useLeadSignals'
+import { useLeadSignals, fmtTime, statusBadgeConfig, tierBadgeClass as tierBadgeClassFor } from '../../composables/useLeadSignals'
 
 const props = defineProps<{
   lead?: LeadDTO
@@ -29,18 +29,7 @@ function goToQuote() {
   if (props.lead?.id) router.push(`/leads/${props.lead.id}/orcamento`)
 }
 
-const statusConfig = computed(() => {
-  if (!props.lead?.status) return { label: 'Novo', variant: 'info' as const }
-
-  const configs = {
-    NEW: { label: 'Novo', variant: 'info' as const },
-    CONTACTED: { label: 'Contatado', variant: 'warning' as const },
-    QUALIFIED: { label: 'Qualificado', variant: 'success' as const },
-    CONVERTED: { label: 'Convertido', variant: 'default' as const },
-    LOST: { label: 'Perdido', variant: 'secondary' as const }
-  }
-  return configs[props.lead.status] || configs.NEW
-})
+const statusConfig = computed(() => statusBadgeConfig(props.lead?.status))
 
 const formattedDate = computed(() => {
   if (!props.lead?.createdDate) return ''
@@ -82,14 +71,8 @@ const canMarkQualified = computed(() => {
   return props.lead?.status === 'CONTACTED'
 })
 
-// V2_17: tier badge color
-const tierBadgeClass = computed(() => {
-  const t = props.lead?.tier
-  if (t === '$$$') return 'bg-yellow-500 text-white'
-  if (t === '$$') return 'bg-blue-500 text-white'
-  if (t === '$') return 'bg-gray-400 text-white'
-  return ''
-})
+// V2_17: tier badge color — fonte única no composable
+const tierBadgeClass = computed(() => tierBadgeClassFor(props.lead?.tier))
 
 function formatBrl(n?: number | null): string {
   if (n == null) return '—'
@@ -101,7 +84,7 @@ const { transcript, signalChips, nextAction } = useLeadSignals(() => props.lead)
 </script>
 
 <template>
-  <div class="flex flex-col h-full bg-white">
+  <div class="flex flex-col h-full bg-card">
     <!-- Empty state -->
     <div v-if="!lead" class="flex flex-col items-center justify-center h-full p-8 text-center">
       <div class="w-16 h-16 mb-4 text-muted-foreground">
@@ -311,7 +294,7 @@ const { transcript, signalChips, nextAction } = useLeadSignals(() => props.lead)
       <!-- Sticky bottom CTA bar: WhatsApp em destaque, depois converter/status,
            e "marcar como perdido" como link discreto/destrutivo. -->
       <div
-        class="border-t border-border bg-white p-3 md:p-4 space-y-2 shrink-0"
+        class="border-t border-border bg-card p-3 md:p-4 space-y-2 shrink-0"
         :style="isMobile ? 'padding-bottom: calc(0.75rem + env(safe-area-inset-bottom))' : undefined"
       >
         <Button
@@ -327,7 +310,7 @@ const { transcript, signalChips, nextAction } = useLeadSignals(() => props.lead)
         <Button
           v-if="lead.phone"
           variant="default"
-          class="w-full bg-green-600 hover:bg-green-700 text-white"
+          class="w-full bg-success hover:bg-success/90 text-success-foreground"
           @click="emit('openWhatsapp')"
         >
           <Phone class="w-4 h-4 mr-2" />
