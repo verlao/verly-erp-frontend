@@ -69,7 +69,13 @@ export interface LeadDTO {
   // suggestedReply is null when nothing essential is missing.
   suggestedReply?: string | null
   missingFields?: string[]
+
+  // V2_28: medição/visita técnica
+  measurementStatus?: MeasurementStatus
+  measurementDate?: string
 }
+
+export type MeasurementStatus = 'NONE' | 'NEEDED' | 'SCHEDULED' | 'DONE'
 
 // Leads colapsados por contato (telefone) + funil, tudo resolvido no backend.
 export interface LeadContactDTO {
@@ -139,6 +145,14 @@ const leadService = {
   // Novos métodos para inbox-style
   updateStatus: async (id: number, status: LeadStatus) => {
     const response = await api.patch(`/leads/${id}/status`, { status })
+    return response.data
+  },
+
+  // V2_28: transição de medição (kanban "Precisa medir")
+  updateMeasurement: async (id: number, status: MeasurementStatus, date?: string) => {
+    const body: Record<string, string> = { status }
+    if (date) body.date = date
+    const response = await api.patch(`/leads/${id}/measurement`, body)
     return response.data
   },
 

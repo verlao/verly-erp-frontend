@@ -60,6 +60,11 @@ const routes = [
         component: () => import('../views/LeadQuote.vue'),
       },
       {
+        path: 'kanban',
+        name: 'Kanban',
+        component: () => import('../views/Kanban.vue'),
+      },
+      {
         path: 'users',
         name: 'Users',
         component: () => import('../views/Users.vue'),

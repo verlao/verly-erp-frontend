@@ -62,6 +62,33 @@
           <span :class="{ 'sr-only': collapsed }">Leads</span>
         </Button>
       </router-link>
+      <router-link to="kanban" custom v-slot="{ navigate, isActive }">
+        <Button
+          @click="navigate"
+          :variant="isActive ? 'secondary' : 'ghost'"
+          class="w-full justify-start"
+        >
+          <span class="mr-2">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <rect width="18" height="18" x="3" y="3" rx="2" />
+              <path d="M8 7v7" />
+              <path d="M12 7v4" />
+              <path d="M16 7v9" />
+            </svg>
+          </span>
+          <span :class="{ 'sr-only': collapsed }">Funil</span>
+        </Button>
+      </router-link>
       <router-link to="customers" custom v-slot="{ navigate, isActive }">
         <Button
           @click="navigate"
