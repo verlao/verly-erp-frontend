@@ -29,6 +29,14 @@
         </div>
       </div>
 
+      <!-- Comprovantes PIX detectados no WhatsApp (PENDING → confirmar com 1 toque) -->
+      <WhatsAppPendingSection
+        :entries="waPending"
+        :action-loading="actionLoading"
+        @post="postLedger"
+        @cancel="cancelLedger"
+      />
+
       <!-- Cards de Resumo -->
       <div class="grid grid-cols-3 gap-2 md:gap-4 mb-4 md:mb-6">
         <Card class="bg-card border-border p-3 md:p-6 hover:shadow-lg transition-shadow duration-200">
@@ -407,6 +415,7 @@ import Button from '../components/ui/Button.vue'
 import Card from '../components/ui/Card.vue'
 import Skeleton from '../components/ui/Skeleton.vue'
 import Pagination from '../components/ui/Pagination.vue'
+import WhatsAppPendingSection from '../components/ledger/WhatsAppPendingSection.vue'
 import { useCurrency } from '../composables/useCurrency'
 import { useNotification } from '../composables/useNotification'
 
@@ -505,6 +514,18 @@ async function loadSummary() {
     console.error('Erro ao carregar resumo:', error)
   } finally {
     loadingSummary.value = false
+  }
+}
+
+// Pendências vindas do bot do WhatsApp (comprovantes PIX aguardando confirmação)
+const waPending = ref<LedgerResponseDTO[]>([])
+
+async function loadWaPending() {
+  try {
+    waPending.value = await ledgerService.getPendingBySource('WHATSAPP')
+  } catch (error) {
+    console.error('Erro ao carregar pendências do WhatsApp:', error)
+    waPending.value = []
   }
 }
 
@@ -651,6 +672,7 @@ async function postLedger(ledger: LedgerResponseDTO) {
     notification.success('Sucesso', `Lançamento postado`)
     loadLedgers()
     loadSummary()
+    loadWaPending()
   } catch (error: any) {
     const msg = error.response?.data?.message || 'Não foi possível postar o lançamento'
     notification.error('Erro', msg)
@@ -666,6 +688,7 @@ async function cancelLedger(ledger: LedgerResponseDTO) {
     notification.success('Sucesso', `Lançamento cancelado`)
     loadLedgers()
     loadSummary()
+    loadWaPending()
   } catch (error: any) {
     const msg = error.response?.data?.message || 'Não foi possível cancelar o lançamento'
     notification.error('Erro', msg)
@@ -706,6 +729,7 @@ onMounted(() => {
   window.addEventListener('resize', updateIsMobile)
   loadLedgers()
   loadSummary()
+  loadWaPending()
 })
 
 onUnmounted(() => {
