@@ -1,31 +1,23 @@
 <template>
   <div>
-    <!-- Título "Leads" já vem do MainLayout (MobileTopBar no mobile / header no desktop);
-         aqui fica só o subtítulo pra não duplicar. -->
-    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
-      <div>
-        <p class="text-sm text-muted-foreground">Gerencie leads e converta em clientes</p>
-      </div>
-
-      <!-- Ações em lote -->
-      <div v-if="checkedIds.length > 0" class="flex items-center gap-2">
-        <span class="text-sm text-muted-foreground">{{ checkedIds.length }} selecionado(s)</span>
-        <Button variant="outline" size="sm" @click="clearSelection">
-          Limpar Seleção
-        </Button>
-      </div>
+    <!-- Ações em lote: só ocupa espaço quando há seleção -->
+    <div v-if="checkedIds.length > 0" class="flex items-center justify-end gap-2 mb-3">
+      <span class="text-sm text-muted-foreground">{{ checkedIds.length }} selecionado(s)</span>
+      <Button variant="outline" size="sm" @click="clearSelection">
+        Limpar Seleção
+      </Button>
     </div>
 
     <!-- Toolbar: busca + CTA principal -->
     <LeadsToolbar
       v-model:search="search"
       :has-active-filters="hasActiveFilters"
-      class="mb-4"
+      class="mb-3"
       @clear="clearFilters"
     />
 
-    <!-- KPI row -->
-    <LeadStats :leads="leads" :counts="counts" :loading="loading" class="mb-4" />
+    <!-- Stats strip compacta -->
+    <LeadStats :leads="leads" :counts="counts" :loading="loading" class="mb-3" />
 
     <!-- Filtros inline -->
     <LeadFilters
@@ -37,7 +29,7 @@
     <!-- Conteúdo Principal: Card com Split View -->
     <div class="bg-card rounded-lg shadow-sm border border-border overflow-hidden">
       <!-- Desktop: Split View -->
-      <div class="hidden md:flex h-[max(420px,calc(100vh-32rem))]">
+      <div class="hidden md:flex h-[max(420px,calc(100vh-22rem))]">
         <!-- Lista Leads (40%) -->
         <div class="w-2/5 border-r border-border overflow-y-auto">
           <LeadList

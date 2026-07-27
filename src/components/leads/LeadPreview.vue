@@ -148,7 +148,66 @@ async function copySuggestedReply() {
           </div>
         </section>
 
-        <!-- 2. Produtos / itens estruturados -->
+        <!-- 2. Próxima pergunta sugerida (ladder deterministico do backend) + copiar -->
+        <section v-if="lead.suggestedReply">
+          <div class="flex items-start gap-2 rounded-lg border border-warning/30 bg-warning/10 p-3 text-sm">
+            <span aria-hidden="true">💬</span>
+            <div class="flex-1 min-w-0">
+              <span class="text-warning font-medium">Próxima pergunta: </span>
+              <span class="text-foreground">{{ lead.suggestedReply }}</span>
+            </div>
+            <button
+              type="button"
+              class="shrink-0 inline-flex items-center gap-1 rounded px-2 py-1 text-xs font-medium text-warning hover:bg-warning/20 transition-colors"
+              :aria-label="copied ? 'Copiado' : 'Copiar pergunta'"
+              @click="copySuggestedReply"
+            >
+              <component :is="copied ? Check : Copy" class="w-3.5 h-3.5" aria-hidden="true" />
+              {{ copied ? 'Copiado' : 'Copiar' }}
+            </button>
+          </div>
+        </section>
+
+        <!-- 3. Sinais lidos da conversa + próxima ação + timeline (bot → lead.data) -->
+        <section v-if="signalChips.length || transcript.length" class="space-y-3">
+          <div v-if="signalChips.length" class="flex flex-wrap gap-2">
+            <span
+              v-for="c in signalChips"
+              :key="c.key"
+              :class="c.cls"
+              class="px-2 py-0.5 text-xs font-medium rounded-full"
+            >{{ c.label }}</span>
+          </div>
+          <div v-if="nextAction" class="text-sm">
+            <span class="text-muted-foreground">Próxima ação: </span>
+            <span class="font-medium text-foreground">{{ nextAction }}</span>
+          </div>
+          <details v-if="transcript.length" class="text-sm">
+            <summary class="cursor-pointer text-muted-foreground hover:text-foreground select-none">
+              Ver conversa ({{ transcript.length }})
+            </summary>
+            <div class="mt-2 space-y-1.5 max-h-64 overflow-y-auto pr-1">
+              <div
+                v-for="(m, i) in transcript"
+                :key="i"
+                class="flex"
+                :class="m.fromMe ? 'justify-end' : 'justify-start'"
+              >
+                <div
+                  class="max-w-[80%] rounded-lg px-3 py-1.5"
+                  :class="m.fromMe ? 'bg-primary/10' : 'bg-muted'"
+                >
+                  <p class="whitespace-pre-wrap break-words">{{ m.body }}</p>
+                  <p class="text-[10px] text-muted-foreground mt-0.5">
+                    {{ m.fromMe ? 'Loja' : 'Cliente' }} · {{ fmtTime(m.at) }}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </details>
+        </section>
+
+        <!-- 4. Produtos / itens estruturados -->
         <section v-if="lead.items && lead.items.length > 0">
           <h3 class="text-xs md:text-sm font-semibold text-foreground mb-2 md:mb-3">
             Produtos ({{ lead.items.length }})
@@ -174,7 +233,7 @@ async function copySuggestedReply() {
           </div>
         </section>
 
-        <!-- 3. Total + lucro estimados -->
+        <!-- 5. Total + lucro estimados -->
         <section
           v-if="lead.totalEstimatedValue != null || lead.totalEstimatedProfit != null"
           class="rounded-lg border border-border p-3 md:p-4 text-sm space-y-1"
@@ -191,7 +250,7 @@ async function copySuggestedReply() {
 
         <Separator />
 
-        <!-- 4. Contato -->
+        <!-- 6. Contato -->
         <section>
           <h3 class="text-xs md:text-sm font-semibold text-foreground mb-2 md:mb-3">Informações de Contato</h3>
           <div class="space-y-1.5 md:space-y-2">
@@ -261,65 +320,6 @@ async function copySuggestedReply() {
             <div v-if="lead.referrer" class="flex items-start gap-2 md:gap-3 text-xs">
               <span class="text-muted-foreground shrink-0 w-20 md:w-24">Referrer:</span>
               <span class="text-foreground break-all">{{ lead.referrer }}</span>
-            </div>
-          </div>
-        </details>
-      </div>
-
-      <!-- Próxima pergunta sugerida (ladder deterministico do backend) + copiar -->
-      <div v-if="lead.suggestedReply" class="px-4 md:px-6 pb-4">
-        <div class="flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm">
-          <span aria-hidden="true">💬</span>
-          <div class="flex-1 min-w-0">
-            <span class="text-amber-700 font-medium">Próxima pergunta: </span>
-            <span class="text-foreground">{{ lead.suggestedReply }}</span>
-          </div>
-          <button
-            type="button"
-            class="shrink-0 inline-flex items-center gap-1 rounded px-2 py-1 text-xs font-medium text-amber-700 hover:bg-amber-100 transition-colors"
-            :aria-label="copied ? 'Copiado' : 'Copiar pergunta'"
-            @click="copySuggestedReply"
-          >
-            <component :is="copied ? Check : Copy" class="w-3.5 h-3.5" aria-hidden="true" />
-            {{ copied ? 'Copiado' : 'Copiar' }}
-          </button>
-        </div>
-      </div>
-
-      <!-- Sinais lidos da conversa + próxima ação + timeline (bot → lead.data) -->
-      <div v-if="signalChips.length || transcript.length" class="px-4 md:px-6 pb-4 space-y-3">
-        <div v-if="signalChips.length" class="flex flex-wrap gap-2">
-          <span
-            v-for="c in signalChips"
-            :key="c.key"
-            :class="c.cls"
-            class="px-2 py-0.5 text-xs font-medium rounded-full"
-          >{{ c.label }}</span>
-        </div>
-        <div v-if="nextAction" class="text-sm">
-          <span class="text-muted-foreground">Próxima ação: </span>
-          <span class="font-medium text-foreground">{{ nextAction }}</span>
-        </div>
-        <details v-if="transcript.length" class="text-sm">
-          <summary class="cursor-pointer text-muted-foreground hover:text-foreground select-none">
-            Ver conversa ({{ transcript.length }})
-          </summary>
-          <div class="mt-2 space-y-1.5 max-h-64 overflow-y-auto pr-1">
-            <div
-              v-for="(m, i) in transcript"
-              :key="i"
-              class="flex"
-              :class="m.fromMe ? 'justify-end' : 'justify-start'"
-            >
-              <div
-                class="max-w-[80%] rounded-lg px-3 py-1.5"
-                :class="m.fromMe ? 'bg-primary/10' : 'bg-muted'"
-              >
-                <p class="whitespace-pre-wrap break-words">{{ m.body }}</p>
-                <p class="text-[10px] text-muted-foreground mt-0.5">
-                  {{ m.fromMe ? 'Loja' : 'Cliente' }} · {{ fmtTime(m.at) }}
-                </p>
-              </div>
             </div>
           </div>
         </details>

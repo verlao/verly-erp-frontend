@@ -36,9 +36,9 @@
       <!-- Desktop header (mobile usa MobileTopBar) -->
       <header
         v-if="!isMobile"
-        class="bg-background shadow-sm border-b border-border -mx-6 -mt-6 mb-6"
+        class="bg-background shadow-sm border-b border-border -mx-6 -mt-6 mb-4"
       >
-        <div class="px-6 py-4 flex justify-between items-center">
+        <div class="px-6 py-3 flex justify-between items-center">
           <h2 class="text-xl md:text-2xl font-bold text-foreground">
             {{ pageTitle }}
           </h2>
@@ -96,7 +96,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
+import { computed, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 import { useBreakpoint } from '../composables/useBreakpoint'
@@ -114,33 +114,31 @@ const authStore = useAuthStore()
 const { isMobile } = useBreakpoint()
 
 const user = computed(() => authStore.getUser)
-const sidebarCollapsed = ref(false)
-const isManuallyToggled = ref(false)
+
+// Sidebar: colapsada (icon-only) por padrão; escolha do usuário persiste
+// entre rotas e reloads via localStorage.
+const SIDEBAR_STORAGE_KEY = 'sidebar-collapsed'
+
+function readStoredCollapsed(): boolean {
+  try {
+    const stored = localStorage.getItem(SIDEBAR_STORAGE_KEY)
+    return stored === null ? true : stored === 'true'
+  } catch {
+    return true
+  }
+}
+
+const sidebarCollapsed = ref(readStoredCollapsed())
 const moreOpen = ref(false)
 
 const onSidebarToggle = (value: boolean) => {
   sidebarCollapsed.value = value
-  isManuallyToggled.value = true
+  try {
+    localStorage.setItem(SIDEBAR_STORAGE_KEY, String(value))
+  } catch {
+    // localStorage indisponível (private mode) — estado vive só na sessão
+  }
 }
-
-// Define o estado padrão da sidebar por rota:
-// - /products -> colapsada (default da página)
-// - demais telas -> expandida, respeitando auto-collapse de tablet (<1024px)
-// O toggle manual é respeitado enquanto o usuário fica na tela; ao trocar de
-// rota cada página reaplica o seu default.
-watch(
-  () => route.path,
-  (path) => {
-    isManuallyToggled.value = false
-    if (isMobile.value) return
-    if (path.endsWith('products')) {
-      sidebarCollapsed.value = true
-    } else {
-      sidebarCollapsed.value = window.innerWidth < 1024
-    }
-  },
-  { immediate: true },
-)
 
 const pageTitle = computed(() => {
   if (route.path.endsWith('dashboard')) return 'Dashboard'

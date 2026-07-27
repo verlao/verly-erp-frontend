@@ -45,7 +45,7 @@ const handleTabClick = (value: string) => {
 </script>
 
 <template>
-  <div class="bg-card rounded-lg shadow-sm border border-border p-3 md:p-4 mb-4">
+  <div class="bg-card rounded-lg shadow-sm border border-border p-2 md:p-3 mb-3">
     <!-- Tabs de Status -->
     <TabsList class="w-full justify-start overflow-x-auto">
       <TabsTrigger
@@ -66,7 +66,7 @@ const handleTabClick = (value: string) => {
     </TabsList>
 
     <!-- V2_17: tier filter row -->
-    <div class="mt-3 flex flex-wrap gap-1.5">
+    <div class="mt-2 flex flex-wrap gap-1.5">
       <Button
         v-for="tab in tierTabs"
         :key="tab.value"
