@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { TrendingUp, Sparkles, Flame, CircleCheckBig } from 'lucide-vue-next'
-import StatCard from '../ui/StatCard.vue'
+import Skeleton from '../ui/Skeleton.vue'
 import type { LeadDTO } from '../../services/lead'
 import { isHotLead } from '../../composables/useLeadSignals'
 
@@ -27,45 +26,43 @@ const hotCount = computed(() =>
   props.leads.filter(l => l.status !== 'CONVERTED' && l.status !== 'LOST' && isHotLead(l)).length
 )
 
-const conversionRate = computed(() => {
-  if (!props.counts.all) return null
-  return `${Math.round((props.counts.converted / props.counts.all) * 100)}% de conversão`
+const conversionRatePct = computed(() => {
+  if (!props.counts.all) return '0%'
+  return `${Math.round((props.counts.converted / props.counts.all) * 100)}%`
 })
 </script>
 
 <template>
-  <div class="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
-    <StatCard
-      label="Pipeline"
-      :value="pipelineValue"
-      :sub="`${counts.all} leads carregados`"
-      :loading="loading"
-    >
-      <template #icon><TrendingUp class="w-4 h-4" /></template>
-    </StatCard>
-    <StatCard
-      label="Novos"
-      :value="counts.new"
-      sub="aguardando contato"
-      :loading="loading"
-    >
-      <template #icon><Sparkles class="w-4 h-4" /></template>
-    </StatCard>
-    <StatCard
-      label="Quentes"
-      :value="hotCount"
-      sub="sinal de compra ou alto valor"
-      :loading="loading"
-    >
-      <template #icon><Flame class="w-4 h-4" /></template>
-    </StatCard>
-    <StatCard
-      label="Convertidos"
-      :value="counts.converted"
-      :sub="conversionRate ?? undefined"
-      :loading="loading"
-    >
-      <template #icon><CircleCheckBig class="w-4 h-4" /></template>
-    </StatCard>
+  <div
+    class="rounded-lg border border-border bg-card shadow-sm h-10 md:h-11 px-3 md:px-4 flex items-center gap-3 md:gap-5 overflow-x-auto whitespace-nowrap [scrollbar-width:none]"
+  >
+    <template v-if="loading">
+      <Skeleton height="0.875rem" width="14rem" />
+    </template>
+    <template v-else>
+      <div class="flex items-baseline gap-1.5 shrink-0">
+        <span class="text-xs text-muted-foreground">Pipeline</span>
+        <span class="text-sm font-bold text-foreground">{{ pipelineValue }}</span>
+      </div>
+      <span class="h-4 w-px bg-border shrink-0" aria-hidden="true" />
+      <div class="flex items-baseline gap-1.5 shrink-0">
+        <span class="text-xs text-muted-foreground">Novos</span>
+        <span class="text-sm font-bold text-foreground">{{ counts.new }}</span>
+      </div>
+      <span class="h-4 w-px bg-border shrink-0" aria-hidden="true" />
+      <div class="flex items-baseline gap-1.5 shrink-0" title="Leads quentes — sinal de compra ou alto valor">
+        <span class="text-xs" aria-hidden="true">🔥</span>
+        <span class="sr-only">Leads quentes</span>
+        <span class="text-sm font-bold text-foreground">{{ hotCount }}</span>
+      </div>
+      <span class="h-4 w-px bg-border shrink-0" aria-hidden="true" />
+      <div class="flex items-baseline gap-1.5 shrink-0">
+        <span class="text-xs text-muted-foreground">Conv.</span>
+        <span class="text-sm font-bold text-foreground">
+          {{ counts.converted }}
+          <span class="font-normal text-muted-foreground">({{ conversionRatePct }})</span>
+        </span>
+      </div>
+    </template>
   </div>
 </template>
