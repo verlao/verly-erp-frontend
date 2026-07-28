@@ -270,7 +270,7 @@
               >
                 <div class="flex flex-col gap-2">
                   <label class="text-xs font-bold text-foreground flex items-center gap-2 truncate">
-                    <span class="w-1 h-4 rounded-full flex-shrink-0" :class="cell.standard ? 'bg-green-500' : 'bg-gray-400'"></span>
+                    <span class="w-1 h-4 rounded-full flex-shrink-0" :class="cell.standard ? 'bg-success' : 'bg-muted-foreground/40'"></span>
                     <span class="truncate">{{ cell.type }} · {{ cell.standard ? 'Padrão' : 'Não-padrão' }}</span>
                   </label>
                   <EditableValue
@@ -361,7 +361,7 @@
             </div>
             <button
               @click="deleteStandardDim(dim)"
-              class="text-red-600 hover:text-red-900 p-1 rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500"
+              class="text-destructive hover:bg-destructive/10 p-1 rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               aria-label="Remover medida padrão"
             >
               <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c0 1 1 2 1 2v2"/></svg>

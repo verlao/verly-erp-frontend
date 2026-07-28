@@ -4,9 +4,9 @@
       <div class="overflow-auto max-h-[80vh]">
         <div class="p-6">
           <div class="flex items-center mb-4">
-            <div class="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-red-100">
+            <div class="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-destructive/10">
               <svg
-                class="h-6 w-6 text-red-600"
+                class="h-6 w-6 text-destructive"
                 fill="none"
                 viewBox="0 0 24 24"
                 stroke="currentColor"
@@ -23,15 +23,15 @@
           </div>
 
           <div class="text-center">
-            <DialogTitle class="text-lg font-semibold text-gray-900 mb-2">
+            <DialogTitle class="text-lg font-semibold text-foreground mb-2">
               {{ title || 'Confirmar Exclusão' }}
             </DialogTitle>
-            <div class="text-sm text-gray-600 mb-6">
+            <div class="text-sm text-muted-foreground mb-6">
               <p>{{ message || 'Tem certeza que deseja excluir este item?' }}</p>
               <p v-if="itemName" class="mt-2">
-                <strong class="text-gray-900">{{ itemName }}</strong>
+                <strong class="text-foreground">{{ itemName }}</strong>
               </p>
-              <p class="text-xs text-gray-500 mt-2">
+              <p class="text-xs text-muted-foreground mt-2">
                 {{ warning || 'Esta ação não pode ser desfeita.' }}
               </p>
             </div>
@@ -52,7 +52,7 @@
             >
               <span v-if="isDeleting" class="flex items-center">
                 <svg
-                  class="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
+                  class="animate-spin -ml-1 mr-2 h-4 w-4 text-destructive-foreground"
                   xmlns="http://www.w3.org/2000/svg"
                   fill="none"
                   viewBox="0 0 24 24"
