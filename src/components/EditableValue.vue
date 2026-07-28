@@ -44,7 +44,7 @@
             // Add right padding for non-percentage suffix
             suffix && !isPercentage ? (compact ? 'pr-8' : 'pr-10') : '',
             edit.error.value
-              ? 'border-red-400 focus:ring-red-400 bg-red-50'
+              ? 'border-destructive focus:ring-destructive bg-destructive/10'
               : inputClasses,
             'focus:outline-none focus:ring-2'
           )"
@@ -66,18 +66,17 @@
       </div>
       
       <!-- External suffix (fallback for when suffix prop is not used) -->
-      <span 
+      <span
         v-if="!suffix && (type === 'currency' || type === 'number')"
         :class="cn(
-          'font-semibold whitespace-nowrap',
-          compact ? 'text-xs' : 'text-sm',
-          type === 'currency' ? 'text-green-600' : 'text-blue-600'
+          'font-semibold whitespace-nowrap text-muted-foreground',
+          compact ? 'text-xs' : 'text-sm'
         )"
       >
         {{ type === 'currency' ? 'R$' : '%' }}
       </span>
 
-      <div v-if="edit.error.value" class="absolute -bottom-6 left-0 text-xs font-medium text-red-600 bg-red-50 px-2 py-1 rounded shadow-sm">
+      <div v-if="edit.error.value" class="absolute -bottom-6 left-0 text-xs font-medium text-destructive bg-destructive/10 border border-destructive/20 px-2 py-1 rounded shadow-sm">
         {{ edit.error.value }}
       </div>
 
@@ -226,67 +225,24 @@ watch(() => props.modelValue, (newValue) => {
   }
 })
 
-// Variant-based styling
-const variantStyles = {
-  blue: {
-    display: 'bg-blue-50 hover:bg-blue-100 border border-blue-200 hover:border-blue-300 hover:shadow-md hover:shadow-blue-200/50',
-    value: 'text-blue-900',
-    icon: 'text-blue-500',
-    input: 'border-blue-300 focus:ring-blue-400 focus:border-blue-400 bg-blue-50/50',
-    spinner: 'text-blue-600'
-  },
-  green: {
-    display: 'bg-green-50 hover:bg-green-100 border border-green-200 hover:border-green-300 hover:shadow-md hover:shadow-green-200/50',
-    value: 'text-green-900',
-    icon: 'text-green-500',
-    input: 'border-green-300 focus:ring-green-400 focus:border-green-400 bg-green-50/50',
-    spinner: 'text-green-600'
-  },
-  purple: {
-    display: 'bg-purple-50 hover:bg-purple-100 border border-purple-200 hover:border-purple-300 hover:shadow-md hover:shadow-purple-200/50',
-    value: 'text-purple-900',
-    icon: 'text-purple-500',
-    input: 'border-purple-300 focus:ring-purple-400 focus:border-purple-400 bg-purple-50/50',
-    spinner: 'text-purple-600'
-  },
-  orange: {
-    display: 'bg-orange-50 hover:bg-orange-100 border border-orange-200 hover:border-orange-300 hover:shadow-md hover:shadow-orange-200/50',
-    value: 'text-orange-900',
-    icon: 'text-orange-500',
-    input: 'border-orange-300 focus:ring-orange-400 focus:border-orange-400 bg-orange-50/50',
-    spinner: 'text-orange-600'
-  },
-  default: {
-    display: 'bg-gray-50 hover:bg-gray-100 border border-gray-200 hover:border-gray-300 hover:shadow-md',
-    value: 'text-gray-900',
-    icon: 'text-gray-500',
-    input: 'border-gray-300 focus:ring-blue-400 focus:border-blue-400 bg-gray-50/50',
-    spinner: 'text-blue-600'
-  }
+// Estilo único tokenizado. O prop `variant` continua aceito (compat de API),
+// mas toda variante resolve pro mesmo visual do design system.
+const tokenStyles = {
+  display:
+    'bg-muted/50 hover:bg-muted border border-border hover:border-primary/40 hover:shadow-sm',
+  value: 'text-foreground',
+  icon: 'text-muted-foreground',
+  input: 'border-input focus:ring-ring focus:border-ring bg-background',
+  spinner: 'text-primary',
 }
 
-const displayClasses = computed(() => variantStyles[props.variant].display)
-const valueClasses = computed(() => variantStyles[props.variant].value)
-const iconClasses = computed(() => variantStyles[props.variant].icon)
-const inputClasses = computed(() => variantStyles[props.variant].input)
-const spinnerClasses = computed(() => variantStyles[props.variant].spinner)
+const displayClasses = computed(() => tokenStyles.display)
+const valueClasses = computed(() => tokenStyles.value)
+const iconClasses = computed(() => tokenStyles.icon)
+const inputClasses = computed(() => tokenStyles.input)
+const spinnerClasses = computed(() => tokenStyles.spinner)
 
-// Get suffix color based on variant
-const suffixColorClass = computed(() => {
-  const variantColors: Record<ColorVariant, string> = {
-    blue: 'text-blue-600',
-    green: 'text-green-600',
-    purple: 'text-purple-600',
-    orange: 'text-orange-600',
-    default: 'text-gray-600'
-  }
-  
-  if (props.type === 'currency') {
-    return 'text-green-600'
-  }
-  
-  return variantColors[props.variant]
-})
+const suffixColorClass = computed(() => 'text-muted-foreground')
 </script>
 
 <style scoped>

@@ -25,6 +25,7 @@ const METHOD_LABELS: Record<string, string> = {
 const COUNTERPARTY_LABELS: Record<string, string> = {
   CUSTOMER: 'Clientes',
   SUPPLIER: 'Fornecedores',
+  SERVICE_PROVIDER: 'Prestadores',
   EMPLOYEE: 'Funcionários',
   OTHER: 'Outros',
   UNKNOWN: 'Não classificado',

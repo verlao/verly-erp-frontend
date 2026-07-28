@@ -117,10 +117,10 @@
           </div>
 
           <!-- Auto-calculation Info -->
-          <div class="mt-6 p-4 bg-blue-50 rounded-lg">
+          <div class="mt-6 p-4 bg-info/10 border border-info/20 rounded-lg">
             <div class="flex items-center">
               <svg
-                class="w-5 h-5 text-blue-500 mr-2"
+                class="w-5 h-5 text-info mr-2"
                 fill="currentColor"
                 viewBox="0 0 20 20"
               >
@@ -130,7 +130,7 @@
                   clip-rule="evenodd"
                 />
               </svg>
-              <p class="text-sm text-blue-700">
+              <p class="text-sm text-foreground">
                 O custo, preço e lucro serão calculados automaticamente com base nas configurações do sistema.
               </p>
             </div>
@@ -139,9 +139,9 @@
           <!-- Price Info (when editing) -->
           <div
             v-if="isEditing && product && (product.price || product.priceOptions)"
-            class="mt-6 p-4 bg-green-50 rounded-lg border border-green-200"
+            class="mt-6 p-4 bg-success/5 rounded-lg border border-success/20"
           >
-            <h4 class="text-sm font-semibold text-green-800 mb-3 flex items-center">
+            <h4 class="text-sm font-semibold text-success mb-3 flex items-center">
               <svg
                 class="w-4 h-4 mr-2"
                 fill="none"
@@ -159,61 +159,61 @@
             </h4>
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
               <!-- À Vista Dinheiro -->
-              <div class="text-center p-3 bg-white rounded-lg border">
-                <div class="text-xs text-gray-500 mb-1">À Vista Dinheiro</div>
-                <div class="font-mono text-lg font-semibold text-green-700">
+              <div class="text-center p-3 bg-card rounded-lg border border-border">
+                <div class="text-xs text-muted-foreground mb-1">À Vista Dinheiro</div>
+                <div class="font-mono text-lg font-semibold text-success">
                   {{ formatCurrency(product.priceOptions?.cashMoney ?? product.price ?? 0) }}
                 </div>
               </div>
               <!-- À Vista Cartão -->
-              <div class="text-center p-3 bg-white rounded-lg border">
-                <div class="text-xs text-gray-500 mb-1">À Vista Cartão</div>
-                <div class="font-mono text-lg font-semibold text-green-600">
+              <div class="text-center p-3 bg-card rounded-lg border border-border">
+                <div class="text-xs text-muted-foreground mb-1">À Vista Cartão</div>
+                <div class="font-mono text-lg font-semibold text-success">
                   {{ formatCurrency(product.priceOptions?.cashCard ?? 0) }}
                 </div>
               </div>
               <!-- Custo -->
-              <div class="text-center p-3 bg-white rounded-lg border">
-                <div class="text-xs text-gray-500 mb-1">Custo Total</div>
-                <div class="font-mono text-lg font-semibold text-gray-900">
+              <div class="text-center p-3 bg-card rounded-lg border border-border">
+                <div class="text-xs text-muted-foreground mb-1">Custo Total</div>
+                <div class="font-mono text-lg font-semibold text-foreground">
                   {{ formatCurrency(product.cost ?? 0) }}
                 </div>
               </div>
             </div>
             <!-- Parcelamentos -->
             <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
-              <div class="text-center p-2 bg-white rounded border">
-                <div class="text-xs text-gray-500 mb-1">Parc 4x</div>
-                <div class="font-mono text-sm font-semibold text-blue-600">
+              <div class="text-center p-2 bg-card rounded border border-border">
+                <div class="text-xs text-muted-foreground mb-1">Parc 4x</div>
+                <div class="font-mono text-sm font-semibold text-info">
                   {{ product.priceOptions?.installments4x ? formatCurrency(product.priceOptions.installments4x) : '-' }}
                 </div>
               </div>
-              <div class="text-center p-2 bg-white rounded border">
-                <div class="text-xs text-gray-500 mb-1">Parc 6x</div>
-                <div class="font-mono text-sm font-semibold text-blue-600">
+              <div class="text-center p-2 bg-card rounded border border-border">
+                <div class="text-xs text-muted-foreground mb-1">Parc 6x</div>
+                <div class="font-mono text-sm font-semibold text-info">
                   {{ product.priceOptions?.installments6x ? formatCurrency(product.priceOptions.installments6x) : '-' }}
                 </div>
               </div>
-              <div class="text-center p-2 bg-white rounded border">
-                <div class="text-xs text-gray-500 mb-1">Parc 10x</div>
-                <div class="font-mono text-sm font-semibold text-blue-700">
+              <div class="text-center p-2 bg-card rounded border border-border">
+                <div class="text-xs text-muted-foreground mb-1">Parc 10x</div>
+                <div class="font-mono text-sm font-semibold text-info">
                   {{ product.priceOptions?.installments10x ? formatCurrency(product.priceOptions.installments10x) : '-' }}
                 </div>
               </div>
-              <div class="text-center p-2 bg-white rounded border">
-                <div class="text-xs text-gray-500 mb-1">Parc 12x</div>
-                <div class="font-mono text-sm font-semibold text-blue-700">
+              <div class="text-center p-2 bg-card rounded border border-border">
+                <div class="text-xs text-muted-foreground mb-1">Parc 12x</div>
+                <div class="font-mono text-sm font-semibold text-info">
                   {{ product.priceOptions?.installments12x ? formatCurrency(product.priceOptions.installments12x) : '-' }}
                 </div>
               </div>
             </div>
-            <div class="mt-3 text-xs text-gray-600 text-center">
+            <div class="mt-3 text-xs text-muted-foreground text-center">
               * Preços calculados automaticamente pelo backend
             </div>
           </div>
 
           <!-- Actions -->
-          <div class="mt-8 flex justify-end space-x-3 pt-6 border-t border-gray-200">
+          <div class="mt-8 flex justify-end space-x-3 pt-6 border-t border-border">
             <Button
               type="button"
               variant="outline"
@@ -228,7 +228,7 @@
             >
               <span v-if="saving" class="flex items-center">
                 <svg
-                  class="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
+                  class="animate-spin -ml-1 mr-2 h-4 w-4 text-primary-foreground"
                   xmlns="http://www.w3.org/2000/svg"
                   fill="none"
                   viewBox="0 0 24 24"

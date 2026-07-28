@@ -43,11 +43,14 @@ export interface LedgerResponseDTO {
   orderReference?: string
   leadId?: number
   source?: 'WHATSAPP' | 'MANUAL' | string
-  counterpartyType?: 'CUSTOMER' | 'SUPPLIER' | 'EMPLOYEE' | 'OTHER' | 'UNKNOWN' | string
+  counterpartyType?: 'CUSTOMER' | 'SUPPLIER' | 'SERVICE_PROVIDER' | 'EMPLOYEE' | 'OTHER' | 'UNKNOWN' | string
   directionConfidence?: number
   // Enriquecidos pelo backend (cadeia lead→orçamento→pedido)
   quoteId?: number
   leadName?: string
+  // Enriquecido: existe mídia de comprovante (GET /ledgers/{id}/receipt).
+  // undefined = backend antigo (sem a feature) → UI não afirma nada.
+  hasReceipt?: boolean
   totalAmount: number
   status: 'PENDING' | 'POSTED' | 'REVERSED' | 'CANCELLED'
   reversedById?: number
@@ -189,6 +192,12 @@ const ledgerService = {
       if (e?.response?.status === 404) return []
       throw e
     }
+  },
+
+  /** Mídia do comprovante (foto/PDF) — blob autenticado; o caller cria o object URL. */
+  getReceiptBlob: async (id: number): Promise<Blob> => {
+    const response = await api.get(`/ledgers/${id}/receipt`, { responseType: 'blob' })
+    return response.data
   },
 
   getSummary: async (startDate: string, endDate: string): Promise<LedgerSummaryDTO> => {

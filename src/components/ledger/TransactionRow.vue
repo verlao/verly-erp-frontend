@@ -8,6 +8,7 @@ import {
   FileText,
   MessageCircle,
   Package,
+  Paperclip,
   User,
 } from 'lucide-vue-next'
 import Badge from '../ui/Badge.vue'
@@ -26,6 +27,7 @@ const emit = defineEmits<{
   post: [ledger: LedgerResponseDTO]
   cancel: [ledger: LedgerResponseDTO]
   reverse: [ledger: LedgerResponseDTO]
+  receipt: [ledger: LedgerResponseDTO]
 }>()
 
 const currency = useCurrency()
@@ -50,6 +52,7 @@ const METHOD_LABELS: Record<string, string> = {
 const COUNTERPARTY_LABELS: Record<string, string> = {
   CUSTOMER: 'Cliente',
   SUPPLIER: 'Fornecedor',
+  SERVICE_PROVIDER: 'Prestador',
   EMPLOYEE: 'Funcionário',
 }
 
@@ -146,6 +149,14 @@ function formatDate(dateString: string): string {
           >
             ⚠️ confirmar direção
           </span>
+          <!-- Palavra não é prova: linha do WhatsApp sem mídia anexada — o dono
+               confirma sabendo que está confiando na palavra. -->
+          <span
+            v-if="ledger.source === 'WHATSAPP' && ledger.hasReceipt === false"
+            class="px-1.5 py-px rounded border border-warning/50 text-warning text-[10px] font-medium"
+          >
+            sem comprovante
+          </span>
           <span>· {{ DOC_LABELS[ledger.documentType] || ledger.documentType }}</span>
         </p>
       </div>
@@ -208,6 +219,16 @@ function formatDate(dateString: string): string {
 
       <!-- Ações -->
       <div class="flex gap-2">
+        <Button
+          v-if="ledger.hasReceipt"
+          size="sm"
+          variant="outline"
+          class="gap-1.5"
+          @click.stop="emit('receipt', ledger)"
+        >
+          <Paperclip class="w-3.5 h-3.5" />
+          Comprovante
+        </Button>
         <Button
           v-if="ledger.status === 'PENDING'"
           size="sm"

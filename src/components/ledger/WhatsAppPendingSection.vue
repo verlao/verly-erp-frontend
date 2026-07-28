@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { useRouter } from 'vue-router'
-import { MessageCircle, MessageSquareText, ArrowDownToLine, ArrowUpFromLine } from 'lucide-vue-next'
+import { MessageCircle, MessageSquareText, ArrowDownToLine, ArrowUpFromLine, Paperclip } from 'lucide-vue-next'
 import Button from '../ui/Button.vue'
 import Badge from '../ui/Badge.vue'
 import type { LedgerResponseDTO } from '../../services/ledger'
@@ -14,6 +14,7 @@ defineProps<{
 const emit = defineEmits<{
   post: [ledger: LedgerResponseDTO]
   cancel: [ledger: LedgerResponseDTO]
+  receipt: [ledger: LedgerResponseDTO]
 }>()
 
 const router = useRouter()
@@ -62,8 +63,15 @@ function openConversation(l: LedgerResponseDTO) {
           <p class="text-sm font-medium text-foreground truncate">
             {{ l.customerName || l.description }}
           </p>
-          <p class="text-xs text-muted-foreground truncate">
+          <p class="text-xs text-muted-foreground truncate flex items-center gap-1.5">
             {{ l.documentType === 'EXPENSE' ? 'PIX enviado' : 'PIX recebido' }} · {{ relative(l.createdAt) }}
+            <!-- Palavra não é prova: pendência sem mídia — postar aqui é confiar na palavra. -->
+            <span
+              v-if="l.hasReceipt === false"
+              class="px-1.5 py-px rounded border border-warning/50 text-warning text-[10px] font-medium shrink-0"
+            >
+              sem comprovante
+            </span>
           </p>
         </div>
         <span
@@ -73,6 +81,15 @@ function openConversation(l: LedgerResponseDTO) {
           {{ l.documentType === 'EXPENSE' ? '-' : '+' }}{{ currency.formatCurrency(l.totalAmount) }}
         </span>
         <div class="flex items-center gap-1.5 shrink-0">
+          <Button
+            v-if="l.hasReceipt"
+            variant="ghost"
+            size="sm"
+            title="Ver comprovante"
+            @click="emit('receipt', l)"
+          >
+            <Paperclip class="w-4 h-4" />
+          </Button>
           <Button
             v-if="l.leadId"
             variant="ghost"
