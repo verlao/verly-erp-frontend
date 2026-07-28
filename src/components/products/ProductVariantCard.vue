@@ -2,17 +2,15 @@
   <Card
     :class="[
       'p-3 transition-all duration-200',
-      selected ? 'border-blue-400 ring-1 ring-blue-300 bg-blue-50/40' : 'hover:border-primary/40 hover:shadow-md',
+      selected ? 'border-primary ring-1 ring-primary/40 bg-primary/5' : 'hover:border-primary/40 hover:shadow-md',
     ]"
   >
     <!-- Cabeçalho: cor + ações -->
     <div class="flex items-center justify-between gap-2 mb-2">
-      <span
-        class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium whitespace-nowrap"
-        :class="colorBadgeClass(product.color)"
-      >
+      <Badge variant="outline" class="gap-1.5 whitespace-nowrap">
+        <span class="w-2 h-2 rounded-full shrink-0" :style="glassSwatchStyle(product.color)" aria-hidden="true" />
         {{ product.color || '—' }}
-      </span>
+      </Badge>
       <div class="flex items-center gap-0.5">
         <button
           v-if="product.id"
@@ -20,7 +18,7 @@
           @click="emit('toggle-select')"
           :class="[
             'w-8 h-8 flex items-center justify-center rounded-lg transition-colors',
-            selected ? 'text-blue-600 bg-blue-100' : 'text-muted-foreground hover:bg-accent',
+            selected ? 'text-primary bg-primary/15' : 'text-muted-foreground hover:bg-accent',
           ]"
           :aria-label="selected ? 'Desselecionar' : 'Selecionar para orçamento'"
         >
@@ -32,7 +30,7 @@
         <button
           type="button"
           @click="emit('edit')"
-          class="w-8 h-8 flex items-center justify-center text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+          class="w-8 h-8 flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-accent rounded-lg transition-colors"
           aria-label="Editar produto"
         >
           <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -43,7 +41,7 @@
         <button
           type="button"
           @click="emit('delete')"
-          class="w-8 h-8 flex items-center justify-center text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+          class="w-8 h-8 flex items-center justify-center text-destructive hover:bg-destructive/10 rounded-lg transition-colors"
           aria-label="Excluir produto"
         >
           <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -57,7 +55,7 @@
     <div class="flex items-end justify-between gap-2">
       <div class="min-w-0">
         <p class="text-[10px] text-muted-foreground uppercase tracking-wide">À vista</p>
-        <p class="text-xl font-bold text-green-600 leading-tight whitespace-nowrap">
+        <p class="text-xl font-bold text-success leading-tight whitespace-nowrap">
           R$ {{ product.price ? product.price.toFixed(2) : '0,00' }}
         </p>
       </div>
@@ -80,7 +78,7 @@
         Custo <span class="font-medium text-foreground font-mono">R$ {{ product.cost ? product.cost.toFixed(2) : '0,00' }}</span>
       </span>
       <span class="text-muted-foreground">
-        Lucro <span class="font-medium text-purple-600 font-mono">{{ calculateProfit(product) }}</span>
+        Lucro <span class="font-medium text-foreground font-mono">{{ calculateProfit(product) }}</span>
       </span>
     </div>
 
@@ -120,9 +118,10 @@
 
 <script setup lang="ts">
 import Card from '../ui/Card.vue'
+import Badge from '../ui/Badge.vue'
 import EditableValue from '../EditableValue.vue'
 import type { ProductDTO } from '../../services/product'
-import { colorBadgeClass, calculateProfit } from '../../lib/productDisplay'
+import { glassSwatchStyle, calculateProfit } from '../../lib/productDisplay'
 
 defineProps<{
   product: ProductDTO

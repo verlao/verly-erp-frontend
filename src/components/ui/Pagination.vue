@@ -1,24 +1,24 @@
 <template>
-  <div class="flex items-center justify-between px-4 py-3 bg-white border-t border-gray-200 sm:px-6">
+  <div class="flex items-center justify-between px-4 py-3 bg-card border-t border-border sm:px-6">
     <div class="flex justify-between flex-1 sm:hidden">
       <button
         @click="goToPreviousPage"
         :disabled="currentPage === 1"
-        class="relative inline-flex items-center px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+        class="relative inline-flex items-center px-4 py-2 text-sm font-medium text-foreground bg-card border border-border rounded-md hover:bg-accent disabled:opacity-50 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
       >
         Anterior
       </button>
       <button
         @click="goToNextPage"
         :disabled="currentPage === totalPages"
-        class="relative ml-3 inline-flex items-center px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+        class="relative ml-3 inline-flex items-center px-4 py-2 text-sm font-medium text-foreground bg-card border border-border rounded-md hover:bg-accent disabled:opacity-50 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
       >
         Próximo
       </button>
     </div>
     <div class="hidden sm:flex sm:flex-1 sm:items-center sm:justify-between">
       <div>
-        <p class="text-sm text-gray-700">
+        <p class="text-sm text-muted-foreground">
           Mostrando
           <span class="font-medium">{{ startItem }}</span>
           até
@@ -34,7 +34,7 @@
           <button
             @click="goToPreviousPage"
             :disabled="currentPage === 1"
-            class="relative inline-flex items-center px-2 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-l-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+            class="relative inline-flex items-center px-2 py-2 text-sm font-medium text-muted-foreground bg-card border border-border rounded-l-md hover:bg-accent disabled:opacity-50 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           >
             <span class="sr-only">Anterior</span>
             <svg class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
@@ -52,7 +52,7 @@
           </button>
 
           <!-- Ellipsis inicial -->
-          <span v-if="showStartEllipsis" class="relative inline-flex items-center px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300">
+          <span v-if="showStartEllipsis" class="relative inline-flex items-center px-4 py-2 text-sm font-medium text-muted-foreground bg-card border border-border">
             ...
           </span>
 
@@ -67,7 +67,7 @@
           </button>
 
           <!-- Ellipsis final -->
-          <span v-if="showEndEllipsis" class="relative inline-flex items-center px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300">
+          <span v-if="showEndEllipsis" class="relative inline-flex items-center px-4 py-2 text-sm font-medium text-muted-foreground bg-card border border-border">
             ...
           </span>
 
@@ -84,7 +84,7 @@
           <button
             @click="goToNextPage"
             :disabled="currentPage === totalPages"
-            class="relative inline-flex items-center px-2 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-r-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+            class="relative inline-flex items-center px-2 py-2 text-sm font-medium text-muted-foreground bg-card border border-border rounded-r-md hover:bg-accent disabled:opacity-50 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           >
             <span class="sr-only">Próximo</span>
             <svg class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
@@ -97,12 +97,12 @@
 
     <!-- Seletor de itens por página -->
     <div class="flex items-center space-x-2 ml-4">
-      <label for="pageSize" class="text-sm text-gray-700">Itens por página:</label>
+      <label for="pageSize" class="text-sm text-muted-foreground">Itens por página:</label>
       <select
         id="pageSize"
         :value="pageSize"
         @change="changePageSize(($event.target as HTMLSelectElement).value)"
-        class="px-3 py-1 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-primary focus:border-primary"
+        class="px-3 py-1 text-sm border border-border bg-background text-foreground rounded-md focus:outline-none focus:ring-ring focus:border-ring"
       >
         <option value="10">10</option>
         <option value="25">25</option>
@@ -199,10 +199,10 @@ function pageButtonClass(page: number): string {
   const baseClass = 'relative inline-flex items-center px-4 py-2 text-sm font-medium border'
   
   if (page === props.currentPage) {
-    return `${baseClass} z-10 bg-primary border-primary text-white`
+    return `${baseClass} z-10 bg-primary border-primary text-primary-foreground`
   }
   
-  return `${baseClass} bg-white border-gray-300 text-gray-500 hover:bg-gray-50`
+  return `${baseClass} bg-card border-border text-muted-foreground hover:bg-accent`
 }
 
 function goToPage(page: number) {

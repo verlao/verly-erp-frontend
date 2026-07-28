@@ -3,7 +3,7 @@
     <DialogContent class="max-w-3xl max-h-[90vh] overflow-y-auto">
       <DialogHeader>
         <DialogTitle class="flex items-center gap-2 text-xl">
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-blue-600" viewBox="0 0 20 20" fill="currentColor">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-primary" viewBox="0 0 20 20" fill="currentColor">
             <path d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z" />
             <path fill-rule="evenodd" d="M4 5a2 2 0 012-2 3 3 0 003 3h2a3 3 0 003-3 2 2 0 012 2v11a2 2 0 01-2 2H6a2 2 0 01-2-2V5zm3 4a1 1 0 000 2h.01a1 1 0 100-2H7zm3 0a1 1 0 000 2h3a1 1 0 100-2h-3zm-3 4a1 1 0 100 2h.01a1 1 0 100-2H7zm3 0a1 1 0 100 2h3a1 1 0 100-2h-3z" clip-rule="evenodd" />
           </svg>
@@ -15,12 +15,12 @@
         <!-- Seleção de Cliente -->
         <div class="space-y-2">
           <Label for="customer" class="text-sm font-medium">
-            Cliente <span class="text-red-500">*</span>
+            Cliente <span class="text-destructive">*</span>
           </Label>
           <select
             id="customer"
             v-model="selectedCustomerId"
-            class="w-full px-3 py-2 bg-background border border-border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+            class="w-full px-3 py-2 bg-background border border-border rounded-lg text-foreground focus:ring-2 focus:ring-ring focus:border-ring transition-colors"
             required
           >
             <option value="">Selecione um cliente...</option>
@@ -44,7 +44,7 @@
             v-model="expirationDate"
             type="date"
             :min="today"
-            class="w-full px-3 py-2 bg-background border border-border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+            class="w-full px-3 py-2 bg-background border border-border rounded-lg text-foreground focus:ring-2 focus:ring-ring focus:border-ring transition-colors"
           />
           <p class="text-xs text-muted-foreground">
             Padrão: {{ defaultExpiryDays }} dias a partir de hoje
@@ -60,7 +60,7 @@
             id="observations"
             v-model="observations"
             rows="3"
-            class="w-full px-3 py-2 bg-background border border-border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors resize-none"
+            class="w-full px-3 py-2 bg-background border border-border rounded-lg text-foreground focus:ring-2 focus:ring-ring focus:border-ring transition-colors resize-none"
             placeholder="Adicione observações sobre este orçamento..."
           ></textarea>
         </div>
@@ -78,7 +78,7 @@
             <div
               v-for="product in products"
               :key="product.id"
-              class="flex items-center justify-between p-3 bg-card border border-border rounded-lg hover:border-blue-300 transition-colors"
+              class="flex items-center justify-between p-3 bg-card border border-border rounded-lg hover:border-primary/40 transition-colors"
             >
               <div class="flex-1 space-y-1">
                 <div class="flex items-center gap-2">
@@ -87,7 +87,7 @@
                   </span>
                   <span
                     v-if="product.sheets"
-                    class="text-xs px-2 py-0.5 bg-blue-100 text-blue-800 rounded-full"
+                    class="text-xs px-2 py-0.5 bg-muted text-muted-foreground rounded-full"
                   >
                     {{ product.sheets }} {{ product.sheets === 1 ? 'folha' : 'folhas' }}
                   </span>
@@ -98,7 +98,7 @@
                 </p>
               </div>
               <div class="text-right space-y-0.5">
-                <p class="font-semibold text-green-600">
+                <p class="font-semibold text-success">
                   R$ {{ (product.price || 0).toFixed(2) }}
                 </p>
                 <p class="text-xs text-muted-foreground">
@@ -120,13 +120,13 @@
           </div>
           <div class="flex justify-between text-sm">
             <span class="text-muted-foreground">Preço Total Estimado:</span>
-            <span class="font-semibold text-lg text-green-600">
+            <span class="font-semibold text-lg text-success">
               R$ {{ totalPrice.toFixed(2) }}
             </span>
           </div>
           <div class="flex justify-between text-sm">
             <span class="text-muted-foreground">Lucro Estimado:</span>
-            <span class="font-medium text-blue-600">
+            <span class="font-medium text-info">
               R$ {{ (totalPrice - totalCost).toFixed(2) }}
             </span>
           </div>
@@ -145,11 +145,11 @@
         <button
           @click="handleCreate"
           :disabled="!canSubmit || loading"
-          class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+          class="px-4 py-2 bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
         >
           <svg
             v-if="loading"
-            class="animate-spin h-4 w-4 text-white"
+            class="animate-spin h-4 w-4 text-primary-foreground"
             xmlns="http://www.w3.org/2000/svg"
             fill="none"
             viewBox="0 0 24 24"
