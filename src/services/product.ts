@@ -19,12 +19,16 @@ export interface ProductDTO {
   // (Calculadora Rápida) → backend usa o custo de vidro NÃO-padrão.
   standard?: boolean
   cost?: number // Calculated field from backend
-  price?: number // Calculated field from backend (À vista dinheiro)
+  price?: number | null // Calculated field from backend (À vista dinheiro). null = not calculable (missing dimension/type, see priceUnavailableReason)
   profit?: number // Calculated field from backend
   laborValue?: number // Calculated field from backend
   gainValue?: number // Calculated field from backend
   createdDate?: string
   installments?: any[] // Calculated field from backend
+
+  // Preenchido por /products/calculate quando o preço não pôde ser calculado
+  // (falta dimensão/tipo). price vem null nesse caso — nunca tratar como grátis.
+  priceUnavailableReason?: string | null
   
   // Novas opções de preço (calculadas no backend)
   priceOptions?: {
