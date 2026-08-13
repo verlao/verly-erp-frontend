@@ -293,7 +293,15 @@ function categoryFor(type: string | null | undefined): string | null {
 // Linhas que efetivamente compõem o orçamento: preço calculado e, se fizerem
 // parte de um grupo de variantes A/B, a que o cliente escolheu.
 function includedRows(): Row[] {
-  return rows.value.filter((r) => !r.priceUnavailable && !(r.variantGroup && r.variantSelected === false))
+  const seenGroups = new Set<string>()
+  return rows.value.filter((r) => {
+    if (r.priceUnavailable) return false
+    if (!r.variantGroup) return true
+    if (r.variantSelected === false) return false
+    if (seenGroups.has(r.variantGroup)) return false
+    seenGroups.add(r.variantGroup)
+    return true
+  })
 }
 
 function variantOptionLabel(row: Row): string {
@@ -340,7 +348,9 @@ async function recalcRow(row: Row) {
     markPriceUnavailable(row, 'Pendente de medição')
     return
   }
-  if (!row.width || !row.height) {
+  // FORRO_PVC e PORTA_ALUMINIO são precificados por m²/unidade e legitimamente
+  // não têm width/height — só exigir medida pros tipos que dependem dela.
+  if (!NON_GLASS[row.type] && (!row.width || !row.height)) {
     markPriceUnavailable(row, 'Pendente de medida')
     return
   }
