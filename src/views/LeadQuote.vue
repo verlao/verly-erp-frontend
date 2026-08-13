@@ -91,11 +91,33 @@
         <!-- Produtos que a IA entendeu — ajuste fino + valores -->
         <div class="min-w-0">
           <div class="space-y-3">
-            <Card v-for="(row, i) in rows" :key="i" class="p-4">
+            <Card
+              v-for="(row, i) in rows"
+              :key="i"
+              class="p-4"
+              :class="row.variantGroup && row.variantSelected === false ? 'opacity-60' : ''"
+            >
               <div class="flex items-start justify-between mb-2">
-                <span class="font-medium">{{ row.type || 'Item' }}</span>
+                <span class="font-medium">{{ row.type || 'Escolha o tipo' }}</span>
                 <button class="text-xs text-muted-foreground hover:text-destructive" @click="removeRow(i)">Remover</button>
               </div>
+
+              <!-- Variantes A/B: o cliente pediu pra comparar; só a selecionada entra no total -->
+              <div v-if="row.variantGroup" class="flex items-center gap-2 mb-2 text-xs">
+                <span class="px-1.5 py-0.5 rounded bg-muted text-muted-foreground font-medium">
+                  {{ variantOptionLabel(row) }}
+                </span>
+                <label class="flex items-center gap-1 cursor-pointer">
+                  <input
+                    type="radio"
+                    :name="`variant-${row.variantGroup}`"
+                    :checked="row.variantSelected !== false"
+                    @change="selectVariant(row)"
+                  />
+                  <span class="text-muted-foreground">Escolhida pelo cliente</span>
+                </label>
+              </div>
+
               <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
                 <label class="text-xs text-muted-foreground">Largura (cm)
                   <input v-model.number="row.width" type="number" class="mt-1 w-full px-2 py-1.5 border border-border rounded-md bg-background" @change="recalcRow(row)" />
@@ -109,6 +131,17 @@
                 <label class="text-xs text-muted-foreground">Qtd
                   <input v-model.number="row.quantity" type="number" min="1" class="mt-1 w-full px-2 py-1.5 border border-border rounded-md bg-background" />
                 </label>
+                <label class="text-xs text-muted-foreground col-span-2">Tipo
+                  <select
+                    v-model="row.type"
+                    class="mt-1 w-full px-2 py-1.5 border rounded-md bg-background"
+                    :class="row.type ? 'border-border' : 'border-warning ring-1 ring-warning'"
+                    @change="recalcRow(row)"
+                  >
+                    <option value="">Escolha o tipo…</option>
+                    <option v-for="t in TYPES" :key="t" :value="t">{{ t }}</option>
+                  </select>
+                </label>
                 <label class="text-xs text-muted-foreground col-span-2">Cor
                   <select v-model="row.color" class="mt-1 w-full px-2 py-1.5 border border-border rounded-md bg-background" @change="recalcRow(row)">
                     <option value="INCOLOR">Incolor</option>
@@ -117,11 +150,14 @@
                     <option value="BRONZE">Bronze</option>
                   </select>
                 </label>
-                <div class="col-span-2 flex items-end justify-end gap-3 text-right">
+                <div class="col-span-2 md:col-span-4 flex items-end justify-end gap-3 text-right">
                   <span v-if="row.aiValue != null" class="text-xs text-muted-foreground" title="Valor estimado pela IA na conversa">
                     IA: {{ currency.formatCurrency(row.aiValue) }}
                   </span>
                   <span v-if="row.calculating" class="text-xs text-muted-foreground">calculando…</span>
+                  <span v-else-if="row.priceUnavailable" class="text-xs text-warning font-medium">
+                    {{ row.priceUnavailableReason || 'Pendente de medida' }}
+                  </span>
                   <span v-else class="text-sm">
                     <span class="text-xs text-muted-foreground">{{ row.quantity || 1 }}× {{ currency.formatCurrency(row.unitPrice || 0) }} = </span>
                     <span class="font-semibold">{{ currency.formatCurrency((row.unitPrice || 0) * (row.quantity || 1)) }}</span>
@@ -200,15 +236,26 @@ import { useCurrency } from '../composables/useCurrency'
 import { useNotification } from '../composables/useNotification'
 
 interface Row {
-  type: string
+  // null/vazio = ainda não escolhido; nunca assumir um tipo por conta própria.
+  type: string | null
   color: string
   sheets: number
   width: number | null
   height: number | null
   quantity: number
-  unitPrice: number
+  // null/undefined = preço não calculado (ver priceUnavailable*); nunca 0 == "grátis".
+  unitPrice: number | null
   aiValue: number | null
   calculating: boolean
+  // vindo do backend: medida ainda não confirmada (ex: visita técnica pendente).
+  pendingMeasurement: boolean
+  // true quando falta tipo/medida ou o backend não conseguiu calcular o preço.
+  priceUnavailable: boolean
+  priceUnavailableReason: string | null
+  // itens com o mesmo variantGroup são alternativas A/B que o cliente pediu
+  // pra comparar; só a variante com variantSelected !== false conta no total.
+  variantGroup: string | null
+  variantSelected: boolean
 }
 
 const route = useRoute()
@@ -236,13 +283,36 @@ function hasMeasurement(body?: string): boolean {
 
 // Tipos não-vidro → categoria; o resto é vidro temperado.
 const NON_GLASS: Record<string, string> = { FORRO_PVC: 'PVC', PORTA_ALUMINIO: 'ALUMINIO' }
-function categoryFor(type: string): string {
+const TYPES = ['PORTA', 'JANELA', 'BOX', 'SACADA', 'BASCULANTE', 'FIXO', 'FORRO_PVC', 'PORTA_ALUMINIO']
+
+function categoryFor(type: string | null | undefined): string | null {
+  if (!type) return null
   return NON_GLASS[type] ?? 'VIDRO_TEMPERADO'
 }
 
-const subtotal = computed(() =>
-  rows.value.reduce((sum, r) => sum + (r.unitPrice || 0) * (r.quantity || 1), 0)
-)
+// Linhas que efetivamente compõem o orçamento: preço calculado e, se fizerem
+// parte de um grupo de variantes A/B, a que o cliente escolheu.
+function includedRows(): Row[] {
+  return rows.value.filter((r) => !r.priceUnavailable && !(r.variantGroup && r.variantSelected === false))
+}
+
+function variantOptionLabel(row: Row): string {
+  if (!row.variantGroup) return ''
+  const group = rows.value.filter((r) => r.variantGroup === row.variantGroup)
+  const pos = Math.max(group.indexOf(row), 0)
+  return `Opção ${String.fromCharCode(65 + pos)}`
+}
+
+function selectVariant(row: Row) {
+  if (!row.variantGroup) return
+  rows.value.forEach((r) => {
+    if (r.variantGroup === row.variantGroup) {
+      r.variantSelected = r === row
+    }
+  })
+}
+
+const subtotal = computed(() => includedRows().reduce((sum, r) => sum + (r.unitPrice || 0) * (r.quantity || 1), 0))
 const finalTotal = computed(() => {
   if (finalPriceOverride.value != null && finalPriceOverride.value >= 0) return finalPriceOverride.value
   return Math.max(0, subtotal.value - (discount.value || 0))
@@ -255,8 +325,25 @@ const aiDiverges = computed(() => {
   return Math.abs(subtotal.value - ai) / ai > 0.1
 })
 
+function markPriceUnavailable(row: Row, reason: string) {
+  row.unitPrice = null
+  row.priceUnavailable = true
+  row.priceUnavailableReason = reason
+}
+
 async function recalcRow(row: Row) {
-  if (!row.type) return
+  if (!row.type) {
+    markPriceUnavailable(row, 'Escolha o tipo do item')
+    return
+  }
+  if (row.pendingMeasurement) {
+    markPriceUnavailable(row, 'Pendente de medição')
+    return
+  }
+  if (!row.width || !row.height) {
+    markPriceUnavailable(row, 'Pendente de medida')
+    return
+  }
   row.calculating = true
   try {
     const res = await productService.calculate({
@@ -267,16 +354,41 @@ async function recalcRow(row: Row) {
       width: row.width ?? undefined,
       height: row.height ?? undefined,
     })
-    row.unitPrice = res?.price ?? 0
+    // Backend pode responder price:null + priceUnavailableReason quando não
+    // conseguir calcular (em vez de calcular parcial) — nunca tratar como grátis.
+    const price = res?.price
+    const unavailableReason = res?.priceUnavailableReason
+    if (price == null || unavailableReason) {
+      markPriceUnavailable(row, unavailableReason || 'Não foi possível calcular o preço')
+    } else {
+      row.unitPrice = price
+      row.priceUnavailable = false
+      row.priceUnavailableReason = null
+    }
   } catch {
-    row.unitPrice = 0
+    markPriceUnavailable(row, 'Erro ao calcular preço')
   } finally {
     row.calculating = false
   }
 }
 
 function addRow() {
-  rows.value.push({ type: 'BOX', color: 'INCOLOR', sheets: 1, width: null, height: null, quantity: 1, unitPrice: 0, aiValue: null, calculating: false })
+  rows.value.push({
+    type: null,
+    color: 'INCOLOR',
+    sheets: 1,
+    width: null,
+    height: null,
+    quantity: 1,
+    unitPrice: null,
+    aiValue: null,
+    calculating: false,
+    pendingMeasurement: false,
+    priceUnavailable: true,
+    priceUnavailableReason: 'Escolha o tipo do item',
+    variantGroup: null,
+    variantSelected: true,
+  })
 }
 
 function removeRow(i: number) {
@@ -288,15 +400,23 @@ async function load() {
   try {
     lead.value = await leadService.getById(leadId)
     rows.value = (lead.value?.items ?? []).map((it) => ({
-      type: it.productType || 'BOX',
+      // Nunca assumir 'BOX' quando o backend não classificou o item — deixar
+      // vazio força quem está conferindo a escolher o tipo real.
+      type: it.productType || null,
       color: it.color || 'INCOLOR',
       sheets: it.sheets ?? 1,
       width: it.widthCm ?? null,
       height: it.heightCm ?? null,
       quantity: it.quantity ?? 1,
-      unitPrice: 0,
+      unitPrice: null,
       aiValue: it.estimatedValue ?? null,
       calculating: false,
+      pendingMeasurement: it.pendingMeasurement ?? false,
+      priceUnavailable: true,
+      priceUnavailableReason: null,
+      variantGroup: it.variantGroup ?? null,
+      // Item antigo sem a info do backend: trata como selecionado (não filtra).
+      variantSelected: it.variantSelected ?? true,
     }))
     await Promise.all(rows.value.map((r) => recalcRow(r)))
   } catch {
@@ -306,12 +426,15 @@ async function load() {
   }
 }
 
+// Só linhas com preço calculado e (se houver variantes) a escolhida pelo
+// cliente entram no orçamento — mandar uma linha sem preço pro backend seria
+// o mesmo bug do preço 0, só que virando um item "de graça" no PDF/mensagem.
 function buildPayload(): CreateQuoteFromLeadPayload {
   return {
     leadId,
-    items: rows.value.map((r) => ({
-      type: r.type,
-      category: categoryFor(r.type),
+    items: includedRows().map((r) => ({
+      type: r.type || '',
+      category: categoryFor(r.type) ?? undefined,
       color: r.color,
       sheets: r.sheets,
       width: r.width ?? undefined,
@@ -328,6 +451,10 @@ async function save(): Promise<{ id: number; daysUntilExpiration?: number } | nu
     notification.warning('Atenção', 'Adicione ao menos um item')
     return null
   }
+  if (includedRows().length === 0) {
+    notification.warning('Atenção', 'Nenhum item com preço calculado — defina o tipo e a medida antes de salvar')
+    return null
+  }
   saving.value = true
   try {
     const created = await quoteService.createFromLead(buildPayload())
@@ -342,7 +469,7 @@ async function save(): Promise<{ id: number; daysUntilExpiration?: number } | nu
 }
 
 function itemLabel(r: Row): string {
-  return `${r.type} ${r.width || ''}×${r.height || ''}${r.color && r.color !== 'INCOLOR' ? ' ' + r.color : ''}`.trim()
+  return `${r.type || ''} ${r.width || ''}×${r.height || ''}${r.color && r.color !== 'INCOLOR' ? ' ' + r.color : ''}`.trim()
 }
 
 function firstNameOf(name: string): string {
@@ -385,13 +512,15 @@ async function sendPdf() {
 }
 
 // Enviar mensagem: salva → mensagem comercial estruturada com preço por item.
+// Mesmo filtro do orçamento/PDF: nunca mandar pro cliente uma linha sem
+// preço calculado ou uma variante que ele não escolheu.
 async function sendMessage() {
   const created = await save()
   if (!created || !lead.value?.phone) return
   const message = buildRichQuoteMessage({
     customerName: lead.value.name,
     quoteId: created.id,
-    items: rows.value.map((r) => ({
+    items: includedRows().map((r) => ({
       qty: r.quantity || 1,
       label: itemLabel(r),
       lineTotal: (r.unitPrice || 0) * (r.quantity || 1),

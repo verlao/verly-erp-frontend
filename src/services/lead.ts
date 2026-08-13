@@ -25,6 +25,13 @@ export interface LeadItemDTO {
   quantity: number
   estimatedValue?: number
   estimatedProfit?: number
+
+  // Medição/variantes (paralelo ao backend) — ausentes em itens antigos.
+  pendingMeasurement?: boolean
+  // Itens com o mesmo variantGroup são alternativas A/B que o cliente pediu
+  // pra comparar; só a variantSelected deve entrar no total/orçamento.
+  variantGroup?: string | null
+  variantSelected?: boolean
 }
 
 export interface LeadDTO {
