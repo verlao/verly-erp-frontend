@@ -44,6 +44,8 @@ export interface LeadDTO {
   neighborhood: string
   data: string
   createdDate: string
+  // V2_37: último create OU re-síntese do bot; ancora o bloco "Novos hoje" do inbox.
+  lastActivityDate?: string
   userAgent?: string
   latitude?: string
   longitude?: string
