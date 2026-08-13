@@ -1,4 +1,4 @@
-import { createRouter, createWebHistory } from 'vue-router'
+import { createRouter, createWebHistory, type RouteLocationGeneric } from 'vue-router'
 import { postLoginRoute } from '../lib/routes'
 import { isTokenExpired } from '../lib/jwt'
 
@@ -58,6 +58,13 @@ const routes = [
         path: 'leads/:id/orcamento',
         name: 'LeadQuote',
         component: () => import('../views/LeadQuote.vue'),
+      },
+      {
+        // Redirect for a URL shape users naturally try (/leads/:id/quotes) that never
+        // had a matching route, so it fell through to a blank/broken screen instead of
+        // the existing quote-review screen at leads/:id/orcamento.
+        path: 'leads/:id/quotes',
+        redirect: (to: RouteLocationGeneric) => ({ name: 'LeadQuote', params: to.params }),
       },
       {
         path: 'kanban',
