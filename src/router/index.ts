@@ -67,6 +67,11 @@ const routes = [
         redirect: (to: RouteLocationGeneric) => ({ name: 'LeadQuote', params: to.params }),
       },
       {
+        path: 'partners',
+        name: 'Partners',
+        component: () => import('../views/Partners.vue'),
+      },
+      {
         path: 'kanban',
         name: 'Kanban',
         component: () => import('../views/Kanban.vue'),
