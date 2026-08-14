@@ -82,6 +82,9 @@ export interface LeadDTO {
   // V2_28: medição/visita técnica
   measurementStatus?: MeasurementStatus
   measurementDate?: string
+
+  // V2_31: cliente afirmou pagamento por texto mas o comprovante ainda não chegou.
+  paymentAwaitingReceipt?: boolean
 }
 
 export type MeasurementStatus = 'NONE' | 'NEEDED' | 'SCHEDULED' | 'DONE'

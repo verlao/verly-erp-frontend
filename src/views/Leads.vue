@@ -24,6 +24,7 @@
       v-model:status-filter="statusFilter"
       v-model:tier-filter="tierFilter"
       :counts="counts"
+      :paid-count="paidCount"
     />
 
     <!-- Conteúdo Principal: Card com Split View -->
@@ -55,6 +56,8 @@
           <LeadPreview
             v-else
             :lead="selectedLead"
+            :duplicates="selectedLeadDuplicates"
+            @select-duplicate="handleSelectLead"
             @convert="handleConvert"
             @mark-contacted="handleMarkContacted"
             @mark-qualified="handleMarkQualified"
@@ -158,6 +161,8 @@
                   v-if="selectedLead"
                   :lead="selectedLead"
                   :is-mobile="true"
+                  :duplicates="selectedLeadDuplicates"
+                  @select-duplicate="handleSelectLead"
                   @convert="handleConvert"
                   @mark-contacted="handleMarkContacted"
                   @mark-qualified="handleMarkQualified"
@@ -190,6 +195,7 @@ import leadService from '../services/lead'
 import type { LeadDTO, PaginatedResponse } from '../services/lead'
 import { buildWhatsAppUrl } from '../lib/whatsapp'
 import { useLeadSelection } from '../composables/useLeadSelection'
+import { activeDuplicatesOf, isPaymentAwaitingReceipt } from '../composables/useLeadSignals'
 import { useLeadKeyboard } from '../composables/useLeadKeyboard'
 import { useCelebration } from '../composables/useCelebration'
 
@@ -241,6 +247,12 @@ const isMobile = computed(() => width.value < 768)
 // Scroll infinito (mobile): há mais páginas pra carregar?
 const hasMore = computed(() => currentPage.value < totalPages.value)
 
+// Fila "💰 Pagos": pagamento sinalizado sem comprovante (calculado client-side).
+const paidCount = computed(() => leads.value.filter(isPaymentAwaitingReceipt).length)
+
+// Duplicatas ativas do lead selecionado (mesmo telefone, status não-terminal).
+const selectedLeadDuplicates = computed(() => activeDuplicatesOf(leads.value, selectedLead.value))
+
 // Botão "limpar filtros" na toolbar aparece se qualquer filtro estiver ativo.
 const hasActiveFilters = computed(() =>
   Boolean(search.value || statusFilter.value !== 'all' || tierFilter.value !== 'all')
@@ -281,8 +293,10 @@ function scrollToTop() {
 const filteredLeads = computed(() => {
   let filtered = leads.value
 
-  // Status filter
-  if (statusFilter.value !== 'all') {
+  // Status filter — 'PAID' é a fila virtual de pagamento sinalizado sem comprovante
+  if (statusFilter.value === 'PAID') {
+    filtered = filtered.filter(lead => isPaymentAwaitingReceipt(lead))
+  } else if (statusFilter.value !== 'all') {
     filtered = filtered.filter(lead =>
       (lead.status || 'NEW') === statusFilter.value
     )

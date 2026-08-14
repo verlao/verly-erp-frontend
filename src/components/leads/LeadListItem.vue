@@ -5,7 +5,7 @@ import Badge from '../ui/Badge.vue'
 import Avatar from '../ui/Avatar.vue'
 import Checkbox from '../ui/Checkbox.vue'
 import type { LeadDTO } from '../../services/lead'
-import { isHotLead, parseLeadData, getNextAction, statusBadgeConfig, tierBadgeClass } from '../../composables/useLeadSignals'
+import { isHotLead, parseLeadData, getNextAction, statusBadgeConfig, tierBadgeClass, negotiatedInfo, isPaymentAwaitingReceipt } from '../../composables/useLeadSignals'
 
 const props = defineProps<{
   lead: LeadDTO
@@ -88,6 +88,13 @@ const productCount = computed(() =>
 // Lead quente (sinal de compra ou alto valor) + próxima ação sugerida
 const hot = computed(() => isHotLead(props.lead))
 const nextAction = computed(() => getNextAction(parseLeadData(props.lead.data)?.signals))
+
+// V2_31: pagamento sinalizado sem comprovante — destaque "Pagou — confirmar"
+const awaitingReceipt = computed(() => isPaymentAwaitingReceipt(props.lead))
+
+// Valor negociado na conversa (signals.negotiated) — null em leads antigos
+const negotiated = computed(() => negotiatedInfo(props.lead))
+const negotiatedDisplay = computed(() => brl(negotiated.value?.value))
 </script>
 
 <template>
@@ -127,6 +134,11 @@ const nextAction = computed(() => getNextAction(parseLeadData(props.lead.data)?.
               {{ lead.name }}
             </h4>
             <span v-if="hot" class="shrink-0" title="Lead quente — sinal de compra ou alto valor">🔥</span>
+            <span
+              v-if="awaitingReceipt"
+              class="shrink-0 inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-semibold bg-success/15 text-success"
+              title="Cliente afirmou pagamento — confirmar comprovante"
+            >💰 Pagou — confirmar</span>
           </div>
 
           <!-- Tier badge proeminente à direita -->
@@ -152,7 +164,18 @@ const nextAction = computed(() => getNextAction(parseLeadData(props.lead.data)?.
 
         <!-- Linha 3: valor + lucro + qtd + status + bairro + tempo -->
         <div class="flex items-center flex-wrap gap-x-2 gap-y-1 text-[11px] md:text-xs">
-          <span v-if="totalDisplay" class="font-bold text-foreground">
+          <template v-if="negotiatedDisplay">
+            <span
+              :class="['font-bold', negotiated?.divergent ? 'text-warning' : 'text-foreground']"
+              :title="negotiated?.divergent ? 'Valor negociado diverge mais de 30% do estimado' : 'Valor negociado na conversa'"
+            >
+              <span v-if="negotiated?.divergent" aria-hidden="true">⚠️ </span>Negociado {{ negotiatedDisplay }}
+            </span>
+            <span v-if="totalDisplay" class="text-muted-foreground">
+              · Estimado {{ totalDisplay }}
+            </span>
+          </template>
+          <span v-else-if="totalDisplay" class="font-bold text-foreground">
             {{ totalDisplay }}
           </span>
           <span v-if="profitDisplay" class="text-success font-medium">
