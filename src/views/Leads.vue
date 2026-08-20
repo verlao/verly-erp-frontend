@@ -205,7 +205,7 @@ import LeadStats from '../components/leads/LeadStats.vue'
 import DeleteConfirmDialog from '../components/DeleteConfirmDialog.vue'
 import Button from '../components/ui/Button.vue'
 import leadService from '../services/lead'
-import type { LeadDTO, LeadStatus, PaginatedResponse } from '../services/lead'
+import type { LeadCounts, LeadDTO, LeadStatus, PaginatedResponse } from '../services/lead'
 import { buildWhatsAppUrl } from '../lib/whatsapp'
 import { shouldMarkContactedOnWhatsapp } from '../lib/leadStatus'
 import { useLeadSelection } from '../composables/useLeadSelection'
@@ -226,7 +226,7 @@ const search = ref('')
 const statusFilter = ref('all')
 const tierFilter = ref('all')
 const showMobilePreview = ref(false)
-const counts = ref({
+const counts = ref<LeadCounts>({
   all: 0,
   new: 0,
   contacted: 0,

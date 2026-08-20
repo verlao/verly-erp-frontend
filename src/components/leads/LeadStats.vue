@@ -1,12 +1,13 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import Skeleton from '../ui/Skeleton.vue'
-import type { LeadDTO } from '../../services/lead'
+import type { LeadDTO, LeadCounts } from '../../services/lead'
 import { isHotLead } from '../../composables/useLeadSignals'
+import { pipelineTotal } from '../../lib/leadPipeline'
 
 const props = defineProps<{
   leads: LeadDTO[]
-  counts: { all: number; new: number; contacted: number; qualified: number; converted: number; lost: number }
+  counts: LeadCounts
   loading?: boolean
 }>()
 
@@ -14,8 +15,11 @@ function formatBrl(n: number): string {
   return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(n)
 }
 
-// Mesmo critério do funil: soma dos leads ainda abertos (exclui convertidos/perdidos).
+// Pipeline = new + contacted + qualified (abertos). Exclui CONVERTED e LOST.
+// Hoje coincide com totals.all porque converted=lost=0 — a escolha errada ficaria invisível.
 const pipelineValue = computed(() => {
+  const fromServer = pipelineTotal(props.counts.totals)
+  if (fromServer != null) return formatBrl(fromServer)
   const total = props.leads
     .filter(l => l.status !== 'CONVERTED' && l.status !== 'LOST')
     .reduce((s, l) => s + (l.totalEstimatedValue || 0), 0)
