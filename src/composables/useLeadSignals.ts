@@ -8,6 +8,8 @@ export interface LeadSignals {
   visit?: { detected?: boolean; date?: string | null; quote?: string | null }
   closed?: { detected?: boolean; quote?: string | null }
   objection?: { detected?: boolean; quote?: string | null }
+  // Valor negociado na conversa (bot). Ausente em leads antigos.
+  negotiated?: { detected?: boolean; value?: number | null; quote?: string | null }
 }
 export interface TranscriptMsg {
   fromMe?: boolean
@@ -95,6 +97,65 @@ export function hotReason(lead?: LeadDTO | null): string {
   return 'novo lead'
 }
 
+// ---- Valor negociado (signals.negotiated no blob `lead.data`) ----
+
+export interface NegotiatedInfo {
+  /** Valor negociado detectado na conversa. */
+  value: number
+  /** Valor estimado do lead (soma dos itens), se existir. */
+  estimated: number | null
+  /** true quando negociado e estimado divergem mais de 30%. */
+  divergent: boolean
+}
+
+const DIVERGENCE_THRESHOLD = 0.3
+
+/** Extrai o valor negociado do lead; null quando ausente/não detectado (leads antigos). */
+export function negotiatedInfo(lead?: LeadDTO | null): NegotiatedInfo | null {
+  if (!lead) return null
+  const n = parseLeadData(lead.data)?.signals?.negotiated
+  if (!n?.detected || n.value == null || !Number.isFinite(n.value) || n.value <= 0) return null
+  const estimated = lead.totalEstimatedValue ?? null
+  const divergent =
+    estimated != null && estimated > 0 && Math.abs(n.value - estimated) / estimated > DIVERGENCE_THRESHOLD
+  return { value: n.value, estimated, divergent }
+}
+
+// ---- Pagamento sinalizado (coluna paymentAwaitingReceipt do DTO) ----
+
+/** Lead cujo cliente afirmou pagamento mas o comprovante ainda não chegou. */
+export function isPaymentAwaitingReceipt(lead?: LeadDTO | null): boolean {
+  return lead?.paymentAwaitingReceipt === true
+}
+
+// ---- Duplicatas por telefone (client-side sobre a lista já carregada) ----
+
+const TERMINAL_STATUSES = new Set(['CONVERTED', 'LOST'])
+
+/** Status não-terminal ⇒ lead ainda em jogo no funil. */
+export function isActiveLead(lead?: LeadDTO | null): boolean {
+  if (!lead) return false
+  return !TERMINAL_STATUSES.has(lead.status ?? 'NEW')
+}
+
+/** Normaliza telefone pra comparação (só dígitos); '' quando inutilizável. */
+export function normalizePhone(phone?: string | null): string {
+  return (phone ?? '').replace(/\D/g, '')
+}
+
+/**
+ * Outros leads ATIVOS que compartilham o telefone do lead dado.
+ * Calculado client-side a partir da lista já carregada — sem endpoint novo.
+ */
+export function activeDuplicatesOf(leads: LeadDTO[], lead?: LeadDTO | null): LeadDTO[] {
+  if (!lead) return []
+  const phone = normalizePhone(lead.phone)
+  if (!phone) return []
+  return leads.filter(
+    (l) => l.id !== lead.id && isActiveLead(l) && normalizePhone(l.phone) === phone
+  )
+}
+
 export function fmtTime(at?: string | null): string {
   if (!at) return ''
   try {
@@ -111,5 +172,6 @@ export function useLeadSignals(leadSource: MaybeRefOrGetter<LeadDTO | undefined>
   const transcript = computed<TranscriptMsg[]>(() => parsed.value?.transcript ?? [])
   const signalChips = computed(() => getSignalChips(signals.value))
   const nextAction = computed(() => getNextAction(signals.value))
-  return { signals, transcript, signalChips, nextAction }
+  const negotiated = computed(() => negotiatedInfo(toValue(leadSource)))
+  return { signals, transcript, signalChips, nextAction, negotiated }
 }

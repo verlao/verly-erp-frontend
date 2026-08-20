@@ -7,11 +7,13 @@ import Badge from '../ui/Badge.vue'
 import Separator from '../ui/Separator.vue'
 import Avatar from '../ui/Avatar.vue'
 import type { LeadDTO } from '../../services/lead'
-import { useLeadSignals, fmtTime, statusBadgeConfig, tierBadgeClass as tierBadgeClassFor } from '../../composables/useLeadSignals'
+import { useLeadSignals, fmtTime, statusBadgeConfig, tierBadgeClass as tierBadgeClassFor, isPaymentAwaitingReceipt } from '../../composables/useLeadSignals'
 
 const props = defineProps<{
   lead?: LeadDTO
   isMobile?: boolean
+  // Outros leads ATIVOS do mesmo telefone (calculados pela view sobre a lista carregada).
+  duplicates?: LeadDTO[]
 }>()
 
 const emit = defineEmits<{
@@ -21,6 +23,7 @@ const emit = defineEmits<{
   markLost: []
   openWhatsapp: []
   sendEmail: []
+  selectDuplicate: [lead: LeadDTO]
 }>()
 
 const router = useRouter()
@@ -80,7 +83,10 @@ function formatBrl(n?: number | null): string {
 }
 
 // Sinais + timeline (blob JSON em lead.data) — fonte única no composable.
-const { transcript, signalChips, nextAction } = useLeadSignals(() => props.lead)
+const { transcript, signalChips, nextAction, negotiated } = useLeadSignals(() => props.lead)
+
+// V2_31: pagamento sinalizado sem comprovante — destaque no header.
+const awaitingReceipt = computed(() => isPaymentAwaitingReceipt(props.lead))
 
 // Próxima pergunta sugerida (ladder deterministico vindo do backend) — a loja envia manualmente.
 const copied = ref(false)
@@ -128,6 +134,11 @@ async function copySuggestedReply() {
               >
                 {{ lead.tier }}
               </span>
+              <span
+                v-if="awaitingReceipt"
+                class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-success/15 text-success"
+                title="Cliente afirmou pagamento — confirmar comprovante"
+              >💰 Pagou — confirmar</span>
             </div>
           </div>
         </div>
@@ -135,6 +146,27 @@ async function copySuggestedReply() {
 
       <!-- Content: ordem de revisão-e-fechamento -->
       <div class="flex-1 overflow-y-auto p-4 md:p-6 space-y-4 md:space-y-6">
+        <!-- 0. Duplicatas ativas do mesmo telefone (banner discreto) -->
+        <section v-if="duplicates && duplicates.length > 0">
+          <div class="rounded-lg border border-info/30 bg-info/10 p-3 text-xs md:text-sm">
+            <p class="text-foreground">
+              <span aria-hidden="true">👥</span>
+              Este contato tem {{ duplicates.length }} outro{{ duplicates.length > 1 ? 's' : '' }} lead{{ duplicates.length > 1 ? 's' : '' }} ativo{{ duplicates.length > 1 ? 's' : '' }}:
+            </p>
+            <div class="mt-1.5 flex flex-wrap gap-1.5">
+              <button
+                v-for="dup in duplicates"
+                :key="dup.id"
+                type="button"
+                class="inline-flex items-center gap-1 rounded px-2 py-0.5 text-xs font-medium text-info hover:bg-info/20 transition-colors underline underline-offset-2"
+                @click="emit('selectDuplicate', dup)"
+              >
+                #{{ dup.id }} · {{ dup.name }}
+              </button>
+            </div>
+          </div>
+        </section>
+
         <!-- 1. Resumo da IA -->
         <section>
           <div class="rounded-lg bg-muted/50 border border-border p-3 md:p-4">
@@ -233,15 +265,31 @@ async function copySuggestedReply() {
           </div>
         </section>
 
-        <!-- 5. Total + lucro estimados -->
+        <!-- 5. Total + lucro estimados + valor negociado na conversa -->
         <section
-          v-if="lead.totalEstimatedValue != null || lead.totalEstimatedProfit != null"
+          v-if="lead.totalEstimatedValue != null || lead.totalEstimatedProfit != null || negotiated"
           class="rounded-lg border border-border p-3 md:p-4 text-sm space-y-1"
         >
-          <div class="flex justify-between font-semibold text-base">
-            <span>Total estimado</span>
+          <div v-if="negotiated" class="flex justify-between font-semibold text-base">
+            <span>Negociado <span class="text-xs font-normal text-muted-foreground">(conversa)</span></span>
+            <span :class="['font-mono', negotiated.divergent ? 'text-warning' : '']">
+              {{ formatBrl(negotiated.value) }}
+            </span>
+          </div>
+          <div
+            v-if="lead.totalEstimatedValue != null"
+            :class="['flex justify-between', negotiated ? 'text-muted-foreground' : 'font-semibold text-base']"
+          >
+            <span>{{ negotiated ? 'Estimado' : 'Total estimado' }}</span>
             <span class="font-mono">{{ formatBrl(lead.totalEstimatedValue) }}</span>
           </div>
+          <p
+            v-if="negotiated?.divergent"
+            class="flex items-start gap-1 rounded border border-warning/30 bg-warning/10 px-2 py-1 text-xs text-warning"
+          >
+            <span aria-hidden="true">⚠️</span>
+            <span>Negociado {{ formatBrl(negotiated.value) }} · Estimado {{ formatBrl(negotiated.estimated) }} — divergência acima de 30%, confira antes de fechar.</span>
+          </p>
           <div v-if="lead.totalEstimatedProfit != null" class="flex justify-between text-muted-foreground">
             <span>Lucro estimado</span>
             <span class="font-mono">{{ formatBrl(lead.totalEstimatedProfit) }}</span>

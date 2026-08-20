@@ -13,6 +13,8 @@ const props = defineProps<{
     converted: number
     lost: number
   }
+  // Leads com pagamento sinalizado sem comprovante (calculado client-side).
+  paidCount?: number
 }>()
 
 const emit = defineEmits<{
@@ -36,6 +38,8 @@ const tierTabs = [
 
 const tabs = computed(() => [
   { value: 'all', label: 'Todos', count: props.counts?.all || 0 },
+  // Fila de pagamentos sinalizados sem comprovante — dinheiro afirmado tem prioridade visual.
+  { value: 'PAID', label: '💰 Pagos', count: props.paidCount || 0 },
   { value: 'NEW', label: 'Novos', count: props.counts?.new || 0, dot: true },
   { value: 'CONTACTED', label: 'Contatados', count: props.counts?.contacted || 0 },
   { value: 'QUALIFIED', label: 'Qualificados', count: props.counts?.qualified || 0 },
