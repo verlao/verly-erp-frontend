@@ -1,5 +1,5 @@
 <template>
-  <div class="flex flex-col md:h-[calc(100vh-6.5625rem)]">
+  <div class="flex flex-col md:h-[calc(100vh-6.5625rem)] md:min-h-fit">
     <!-- Ações em lote: só ocupa espaço quando há seleção -->
     <div v-if="checkedIds.length > 0" class="flex items-center justify-end gap-2 mb-3 shrink-0">
       <span class="text-sm text-muted-foreground">{{ checkedIds.length }} selecionado(s)</span>
@@ -29,7 +29,7 @@
     <!-- Conteúdo Principal: Card com Split View -->
     <div class="bg-card rounded-lg shadow-sm border border-border overflow-hidden md:flex-1 md:min-h-0 md:flex md:flex-col">
       <!-- Desktop: Split View -->
-      <div class="hidden md:flex flex-1 min-h-0">
+      <div class="hidden md:flex flex-1 min-h-[420px]">
         <!-- Lista Leads (40%) -->
         <div class="w-2/5 border-r border-border overflow-y-auto">
           <LeadList
@@ -174,6 +174,7 @@
 
     <DeleteConfirmDialog
       :open="showMarkLostModal"
+      overlay-z-class="z-[65]"
       title="Marcar lead como perdido"
       message="Tem certeza que deseja marcar este lead como perdido?"
       :item-name="selectedLead?.name ?? ''"
