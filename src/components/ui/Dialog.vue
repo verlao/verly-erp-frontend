@@ -39,7 +39,7 @@ watch(() => props.open, (isOpen) => {
     >
       <div
         v-if="open"
-        class="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4"
+        class="fixed inset-0 z-[80] bg-black/50 flex items-center justify-center p-4"
         @click="close"
       >
         <Transition
