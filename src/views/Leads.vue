@@ -187,8 +187,9 @@ import LeadsToolbar from '../components/leads/LeadsToolbar.vue'
 import LeadStats from '../components/leads/LeadStats.vue'
 import Button from '../components/ui/Button.vue'
 import leadService from '../services/lead'
-import type { LeadDTO, PaginatedResponse } from '../services/lead'
+import type { LeadDTO, LeadStatus, PaginatedResponse } from '../services/lead'
 import { buildWhatsAppUrl } from '../lib/whatsapp'
+import { shouldMarkContactedOnWhatsapp } from '../lib/leadStatus'
 import { useLeadSelection } from '../composables/useLeadSelection'
 import { useLeadKeyboard } from '../composables/useLeadKeyboard'
 import { useCelebration } from '../composables/useCelebration'
@@ -490,6 +491,8 @@ const handleMarkLost = async () => {
   }
 }
 
+const contactingLeadIds = new Set<number>()
+
 const handleOpenWhatsapp = () => {
   const lead = selectedLead.value
   if (!lead?.phone) return
@@ -501,7 +504,32 @@ const handleOpenWhatsapp = () => {
     `${greeting}Aqui é da Verly Vidraçaria 👋 ` +
     'Recebemos seu contato sobre um orçamento e queremos te ajudar. ' +
     'Podemos falar sobre os detalhes?'
+
+  // Popup blocker: window.open MUST stay synchronous and BEFORE any await.
+  // After an await the call is outside the user-gesture stack and browsers
+  // silently block the popup — a worse regression than the funnel staying NEW.
   window.open(buildWhatsAppUrl(lead.phone, message), '_blank', 'noopener,noreferrer')
+
+  if (!shouldMarkContactedOnWhatsapp(lead.status, contactingLeadIds.has(lead.id))) return
+
+  contactingLeadIds.add(lead.id)
+  const previousStatus = lead.status
+  lead.status = 'CONTACTED'
+  void persistContactedStatus(lead, previousStatus)
+}
+
+async function persistContactedStatus(lead: LeadDTO, previousStatus: LeadStatus | undefined) {
+  try {
+    await leadService.updateStatusKeepalive(lead.id, 'CONTACTED')
+    await fetchCounts()
+    notification.success('Lead marcado como contatado')
+  } catch (error) {
+    console.error('Erro ao atualizar status:', error)
+    lead.status = previousStatus
+    notification.error('Erro ao atualizar status do lead')
+  } finally {
+    contactingLeadIds.delete(lead.id)
+  }
 }
 
 const handleSendEmail = () => {
