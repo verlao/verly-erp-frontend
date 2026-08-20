@@ -1,7 +1,7 @@
 <template>
-  <div>
+  <div class="flex flex-col md:h-[calc(100vh-6.5625rem)] md:min-h-fit">
     <!-- Ações em lote: só ocupa espaço quando há seleção -->
-    <div v-if="checkedIds.length > 0" class="flex items-center justify-end gap-2 mb-3">
+    <div v-if="checkedIds.length > 0" class="flex items-center justify-end gap-2 mb-3 shrink-0">
       <span class="text-sm text-muted-foreground">{{ checkedIds.length }} selecionado(s)</span>
       <Button variant="outline" size="sm" @click="clearSelection">
         Limpar Seleção
@@ -12,12 +12,12 @@
     <LeadsToolbar
       v-model:search="search"
       :has-active-filters="hasActiveFilters"
-      class="mb-3"
+      class="mb-3 shrink-0"
       @clear="clearFilters"
     />
 
     <!-- Stats strip compacta -->
-    <LeadStats :leads="leads" :counts="counts" :loading="loading" class="mb-3" />
+    <LeadStats :leads="leads" :counts="counts" :loading="loading" class="mb-3 shrink-0" />
 
     <!-- Filtros inline -->
     <LeadFilters
@@ -27,9 +27,9 @@
     />
 
     <!-- Conteúdo Principal: Card com Split View -->
-    <div class="bg-card rounded-lg shadow-sm border border-border overflow-hidden">
+    <div class="bg-card rounded-lg shadow-sm border border-border overflow-hidden md:flex-1 md:min-h-0 md:flex md:flex-col">
       <!-- Desktop: Split View -->
-      <div class="hidden md:flex h-[max(420px,calc(100vh-22rem))]">
+      <div class="hidden md:flex flex-1 min-h-[420px]">
         <!-- Lista Leads (40%) -->
         <div class="w-2/5 border-r border-border overflow-y-auto">
           <LeadList
@@ -171,6 +171,18 @@
         </div>
       </Transition>
     </Teleport>
+
+    <DeleteConfirmDialog
+      :open="showMarkLostModal"
+      overlay-z-class="z-[65]"
+      title="Marcar lead como perdido"
+      message="Tem certeza que deseja marcar este lead como perdido?"
+      :item-name="selectedLead?.name ?? ''"
+      warning="Esta ação pode ser revertida alterando o status do lead."
+      confirm-text="Marcar como Perdido"
+      @update:open="showMarkLostModal = $event"
+      @confirm="confirmMarkLost"
+    />
   </div>
 </template>
 
@@ -185,6 +197,7 @@ import LeadsOverview from '../components/leads/LeadsOverview.vue'
 import LeadFilters from '../components/leads/LeadFilters.vue'
 import LeadsToolbar from '../components/leads/LeadsToolbar.vue'
 import LeadStats from '../components/leads/LeadStats.vue'
+import DeleteConfirmDialog from '../components/DeleteConfirmDialog.vue'
 import Button from '../components/ui/Button.vue'
 import leadService from '../services/lead'
 import type { LeadDTO, LeadStatus, PaginatedResponse } from '../services/lead'
@@ -471,17 +484,22 @@ const handleMarkQualified = async () => {
   }
 }
 
-const handleMarkLost = async () => {
-  if (!selectedLead.value) return
+const showMarkLostModal = ref(false)
 
-  const confirmLost = confirm('Tem certeza que deseja marcar este lead como perdido?')
-  if (!confirmLost) return
+const handleMarkLost = () => {
+  if (!selectedLead.value) return
+  showMarkLostModal.value = true
+}
+
+const confirmMarkLost = async () => {
+  if (!selectedLead.value) return
 
   try {
     await leadService.updateStatus(selectedLead.value.id, 'LOST')
     selectedLead.value.status = 'LOST'
     await fetchCounts()
     notification.warning('Lead marcado como perdido')
+    showMarkLostModal.value = false
     if (isMobile.value) {
       showMobilePreview.value = false
     }

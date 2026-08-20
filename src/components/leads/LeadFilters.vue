@@ -1,8 +1,5 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import Button from '../ui/Button.vue'
-import TabsList from '../ui/TabsList.vue'
-import TabsTrigger from '../ui/TabsTrigger.vue'
 import Badge from '../ui/Badge.vue'
 
 const props = defineProps<{
@@ -23,7 +20,13 @@ const emit = defineEmits<{
   'update:tierFilter': [value: string]
 }>()
 
-// V2_17: tier filter tabs — 4 buckets on top of status tabs
+const chipBase =
+  'h-8 px-3 rounded-full text-xs font-medium border transition-colors shrink-0 inline-flex items-center gap-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2'
+
+const chipActive = 'bg-primary text-primary-foreground border-primary'
+const chipIdle = 'bg-card text-muted-foreground border-border hover:text-foreground hover:bg-accent'
+
+// V2_17: tier filter chips — same row as status
 const tierTabs = [
   { value: 'all', label: 'Todos os tiers' },
   { value: '$$$', label: '$$$ Alto', class: 'text-warning' },
@@ -36,51 +39,75 @@ const tabs = computed(() => [
   { value: 'NEW', label: 'Novos', count: props.counts?.new || 0, dot: true },
   { value: 'CONTACTED', label: 'Contatados', count: props.counts?.contacted || 0 },
   { value: 'QUALIFIED', label: 'Qualificados', count: props.counts?.qualified || 0 },
-  { value: 'CONVERTED', label: 'Convertidos', count: props.counts?.converted || 0 }
+  { value: 'CONVERTED', label: 'Convertidos', count: props.counts?.converted || 0 },
+  { value: 'LOST', label: 'Perdidos', count: props.counts?.lost || 0 },
 ])
 
-const handleTabClick = (value: string) => {
-  emit('update:statusFilter', value)
+const visibleTabs = computed(() =>
+  tabs.value.filter(t => t.count > 0 || t.value === (props.statusFilter || 'all'))
+)
+
+const currentStatus = computed(() => props.statusFilter || 'all')
+const currentTier = computed(() => props.tierFilter || 'all')
+
+function statusAriaLabel(tab: { label: string; count: number }): string {
+  return `Filtrar por status: ${tab.label} (${tab.count})`
+}
+
+function tierAriaLabel(tab: { label: string }): string {
+  return `Filtrar por tier: ${tab.label}`
 }
 </script>
 
 <template>
-  <div class="bg-card rounded-lg shadow-sm border border-border p-2 md:p-3 mb-3">
-    <!-- Tabs de Status -->
-    <TabsList class="w-full justify-start overflow-x-auto">
-      <TabsTrigger
-        v-for="tab in tabs"
+  <div class="mb-3 shrink-0">
+    <div
+      class="flex items-center gap-1.5 overflow-x-auto whitespace-nowrap [scrollbar-width:none]"
+      role="toolbar"
+      aria-label="Filtros de leads por status e tier"
+    >
+      <button
+        v-for="tab in visibleTabs"
         :key="tab.value"
-        :value="tab.value"
-        :class="['shrink-0', statusFilter === tab.value ? 'bg-background' : '']"
-        @click="handleTabClick(tab.value)"
+        type="button"
+        :class="[chipBase, currentStatus === tab.value ? chipActive : chipIdle]"
+        :aria-label="statusAriaLabel(tab)"
+        :aria-pressed="currentStatus === tab.value"
+        @click="emit('update:statusFilter', tab.value)"
       >
-        <span class="flex items-center gap-2">
-          <span v-if="tab.dot && tab.count > 0" class="flex h-2 w-2 rounded-full bg-info" />
-          {{ tab.label }}
-          <Badge v-if="tab.count > 0" variant="secondary" class="ml-1">
-            {{ tab.count }}
-          </Badge>
-        </span>
-      </TabsTrigger>
-    </TabsList>
+        <span
+          v-if="tab.dot && tab.count > 0"
+          class="flex h-2 w-2 rounded-full"
+          :class="currentStatus === tab.value ? 'bg-primary-foreground' : 'bg-info'"
+          aria-hidden="true"
+        />
+        {{ tab.label }}
+        <Badge
+          v-if="tab.count > 0"
+          variant="secondary"
+          :class="currentStatus === tab.value ? 'bg-primary-foreground/20 text-primary-foreground' : ''"
+        >
+          {{ tab.count }}
+        </Badge>
+      </button>
 
-    <!-- V2_17: tier filter row -->
-    <div class="mt-2 flex flex-wrap gap-1.5">
-      <Button
+      <span class="h-4 w-px bg-border shrink-0" aria-hidden="true" />
+
+      <button
         v-for="tab in tierTabs"
         :key="tab.value"
-        variant="ghost"
-        size="sm"
+        type="button"
         :class="[
-          'text-xs h-7 px-2.5',
-          (tierFilter || 'all') === tab.value ? 'bg-accent font-semibold' : '',
-          tab.class || '',
+          chipBase,
+          currentTier === tab.value ? chipActive : chipIdle,
+          currentTier === tab.value ? '' : tab.class || '',
         ]"
+        :aria-label="tierAriaLabel(tab)"
+        :aria-pressed="currentTier === tab.value"
         @click="emit('update:tierFilter', tab.value)"
       >
         {{ tab.label }}
-      </Button>
+      </button>
     </div>
   </div>
 </template>

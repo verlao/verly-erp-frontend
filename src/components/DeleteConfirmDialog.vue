@@ -1,5 +1,5 @@
 <template>
-  <Dialog :open="open" @update:open="emit('update:open', $event)">
+  <Dialog :open="open" :overlay-z-class="overlayZClass" @update:open="emit('update:open', $event)">
     <DialogContent>
       <div class="overflow-auto max-h-[80vh]">
         <div class="p-6">
@@ -91,6 +91,7 @@ import Button from './ui/Button.vue'
 
 const props = defineProps<{
   open: boolean
+  overlayZClass?: string
   title?: string
   message?: string
   itemName?: string

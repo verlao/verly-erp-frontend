@@ -1,9 +1,17 @@
 <script setup lang="ts">
 import { watch } from 'vue'
 
-const props = defineProps<{
-  open: boolean
-}>()
+const props = withDefaults(
+  defineProps<{
+    open: boolean
+    // Tailwind z-index class for the overlay. Default keeps every dialog in the
+    // app on the same layer; raise it ONLY at the call site that opens on top of
+    // something higher (e.g. the mobile lead sheet at z-[60]). Raising the default
+    // would push all dialogs above PwaUpdatePrompt (z-[70]).
+    overlayZClass?: string
+  }>(),
+  { overlayZClass: 'z-50' }
+)
 
 const emit = defineEmits<{
   'update:open': [value: boolean]
@@ -39,7 +47,7 @@ watch(() => props.open, (isOpen) => {
     >
       <div
         v-if="open"
-        class="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4"
+        :class="['fixed inset-0 bg-black/50 flex items-center justify-center p-4', props.overlayZClass]"
         @click="close"
       >
         <Transition
