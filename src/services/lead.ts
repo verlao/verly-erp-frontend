@@ -1,4 +1,4 @@
-import api from './api'
+import api, { apiUrl } from './api'
 import type { PaginationParams } from './order'
 
 export interface PaginatedResponse<T> {
@@ -155,6 +155,31 @@ const leadService = {
   updateStatus: async (id: number, status: LeadStatus) => {
     const response = await api.patch(`/leads/${id}/status`, { status })
     return response.data
+  },
+
+  // fetch + keepalive so the PATCH survives the tab being backgrounded when
+  // WhatsApp opens (axios XHR is not guaranteed to complete in that case).
+  updateStatusKeepalive: async (id: number, status: LeadStatus) => {
+    const headers: Record<string, string> = { 'Content-Type': 'application/json' }
+    const token = localStorage.getItem('token')
+    if (token) headers.Authorization = `Bearer ${token}`
+
+    const response = await fetch(`${apiUrl}/leads/${id}/status`, {
+      method: 'PATCH',
+      headers,
+      body: JSON.stringify({ status }),
+      keepalive: true
+    })
+
+    if (!response.ok) {
+      throw new Error(`Failed to update lead status (${response.status})`)
+    }
+
+    try {
+      return await response.json()
+    } catch {
+      return undefined
+    }
   },
 
   // V2_28: transição de medição (kanban "Precisa medir")
