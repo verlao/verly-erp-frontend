@@ -89,6 +89,27 @@ export interface LeadDTO {
 
 export type MeasurementStatus = 'NONE' | 'NEEDED' | 'SCHEDULED' | 'DONE'
 
+/** Per-status SUM(total_estimated_value) over non-deleted leads. */
+export interface LeadStatusTotals {
+  all: number
+  new: number
+  contacted: number
+  qualified: number
+  converted: number
+  lost: number
+}
+
+/** GET /leads/counts. `totals` is optional so a stale/local backend cannot NaN the stat. */
+export interface LeadCounts {
+  all: number
+  new: number
+  contacted: number
+  qualified: number
+  converted: number
+  lost: number
+  totals?: LeadStatusTotals
+}
+
 // Leads colapsados por contato (telefone) + funil, tudo resolvido no backend.
 export interface LeadContactDTO {
   phone: string
@@ -213,7 +234,7 @@ const leadService = {
     return response.data
   },
 
-  getCounts: async () => {
+  getCounts: async (): Promise<LeadCounts> => {
     const response = await api.get('/leads/counts')
     return response.data
   },
