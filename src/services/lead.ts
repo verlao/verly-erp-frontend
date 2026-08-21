@@ -89,7 +89,7 @@ export interface LeadDTO {
 
 export type MeasurementStatus = 'NONE' | 'NEEDED' | 'SCHEDULED' | 'DONE'
 
-/** Per-status SUM(total_estimated_value) over non-deleted leads. */
+/** Per-status monetary SUM. Same keys as the count fields. */
 export interface LeadStatusTotals {
   all: number
   new: number
@@ -99,7 +99,31 @@ export interface LeadStatusTotals {
   lost: number
 }
 
-/** GET /leads/counts. `totals` is optional so a stale/local backend cannot NaN the stat. */
+/**
+ * Nested `partners` segment on GET /leads/counts — counterparties already
+ * excluded from the top-level sales keys (suppliers and the installer).
+ * Optional end-to-end so a stale cached client cannot NaN the strip.
+ */
+export interface LeadPartnerCounts {
+  all?: number
+  new?: number
+  contacted?: number
+  qualified?: number
+  converted?: number
+  lost?: number
+  totals?: LeadStatusTotals
+  measuredTotals?: LeadStatusTotals
+}
+
+/**
+ * GET /leads/counts.
+ * `totals`, `measuredTotals`, and `partners` are optional so a stale cached
+ * client or local backend cannot NaN the stat.
+ *
+ * Top-level keys already exclude partner-linked leads; those live under
+ * `partners`. `measuredTotals` is items with both width and height;
+ * `totals` includes unmeasured placeholders.
+ */
 export interface LeadCounts {
   all: number
   new: number
@@ -108,6 +132,8 @@ export interface LeadCounts {
   converted: number
   lost: number
   totals?: LeadStatusTotals
+  measuredTotals?: LeadStatusTotals
+  partners?: LeadPartnerCounts
 }
 
 // Leads colapsados por contato (telefone) + funil, tudo resolvido no backend.
