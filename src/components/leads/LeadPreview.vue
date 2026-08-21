@@ -6,8 +6,15 @@ import Button from '../ui/Button.vue'
 import Badge from '../ui/Badge.vue'
 import Separator from '../ui/Separator.vue'
 import Avatar from '../ui/Avatar.vue'
+import Accordion from '../ui/Accordion.vue'
 import type { LeadDTO } from '../../services/lead'
 import { useLeadSignals, fmtTime, statusBadgeConfig, tierBadgeClass as tierBadgeClassFor, isPaymentAwaitingReceipt } from '../../composables/useLeadSignals'
+import {
+  formatLeadAddress,
+  formatLeadReference,
+  leadLocationInput,
+  parseLeadCoordinates,
+} from '../../lib/leadLocation'
 
 const props = defineProps<{
   lead?: LeadDTO
@@ -61,6 +68,11 @@ const emailLink = computed(() => {
   if (!props.lead?.email) return ''
   return `mailto:${props.lead.email}`
 })
+
+const location = computed(() => leadLocationInput(props.lead))
+const formattedAddress = computed(() => formatLeadAddress(location.value))
+const locationReference = computed(() => formatLeadReference(location.value))
+const coordinates = computed(() => parseLeadCoordinates(location.value))
 
 const canConvert = computed(() => {
   return props.lead?.status !== 'CONVERTED' && props.lead?.status !== 'LOST'
@@ -324,11 +336,27 @@ async function copySuggestedReply() {
                 <ExternalLink class="w-2.5 h-2.5 md:w-3 md:h-3 shrink-0" />
               </a>
             </div>
-            <div v-if="lead.neighborhood || lead.city" class="flex items-center gap-2 md:gap-3 text-xs md:text-sm">
-              <MapPin class="w-3.5 h-3.5 md:w-4 md:h-4 text-muted-foreground shrink-0" />
-              <span class="text-foreground">
-                {{ lead.neighborhood }}{{ lead.city ? `, ${lead.city}` : '' }}
-              </span>
+            <div
+              v-if="formattedAddress || locationReference || coordinates"
+              class="flex items-start gap-2 md:gap-3 text-xs md:text-sm"
+            >
+              <MapPin class="w-3.5 h-3.5 md:w-4 md:h-4 text-muted-foreground shrink-0 mt-0.5" />
+              <div class="min-w-0">
+                <span v-if="formattedAddress" class="text-foreground">{{ formattedAddress }}</span>
+                <p v-if="locationReference" class="text-muted-foreground" :class="formattedAddress ? 'mt-0.5' : ''">
+                  {{ locationReference }}
+                </p>
+                <a
+                  v-if="coordinates"
+                  :href="coordinates.mapsUrl"
+                  class="text-foreground hover:text-primary transition-colors inline-flex items-center gap-1"
+                  :class="formattedAddress || locationReference ? 'mt-0.5' : ''"
+                  target="_blank"
+                >
+                  Ver no mapa
+                  <ExternalLink class="w-2.5 h-2.5 md:w-3 md:h-3 shrink-0" />
+                </a>
+              </div>
             </div>
             <div v-if="formattedDate" class="flex items-center gap-2 md:gap-3 text-xs md:text-sm">
               <Calendar class="w-3.5 h-3.5 md:w-4 md:h-4 text-muted-foreground shrink-0" />
@@ -336,6 +364,28 @@ async function copySuggestedReply() {
             </div>
           </div>
         </section>
+
+        <Accordion
+          v-if="coordinates"
+          :key="lead.id"
+          title="Coordenadas"
+          variant="default"
+        >
+          <dl class="space-y-1.5 text-xs md:text-sm">
+            <div class="flex items-start gap-2 md:gap-3">
+              <dt class="text-muted-foreground shrink-0 w-20 md:w-24">Latitude</dt>
+              <dd class="text-foreground font-mono">{{ coordinates.latitude }}</dd>
+            </div>
+            <div class="flex items-start gap-2 md:gap-3">
+              <dt class="text-muted-foreground shrink-0 w-20 md:w-24">Longitude</dt>
+              <dd class="text-foreground font-mono">{{ coordinates.longitude }}</dd>
+            </div>
+            <div v-if="coordinates.provenance" class="flex items-start gap-2 md:gap-3">
+              <dt class="text-muted-foreground shrink-0 w-20 md:w-24">Origem</dt>
+              <dd class="text-foreground">{{ coordinates.provenance }}</dd>
+            </div>
+          </dl>
+        </Accordion>
 
         <!-- Rastreamento — colapsado / de-emphasized -->
         <details v-if="lead.utmSource || lead.deviceType || lead.referrer" class="group">
