@@ -3,7 +3,7 @@ import { computed } from 'vue'
 import Skeleton from '../ui/Skeleton.vue'
 import type { LeadDTO, LeadCounts } from '../../services/lead'
 import { isHotLead } from '../../composables/useLeadSignals'
-import { pipelineTotal } from '../../lib/leadPipeline'
+import { selectPipeline } from '../../lib/leadPipeline'
 
 const props = defineProps<{
   leads: LeadDTO[]
@@ -15,15 +15,30 @@ function formatBrl(n: number): string {
   return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(n)
 }
 
-// Pipeline = new + contacted + qualified (abertos). Exclui CONVERTED e LOST.
-// Hoje coincide com totals.all porque converted=lost=0 — a escolha errada ficaria invisível.
+const pipeline = computed(() => selectPipeline(props.counts))
+
+// Pipeline = new + contacted + qualified of measuredTotals (itens com largura
+// e altura). Exclui CONVERTED e LOST. Hoje coincide com measuredTotals.all
+// porque converted=lost=0 — a escolha errada (usar `all`, ou `totals` em
+// vez de `measuredTotals`) ficaria invisível agora e errada depois.
 const pipelineValue = computed(() => {
-  const fromServer = pipelineTotal(props.counts.totals)
-  if (fromServer != null) return formatBrl(fromServer)
+  if (pipeline.value.value != null) return formatBrl(pipeline.value.value)
   const total = props.leads
     .filter(l => l.status !== 'CONVERTED' && l.status !== 'LOST')
     .reduce((s, l) => s + (l.totalEstimatedValue || 0), 0)
   return formatBrl(total)
+})
+
+const unmeasuredLabel = computed(() => {
+  const gap = pipeline.value.unmeasured
+  if (gap == null || gap <= 0) return null
+  return `+ ${formatBrl(gap)} sem medida`
+})
+
+const partnersValue = computed(() => {
+  const v = pipeline.value.partners
+  if (v == null || v <= 0) return null
+  return formatBrl(v)
 })
 
 const hotCount = computed(() =>
@@ -44,9 +59,17 @@ const conversionRatePct = computed(() => {
       <Skeleton height="0.875rem" width="14rem" />
     </template>
     <template v-else>
-      <div class="flex items-baseline gap-1.5 shrink-0">
+      <div
+        class="flex items-baseline gap-1.5 shrink-0"
+        title="Itens com largura e altura. O restante (sem medida) aparece ao lado."
+      >
         <span class="text-xs text-muted-foreground">Pipeline</span>
         <span class="text-sm font-bold text-foreground">{{ pipelineValue }}</span>
+        <span
+          v-if="unmeasuredLabel"
+          class="text-[11px] text-muted-foreground"
+          title="Itens sem largura ou altura — não entram no valor medido."
+        >{{ unmeasuredLabel }}</span>
       </div>
       <span class="h-4 w-px bg-border shrink-0" aria-hidden="true" />
       <div class="flex items-baseline gap-1.5 shrink-0">
@@ -67,6 +90,16 @@ const conversionRatePct = computed(() => {
           <span class="font-normal text-muted-foreground">({{ conversionRatePct }})</span>
         </span>
       </div>
+      <template v-if="partnersValue">
+        <span class="h-4 w-px bg-border shrink-0" aria-hidden="true" />
+        <div
+          class="flex items-baseline gap-1.5 shrink-0"
+          title="Conversas com fornecedores e instalador. Fora do pipeline de vendas."
+        >
+          <span class="text-xs text-muted-foreground">Fornec.</span>
+          <span class="text-xs font-medium text-muted-foreground">{{ partnersValue }}</span>
+        </div>
+      </template>
     </template>
   </div>
 </template>
