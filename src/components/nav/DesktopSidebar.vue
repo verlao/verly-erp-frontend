@@ -1,11 +1,11 @@
 <template>
   <aside
     :class="[
-      'bg-sidebar border-r border-border fixed top-0 left-0 h-screen z-50 transition-all duration-300 ease-in-out',
+      'bg-sidebar border-r border-border fixed top-0 left-0 h-screen z-50 flex flex-col transition-all duration-300 ease-in-out',
       collapsed ? 'w-16' : 'w-64',
     ]"
   >
-    <div class="p-4 border-b border-border flex items-center justify-between">
+    <div class="p-4 border-b border-border flex items-center justify-between shrink-0">
       <h1
         :class="[
           'font-bold text-foreground transition-opacity duration-300',
@@ -34,7 +34,7 @@
         </svg>
       </button>
     </div>
-    <nav class="mt-4 space-y-1 px-2">
+    <nav class="mt-4 space-y-1 px-2 flex-1 min-h-0 overflow-y-auto">
       <router-link to="leads" custom v-slot="{ navigate, isActive }">
         <Button
           @click="navigate"
@@ -175,30 +175,6 @@
           <span :class="{ 'sr-only': collapsed }">Produtos</span>
         </Button>
       </router-link>
-      <router-link to="new-quote" custom v-slot="{ navigate, isActive }">
-        <Button
-          @click="navigate"
-          :variant="isActive ? 'secondary' : 'ghost'"
-          class="w-full justify-start"
-        >
-          <span class="mr-2">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="16"
-              height="16"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-            >
-              <path d="M12 5v14M5 12h14" />
-            </svg>
-          </span>
-          <span :class="{ 'sr-only': collapsed }">Novo Orçamento</span>
-        </Button>
-      </router-link>
       <router-link to="quotes" custom v-slot="{ navigate, isActive }">
         <Button
           @click="navigate"
@@ -314,12 +290,7 @@
         </Button>
       </router-link>
     </nav>
-    <div
-      :class="[
-        'absolute bottom-0 p-4 border-t border-border',
-        collapsed ? 'w-16' : 'w-64',
-      ]"
-    >
+    <div class="p-4 border-t border-border shrink-0">
       <Button
         @click="emit('logout')"
         variant="ghost"
