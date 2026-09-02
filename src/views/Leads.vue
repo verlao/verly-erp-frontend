@@ -63,7 +63,6 @@
             @mark-qualified="handleMarkQualified"
             @mark-lost="handleMarkLost"
             @open-whatsapp="handleOpenWhatsapp"
-            @send-email="handleSendEmail"
           />
         </div>
       </div>
@@ -168,7 +167,6 @@
                   @mark-qualified="handleMarkQualified"
                   @mark-lost="handleMarkLost"
                   @open-whatsapp="handleOpenWhatsapp"
-                  @send-email="handleSendEmail"
                 />
               </div>
             </div>
@@ -193,7 +191,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { useWindowSize, useIntersectionObserver, useWindowScroll } from '@vueuse/core'
 import { useNotificationStore } from '../stores/notification'
 import LeadList from '../components/leads/LeadList.vue'
@@ -215,6 +213,7 @@ import { useLeadKeyboard } from '../composables/useLeadKeyboard'
 import { useCelebration } from '../composables/useCelebration'
 
 const { celebrate } = useCelebration()
+const router = useRouter()
 
 // Notification store
 const notification = useNotificationStore()
@@ -442,6 +441,9 @@ const handleQuickAction = async (leadId: number, action: string) => {
           window.open(`mailto:${lead.email}`, '_blank')
         }
         break
+      case 'review-extraction':
+        await router.push(`/leads/${lead.id}/orcamento`)
+        break
     }
   } catch (error) {
     console.error('Erro ao executar ação:', error)
@@ -526,17 +528,12 @@ const confirmMarkLost = async () => {
 
 const contactingLeadIds = new Set<number>()
 
-const handleOpenWhatsapp = () => {
+const handleOpenWhatsapp = (suggestedReply?: string) => {
   const lead = selectedLead.value
   if (!lead?.phone) return
-  // Abre a conversa já com uma saudação — 1 toque, sem fricção (platform-aware:
-  // wa.me no mobile, web.whatsapp no desktop). Reutiliza lib/whatsapp.
-  const firstName = (lead.name || '').trim().split(' ')[0] || ''
-  const greeting = firstName ? `Olá ${firstName}! ` : 'Olá! '
-  const message =
-    `${greeting}Aqui é da Verly Vidraçaria 👋 ` +
-    'Recebemos seu contato sobre um orçamento e queremos te ajudar. ' +
-    'Podemos falar sobre os detalhes?'
+  // A próxima pergunta vem pronta do backend e segue sem saudação. O CTA geral
+  // continua usando a abertura comercial já existente.
+  const message = suggestedReply ?? buildInitialContactMessage(lead)
 
   // Popup blocker: window.open MUST stay synchronous and BEFORE any await.
   // After an await the call is outside the user-gesture stack and browsers
@@ -549,6 +546,16 @@ const handleOpenWhatsapp = () => {
   const previousStatus = lead.status
   lead.status = 'CONTACTED'
   void persistContactedStatus(lead, previousStatus)
+}
+
+function buildInitialContactMessage(lead: LeadDTO): string {
+  const firstName = (lead.name || '').trim().split(' ')[0] || ''
+  const greeting = firstName ? `Olá ${firstName}! ` : 'Olá! '
+  return (
+    `${greeting}Aqui é da Verly Vidraçaria 👋 ` +
+    'Recebemos seu contato sobre um orçamento e queremos te ajudar. ' +
+    'Podemos falar sobre os detalhes?'
+  )
 }
 
 async function persistContactedStatus(lead: LeadDTO, previousStatus: LeadStatus | undefined) {
