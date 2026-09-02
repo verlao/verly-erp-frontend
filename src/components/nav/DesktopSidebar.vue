@@ -16,7 +16,9 @@
       </h1>
       <button
         @click="emit('update:collapsed', !collapsed)"
-        class="p-1.5 rounded-md hover:bg-accent transition-colors flex-shrink-0"
+        class="h-11 w-11 rounded-md hover:bg-accent transition-colors flex-shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+        :title="collapsed ? 'Expandir menu' : 'Recolher menu'"
+        :aria-label="collapsed ? 'Expandir menu' : 'Recolher menu'"
       >
         <svg
           xmlns="http://www.w3.org/2000/svg"
@@ -34,12 +36,14 @@
         </svg>
       </button>
     </div>
-    <nav class="mt-4 space-y-1 px-2 flex-1 min-h-0 overflow-y-auto">
+    <nav class="mt-4 space-y-1 px-2 flex-1 min-h-0 overflow-y-auto [&_button]:min-h-11">
       <router-link to="leads" custom v-slot="{ navigate, isActive }">
         <Button
           @click="navigate"
           :variant="isActive ? 'secondary' : 'ghost'"
           class="w-full justify-start"
+          title="Leads"
+          aria-label="Leads"
         >
           <span class="mr-2">
             <svg
@@ -67,6 +71,8 @@
           @click="navigate"
           :variant="isActive ? 'secondary' : 'ghost'"
           class="w-full justify-start"
+          title="Funil"
+          aria-label="Funil"
         >
           <span class="mr-2">
             <svg
@@ -94,6 +100,8 @@
           @click="navigate"
           :variant="isActive ? 'secondary' : 'ghost'"
           class="w-full justify-start"
+          title="Clientes"
+          aria-label="Clientes"
         >
           <span class="mr-2">
             <svg
@@ -121,6 +129,8 @@
           @click="navigate"
           :variant="isActive ? 'secondary' : 'ghost'"
           class="w-full justify-start"
+          title="Parceiros"
+          aria-label="Parceiros"
         >
           <span class="mr-2">
             <svg
@@ -151,6 +161,8 @@
           @click="navigate"
           :variant="isActive ? 'secondary' : 'ghost'"
           class="w-full justify-start"
+          title="Produtos"
+          aria-label="Produtos"
         >
           <span class="mr-2">
             <svg
@@ -180,6 +192,8 @@
           @click="navigate"
           :variant="isActive ? 'secondary' : 'ghost'"
           class="w-full justify-start"
+          title="Orçamentos"
+          aria-label="Orçamentos"
         >
           <span class="mr-2">
             <svg
@@ -205,6 +219,8 @@
           @click="navigate"
           :variant="isActive ? 'secondary' : 'ghost'"
           class="w-full justify-start"
+          title="Pedidos"
+          aria-label="Pedidos"
         >
           <span class="mr-2">
             <svg
@@ -236,6 +252,8 @@
           @click="navigate"
           :variant="isActive ? 'secondary' : 'ghost'"
           class="w-full justify-start"
+          title="Financeiro"
+          aria-label="Financeiro"
         >
           <span class="mr-2">
             <svg
@@ -267,6 +285,8 @@
           @click="navigate"
           :variant="isActive ? 'secondary' : 'ghost'"
           class="w-full justify-start"
+          title="Usuários"
+          aria-label="Usuários"
         >
           <span class="mr-2">
             <svg
@@ -294,7 +314,9 @@
       <Button
         @click="emit('logout')"
         variant="ghost"
-        class="w-full justify-start text-destructive hover:text-destructive-foreground hover:bg-destructive"
+        class="w-full min-h-11 justify-start text-destructive hover:text-destructive-foreground hover:bg-destructive"
+        title="Sair"
+        aria-label="Sair"
       >
         <span class="mr-2">
           <svg
