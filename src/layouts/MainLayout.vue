@@ -3,7 +3,7 @@
     <!-- Desktop sidebar -->
     <DesktopSidebar
       v-if="!isMobile"
-      :collapsed="sidebarCollapsed"
+      :collapsed="effectiveSidebarCollapsed"
       @update:collapsed="onSidebarToggle"
       @logout="logout"
     />
@@ -27,7 +27,7 @@
           : [
               'h-screen min-h-0 flex flex-col',
               isLeadsRoute ? 'overflow-hidden' : 'overflow-y-auto',
-              sidebarCollapsed ? 'ml-16 p-6' : 'ml-64 p-6',
+              isWide && !sidebarCollapsed ? 'ml-64 p-6' : 'ml-16 p-6',
             ],
       ]"
       :style="
@@ -102,7 +102,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 import { useBreakpoint } from '../composables/useBreakpoint'
@@ -117,7 +117,7 @@ import MobileMoreMenu from '../components/nav/MobileMoreMenu.vue'
 const router = useRouter()
 const route = useRoute()
 const authStore = useAuthStore()
-const { isMobile } = useBreakpoint()
+const { isMobile, isWide } = useBreakpoint()
 
 const user = computed(() => authStore.getUser)
 
@@ -135,10 +135,20 @@ function readStoredCollapsed(): boolean {
 }
 
 const sidebarCollapsed = ref(readStoredCollapsed())
+const compactSidebarOpen = ref(false)
 const moreOpen = ref(false)
 const isLeadsRoute = computed(() => route.name === 'Leads')
 
+const effectiveSidebarCollapsed = computed(() =>
+  isWide.value ? sidebarCollapsed.value : !compactSidebarOpen.value,
+)
+
 const onSidebarToggle = (value: boolean) => {
+  if (!isWide.value) {
+    compactSidebarOpen.value = !value
+    return
+  }
+
   sidebarCollapsed.value = value
   try {
     localStorage.setItem(SIDEBAR_STORAGE_KEY, String(value))
@@ -146,6 +156,10 @@ const onSidebarToggle = (value: boolean) => {
     // localStorage indisponível (private mode) — estado vive só na sessão
   }
 }
+
+watch(isWide, () => {
+  compactSidebarOpen.value = false
+})
 
 const pageTitle = computed(() => {
   if (route.path.endsWith('dashboard')) return 'Dashboard'

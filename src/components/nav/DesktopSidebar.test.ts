@@ -83,4 +83,42 @@ describe('desktop sidebar', () => {
     await flushPromises()
     expect(router.currentRoute.value.path).toBe('/new-quote')
   })
+
+  it('keeps every rail action identifiable, focusable, and touch-sized', async () => {
+    const wrapper = await mountSidebar()
+    await wrapper.setProps({ collapsed: true })
+
+    const expectedLabels = [
+      'Leads',
+      'Funil',
+      'Clientes',
+      'Parceiros',
+      'Produtos',
+      'Orçamentos',
+      'Pedidos',
+      'Financeiro',
+      'Usuários',
+    ]
+    const nav = wrapper.get('nav')
+    const navButtons = nav.findAll('button')
+
+    expect(nav.classes()).toContain('[&_button]:min-h-11')
+    expect(navButtons).toHaveLength(expectedLabels.length)
+    expectedLabels.forEach((label, index) => {
+      expect(navButtons[index]?.attributes('title')).toBe(label)
+      expect(navButtons[index]?.attributes('aria-label')).toBe(label)
+      expect(navButtons[index]?.get('span.sr-only').text()).toBe(label)
+    })
+
+    const toggle = wrapper.get('aside > div:first-child button')
+    expect(toggle.attributes('title')).toBe('Expandir menu')
+    expect(toggle.attributes('aria-label')).toBe('Expandir menu')
+    expect(toggle.classes()).toEqual(expect.arrayContaining(['h-11', 'w-11']))
+    expect(toggle.classes()).toContain('focus-visible:ring-2')
+
+    const logout = wrapper.get('aside > div:last-child button')
+    expect(logout.attributes('title')).toBe('Sair')
+    expect(logout.attributes('aria-label')).toBe('Sair')
+    expect(logout.classes()).toContain('min-h-11')
+  })
 })
