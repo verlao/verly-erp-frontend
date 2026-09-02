@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { Mail, Phone, MapPin, Calendar, Target, Monitor, ExternalLink, User, MessageSquare, FileText, Copy, Check } from 'lucide-vue-next'
+import { Mail, Phone, MapPin, Calendar, Target, Monitor, ExternalLink, User, MessageSquare, FileText, Copy, Check, ClipboardCheck } from 'lucide-vue-next'
 import Button from '../ui/Button.vue'
 import Badge from '../ui/Badge.vue'
 import Separator from '../ui/Separator.vue'
@@ -29,8 +29,7 @@ const emit = defineEmits<{
   markContacted: []
   markQualified: []
   markLost: []
-  openWhatsapp: []
-  sendEmail: []
+  openWhatsapp: [message?: string]
   selectDuplicate: [lead: LeadDTO]
 }>()
 
@@ -190,30 +189,45 @@ async function copySuggestedReply() {
             <p class="text-xs md:text-sm text-foreground leading-relaxed whitespace-pre-wrap">
               {{ lead.description || 'Sem descrição' }}
             </p>
-            <p class="mt-2 text-[11px] md:text-xs text-muted-foreground flex items-start gap-1">
+            <button
+              type="button"
+              class="mt-2 text-left text-[11px] md:text-xs text-muted-foreground hover:text-primary flex items-start gap-1 transition-colors"
+              @click="goToQuote"
+            >
               <span aria-hidden="true">ℹ️</span>
-              <span>Extraído automaticamente — confira antes de enviar</span>
-            </p>
+              <span class="underline underline-offset-2">Extraído automaticamente — confira antes de enviar</span>
+            </button>
           </div>
         </section>
 
         <!-- 2. Próxima pergunta sugerida (ladder deterministico do backend) + copiar -->
         <section v-if="lead.suggestedReply">
-          <div class="flex items-start gap-2 rounded-lg border border-warning/30 bg-warning/10 p-3 text-sm">
+          <div class="flex flex-wrap items-start gap-2 rounded-lg border border-warning/30 bg-warning/10 p-3 text-sm">
             <span aria-hidden="true">💬</span>
-            <div class="flex-1 min-w-0">
+            <div class="flex-1 min-w-[12rem]">
               <span class="text-warning font-medium">Próxima pergunta: </span>
               <span class="text-foreground">{{ lead.suggestedReply }}</span>
             </div>
-            <button
-              type="button"
-              class="shrink-0 inline-flex items-center gap-1 rounded px-2 py-1 text-xs font-medium text-warning hover:bg-warning/20 transition-colors"
-              :aria-label="copied ? 'Copiado' : 'Copiar pergunta'"
-              @click="copySuggestedReply"
-            >
-              <component :is="copied ? Check : Copy" class="w-3.5 h-3.5" aria-hidden="true" />
-              {{ copied ? 'Copiado' : 'Copiar' }}
-            </button>
+            <div class="ml-auto flex shrink-0 items-center gap-1">
+              <button
+                type="button"
+                class="inline-flex items-center gap-1 rounded px-2 py-1 text-xs font-semibold bg-success text-success-foreground hover:bg-success/90 transition-colors"
+                aria-label="Enviar pergunta no WhatsApp"
+                @click="emit('openWhatsapp', lead.suggestedReply)"
+              >
+                <MessageSquare class="w-3.5 h-3.5" aria-hidden="true" />
+                Enviar no WhatsApp
+              </button>
+              <button
+                type="button"
+                class="inline-flex items-center gap-1 rounded px-2 py-1 text-xs font-medium text-warning hover:bg-warning/20 transition-colors"
+                :aria-label="copied ? 'Copiado' : 'Copiar pergunta'"
+                @click="copySuggestedReply"
+              >
+                <component :is="copied ? Check : Copy" class="w-3.5 h-3.5" aria-hidden="true" />
+                {{ copied ? 'Copiado' : 'Copiar' }}
+              </button>
+            </div>
           </div>
         </section>
 
@@ -258,9 +272,19 @@ async function copySuggestedReply() {
 
         <!-- 4. Produtos / itens estruturados -->
         <section v-if="lead.items && lead.items.length > 0">
-          <h3 class="text-xs md:text-sm font-semibold text-foreground mb-2 md:mb-3">
-            Produtos ({{ lead.items.length }})
-          </h3>
+          <div class="mb-2 flex items-center justify-between gap-2 md:mb-3">
+            <h3 class="text-xs md:text-sm font-semibold text-foreground">
+              Produtos ({{ lead.items.length }})
+            </h3>
+            <button
+              type="button"
+              class="inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline underline-offset-2"
+              @click="goToQuote"
+            >
+              <ClipboardCheck class="h-3.5 w-3.5" aria-hidden="true" />
+              Conferir/corrigir
+            </button>
+          </div>
           <div class="space-y-1.5 text-xs md:text-sm">
             <div
               v-for="(item, idx) in lead.items"
@@ -486,14 +510,13 @@ async function copySuggestedReply() {
             Qualificado
           </Button>
           <Button
-            v-if="hasPresentableEmail"
             variant="outline"
             size="sm"
             class="flex-1"
-            @click="emit('sendEmail')"
+            @click="goToQuote"
           >
-            <Mail class="w-4 h-4 mr-2" />
-            Email
+            <ClipboardCheck class="w-4 h-4 mr-2" />
+            Conferir extração
           </Button>
         </div>
 
