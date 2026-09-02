@@ -163,7 +163,7 @@
               Pedidos
             </button>
           </router-link>
-          <router-link to="/ledger" custom v-slot="{ navigate, isActive }">
+          <router-link to="/products" custom v-slot="{ navigate, isActive }">
             <button
               @click="navAndClose(navigate)"
               :class="[
@@ -184,13 +184,14 @@
                 stroke-linecap="round"
                 stroke-linejoin="round"
               >
+                <path d="m7.5 4.27 9 5.15" />
                 <path
-                  d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"
+                  d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"
                 />
-                <path d="M8 7h6" />
-                <path d="M8 11h8" />
+                <path d="m3.3 7 8.7 5 8.7-5" />
+                <path d="M12 22V12" />
               </svg>
-              Financeiro
+              Produtos
             </button>
           </router-link>
           <router-link
