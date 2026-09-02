@@ -36,9 +36,20 @@
         </svg>
       </button>
     </div>
-    <nav class="mt-4 space-y-1 px-2 flex-1 min-h-0 overflow-y-auto [&_button]:min-h-11">
+    <div class="relative mt-4 flex-1 min-h-0">
+      <nav
+        ref="containerRef"
+        :style="maskStyle"
+        :class="[
+          'h-full space-y-1 px-2 overflow-y-auto',
+          collapsed
+            ? '[&>[data-navigation-item]]:h-8 [&>[data-navigation-item]]:min-h-8'
+            : '[&>[data-navigation-item]]:min-h-11',
+        ]"
+      >
       <router-link to="leads" custom v-slot="{ navigate, isActive }">
         <Button
+          data-navigation-item
           @click="navigate"
           :variant="isActive ? 'secondary' : 'ghost'"
           class="w-full justify-start"
@@ -66,8 +77,38 @@
           <span :class="{ 'sr-only': collapsed }">Leads</span>
         </Button>
       </router-link>
+      <router-link to="ledger" custom v-slot="{ navigate, isActive }">
+        <Button
+          data-navigation-item
+          @click="navigate"
+          :variant="isActive ? 'secondary' : 'ghost'"
+          class="w-full justify-start"
+          title="Financeiro"
+          aria-label="Financeiro"
+        >
+          <span class="mr-2">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20" />
+              <path d="M8 7h6" />
+              <path d="M8 11h8" />
+            </svg>
+          </span>
+          <span :class="{ 'sr-only': collapsed }">Financeiro</span>
+        </Button>
+      </router-link>
       <router-link to="kanban" custom v-slot="{ navigate, isActive }">
         <Button
+          data-navigation-item
           @click="navigate"
           :variant="isActive ? 'secondary' : 'ghost'"
           class="w-full justify-start"
@@ -97,6 +138,7 @@
       </router-link>
       <router-link to="customers" custom v-slot="{ navigate, isActive }">
         <Button
+          data-navigation-item
           @click="navigate"
           :variant="isActive ? 'secondary' : 'ghost'"
           class="w-full justify-start"
@@ -126,6 +168,7 @@
       </router-link>
       <router-link to="partners" custom v-slot="{ navigate, isActive }">
         <Button
+          data-navigation-item
           @click="navigate"
           :variant="isActive ? 'secondary' : 'ghost'"
           class="w-full justify-start"
@@ -158,6 +201,7 @@
       </router-link>
       <router-link to="products" custom v-slot="{ navigate, isActive }">
         <Button
+          data-navigation-item
           @click="navigate"
           :variant="isActive ? 'secondary' : 'ghost'"
           class="w-full justify-start"
@@ -189,6 +233,7 @@
       </router-link>
       <router-link to="quotes" custom v-slot="{ navigate, isActive }">
         <Button
+          data-navigation-item
           @click="navigate"
           :variant="isActive ? 'secondary' : 'ghost'"
           class="w-full justify-start"
@@ -216,6 +261,7 @@
       </router-link>
       <router-link to="orders" custom v-slot="{ navigate, isActive }">
         <Button
+          data-navigation-item
           @click="navigate"
           :variant="isActive ? 'secondary' : 'ghost'"
           class="w-full justify-start"
@@ -247,34 +293,6 @@
           <span :class="{ 'sr-only': collapsed }">Pedidos</span>
         </Button>
       </router-link>
-      <router-link to="ledger" custom v-slot="{ navigate, isActive }">
-        <Button
-          @click="navigate"
-          :variant="isActive ? 'secondary' : 'ghost'"
-          class="w-full justify-start"
-          title="Financeiro"
-          aria-label="Financeiro"
-        >
-          <span class="mr-2">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="16"
-              height="16"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-            >
-              <path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20" />
-              <path d="M8 7h6" />
-              <path d="M8 11h8" />
-            </svg>
-          </span>
-          <span :class="{ 'sr-only': collapsed }">Financeiro</span>
-        </Button>
-      </router-link>
       <router-link
         v-if="authStore.isAdmin"
         to="users"
@@ -282,6 +300,7 @@
         v-slot="{ navigate, isActive }"
       >
         <Button
+          data-navigation-item
           @click="navigate"
           :variant="isActive ? 'secondary' : 'ghost'"
           class="w-full justify-start"
@@ -309,7 +328,54 @@
           <span :class="{ 'sr-only': collapsed }">Usuários</span>
         </Button>
       </router-link>
-    </nav>
+      </nav>
+      <button
+        v-if="canScrollUp"
+        type="button"
+        class="absolute right-1 top-1 z-10 h-8 w-8 rounded-full border border-border bg-sidebar shadow-md flex items-center justify-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        title="Ver destinos anteriores"
+        aria-label="Ver destinos anteriores"
+        @click="scrollNavigation('up')"
+      >
+        <svg
+          aria-hidden="true"
+          xmlns="http://www.w3.org/2000/svg"
+          width="16"
+          height="16"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
+          <path d="m18 15-6-6-6 6" />
+        </svg>
+      </button>
+      <button
+        v-if="canScrollDown"
+        type="button"
+        class="absolute right-1 bottom-1 z-10 h-8 w-8 rounded-full border border-border bg-sidebar shadow-md flex items-center justify-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        title="Ver mais destinos"
+        aria-label="Ver mais destinos"
+        @click="scrollNavigation('down')"
+      >
+        <svg
+          aria-hidden="true"
+          xmlns="http://www.w3.org/2000/svg"
+          width="16"
+          height="16"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
+          <path d="m6 9 6 6 6-6" />
+        </svg>
+      </button>
+    </div>
     <div class="p-4 border-t border-border shrink-0">
       <Button
         @click="emit('logout')"
@@ -342,6 +408,7 @@
 </template>
 
 <script setup lang="ts">
+import { useVerticalOverflow } from '../../composables/useVerticalOverflow'
 import { useAuthStore } from '../../stores/auth'
 import Button from '../ui/Button.vue'
 
@@ -355,4 +422,11 @@ const emit = defineEmits<{
 }>()
 
 const authStore = useAuthStore()
+const {
+  containerRef,
+  canScrollUp,
+  canScrollDown,
+  maskStyle,
+  scroll: scrollNavigation,
+} = useVerticalOverflow()
 </script>

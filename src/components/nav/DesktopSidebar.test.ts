@@ -56,9 +56,9 @@ describe('desktop sidebar', () => {
     expect(wrapper.get('aside').classes()).toEqual(
       expect.arrayContaining(['flex', 'flex-col']),
     )
-    expect(nav.classes()).toEqual(
-      expect.arrayContaining(['flex-1', 'min-h-0', 'overflow-y-auto']),
-    )
+    expect(nav.classes()).toEqual(expect.arrayContaining(['h-full', 'overflow-y-auto']))
+    expect(nav.element.parentElement?.classList.contains('flex-1')).toBe(true)
+    expect(nav.element.parentElement?.classList.contains('min-h-0')).toBe(true)
     expect(logout?.classes()).toContain('shrink-0')
     expect(logout?.classes()).not.toContain('absolute')
 
@@ -84,25 +84,30 @@ describe('desktop sidebar', () => {
     expect(router.currentRoute.value.path).toBe('/new-quote')
   })
 
-  it('keeps every rail action identifiable, focusable, and touch-sized', async () => {
+  it('prioritizes Leads and Financeiro and keeps every rail action identifiable', async () => {
     const wrapper = await mountSidebar()
     await wrapper.setProps({ collapsed: true })
 
     const expectedLabels = [
       'Leads',
+      'Financeiro',
       'Funil',
       'Clientes',
       'Parceiros',
       'Produtos',
       'Orçamentos',
       'Pedidos',
-      'Financeiro',
       'Usuários',
     ]
     const nav = wrapper.get('nav')
     const navButtons = nav.findAll('button')
 
-    expect(nav.classes()).toContain('[&_button]:min-h-11')
+    expect(nav.classes()).toEqual(
+      expect.arrayContaining([
+        '[&>[data-navigation-item]]:h-8',
+        '[&>[data-navigation-item]]:min-h-8',
+      ]),
+    )
     expect(navButtons).toHaveLength(expectedLabels.length)
     expectedLabels.forEach((label, index) => {
       expect(navButtons[index]?.attributes('title')).toBe(label)
@@ -120,5 +125,8 @@ describe('desktop sidebar', () => {
     expect(logout.attributes('title')).toBe('Sair')
     expect(logout.attributes('aria-label')).toBe('Sair')
     expect(logout.classes()).toContain('min-h-11')
+
+    await wrapper.setProps({ collapsed: false })
+    expect(nav.classes()).toContain('[&>[data-navigation-item]]:min-h-11')
   })
 })
