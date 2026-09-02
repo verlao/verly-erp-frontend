@@ -5,6 +5,7 @@ import {
   formatLeadReference,
   googleMapsSearchUrl,
   leadLocationInput,
+  openStreetMapEmbedUrl,
   parseCoordinate,
   parseLeadCoordinates,
 } from './leadLocation'
@@ -119,6 +120,7 @@ describe('parseLeadCoordinates', () => {
       latitude: -23.5505,
       longitude: -46.6333,
       mapsUrl: 'https://www.google.com/maps/search/?api=1&query=-23.5505,-46.6333',
+      embedUrl: openStreetMapEmbedUrl(-23.5505, -46.6333),
       provenance: 'Pin GPS',
     })
   })
@@ -146,6 +148,27 @@ describe('parseLeadCoordinates', () => {
     expect(parseLeadCoordinates({ latitude: '91', longitude: '0' })).toBeNull()
     expect(parseLeadCoordinates({ latitude: '0', longitude: '181' })).toBeNull()
     expect(parseLeadCoordinates({ latitude: '-91', longitude: '-46.6333' })).toBeNull()
+  })
+})
+
+describe('openStreetMapEmbedUrl', () => {
+  it('builds a keyless OSM embed centered on the lead pin', () => {
+    const url = new URL(openStreetMapEmbedUrl(-22.9068, -43.1729))
+
+    expect(url.origin).toBe('https://www.openstreetmap.org')
+    expect(url.pathname).toBe('/export/embed.html')
+    expect(url.searchParams.get('bbox')).toBe('-43.1809,-22.9128,-43.1649,-22.9008')
+    expect(url.searchParams.get('layer')).toBe('mapnik')
+    expect(url.searchParams.get('marker')).toBe('-22.9068,-43.1729')
+    expect([...url.searchParams.keys()]).not.toContain('key')
+  })
+
+  it('keeps the embed bounds inside valid coordinate ranges', () => {
+    const northeast = new URL(openStreetMapEmbedUrl(90, 180))
+    const southwest = new URL(openStreetMapEmbedUrl(-90, -180))
+
+    expect(northeast.searchParams.get('bbox')).toBe('179.992,89.994,180,90')
+    expect(southwest.searchParams.get('bbox')).toBe('-180,-90,-179.992,-89.994')
   })
 })
 
