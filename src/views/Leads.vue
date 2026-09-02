@@ -1,5 +1,5 @@
 <template>
-  <div class="flex flex-col md:h-[calc(100vh-6.5625rem)] md:min-h-fit">
+  <div class="flex flex-col md:flex-1 md:min-h-0">
     <!-- Ações em lote: só ocupa espaço quando há seleção -->
     <div v-if="checkedIds.length > 0" class="flex items-center justify-end gap-2 mb-3 shrink-0">
       <span class="text-sm text-muted-foreground">{{ checkedIds.length }} selecionado(s)</span>
@@ -30,7 +30,7 @@
     <!-- Conteúdo Principal: Card com Split View -->
     <div class="bg-card rounded-lg shadow-sm border border-border overflow-hidden md:flex-1 md:min-h-0 md:flex md:flex-col">
       <!-- Desktop: Split View -->
-      <div class="hidden md:flex flex-1 min-h-[420px]">
+      <div class="hidden md:flex flex-1 min-h-0">
         <!-- Lista Leads (40%) -->
         <div class="w-2/5 border-r border-border overflow-y-auto">
           <LeadList
@@ -46,7 +46,7 @@
         </div>
 
         <!-- Preview (60%) — command center quando nada selecionado -->
-        <div class="flex-1 overflow-y-auto bg-muted/30">
+        <div class="flex-1 min-w-0 overflow-hidden bg-muted/30">
           <LeadsOverview
             v-if="!selectedLead"
             :leads="leads"
