@@ -1,5 +1,5 @@
 <template>
-  <div class="min-h-screen bg-muted/30">
+  <div class="min-h-screen bg-muted/30 md:h-screen md:min-h-0 md:flex md:flex-col">
     <!-- Desktop sidebar -->
     <DesktopSidebar
       v-if="!isMobile"
@@ -22,7 +22,13 @@
     <main
       :class="[
         'min-h-screen transition-all duration-300 ease-in-out',
-        isMobile ? 'px-4' : sidebarCollapsed ? 'ml-16 p-6' : 'ml-64 p-6',
+        isMobile
+          ? 'px-4'
+          : [
+              'h-screen min-h-0 flex flex-col',
+              isLeadsRoute ? 'overflow-hidden' : 'overflow-y-auto',
+              sidebarCollapsed ? 'ml-16 p-6' : 'ml-64 p-6',
+            ],
       ]"
       :style="
         isMobile
@@ -36,7 +42,7 @@
       <!-- Desktop header (mobile usa MobileTopBar) -->
       <header
         v-if="!isMobile"
-        class="bg-background shadow-sm border-b border-border -mx-6 -mt-6 mb-4"
+        class="bg-background shadow-sm border-b border-border -mx-6 -mt-6 mb-4 shrink-0"
       >
         <div class="px-6 py-3 flex justify-between items-center">
           <h2 class="text-xl md:text-2xl font-bold text-foreground">
@@ -90,7 +96,7 @@
         </div>
       </header>
 
-      <router-view />
+      <router-view :class="isMobile ? undefined : 'flex-1 min-h-0'" />
     </main>
   </div>
 </template>
@@ -130,6 +136,7 @@ function readStoredCollapsed(): boolean {
 
 const sidebarCollapsed = ref(readStoredCollapsed())
 const moreOpen = ref(false)
+const isLeadsRoute = computed(() => route.name === 'Leads')
 
 const onSidebarToggle = (value: boolean) => {
   sidebarCollapsed.value = value

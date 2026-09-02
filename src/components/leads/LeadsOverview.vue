@@ -1,5 +1,5 @@
 <template>
-  <div class="h-full overflow-y-auto p-4 md:p-6 space-y-4">
+  <div class="h-full overflow-hidden p-4 md:p-6 space-y-4">
     <div>
       <h2 class="text-lg md:text-xl font-bold text-foreground">Visão geral do funil</h2>
       <p class="text-sm text-muted-foreground">Selecione um lead à esquerda para ver os detalhes — ou aja pelos atalhos abaixo.</p>
