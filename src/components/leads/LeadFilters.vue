@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import Badge from '../ui/Badge.vue'
+import { useHorizontalOverflow } from '../../composables/useHorizontalOverflow'
 
 const props = defineProps<{
   statusFilter?: string
@@ -61,12 +62,16 @@ function statusAriaLabel(tab: { label: string; count: number }): string {
 function tierAriaLabel(tab: { label: string }): string {
   return `Filtrar por tier: ${tab.label}`
 }
+
+const { containerRef, maskStyle } = useHorizontalOverflow()
 </script>
 
 <template>
   <div class="mb-3 shrink-0">
     <div
-      class="flex items-center gap-1.5 overflow-x-auto whitespace-nowrap [scrollbar-width:none]"
+      ref="containerRef"
+      :style="maskStyle"
+      class="flex items-center gap-1.5 pr-6 overflow-x-auto whitespace-nowrap [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
       role="toolbar"
       aria-label="Filtros de leads por status e tier"
     >
