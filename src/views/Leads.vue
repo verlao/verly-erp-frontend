@@ -206,6 +206,7 @@ import DeleteConfirmDialog from '../components/DeleteConfirmDialog.vue'
 import Button from '../components/ui/Button.vue'
 import leadService from '../services/lead'
 import type { LeadCounts, LeadDTO, LeadStatus, PaginatedResponse } from '../services/lead'
+import { isSyntheticEmail } from '../lib/leadContact'
 import { buildWhatsAppUrl } from '../lib/whatsapp'
 import { shouldMarkContactedOnWhatsapp } from '../lib/leadStatus'
 import { useLeadSelection } from '../composables/useLeadSelection'
@@ -437,7 +438,7 @@ const handleQuickAction = async (leadId: number, action: string) => {
         }
         break
       case 'email':
-        if (lead.email) {
+        if (lead.email && !isSyntheticEmail(lead.email)) {
           window.open(`mailto:${lead.email}`, '_blank')
         }
         break
@@ -565,7 +566,7 @@ async function persistContactedStatus(lead: LeadDTO, previousStatus: LeadStatus 
 }
 
 const handleSendEmail = () => {
-  if (!selectedLead.value?.email) return
+  if (!selectedLead.value?.email || isSyntheticEmail(selectedLead.value.email)) return
   window.open(`mailto:${selectedLead.value.email}`, '_blank')
 }
 

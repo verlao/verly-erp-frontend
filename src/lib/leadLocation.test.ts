@@ -21,11 +21,14 @@ describe('formatLeadAddress', () => {
     ).toBe('Rua das Flores, 100')
   })
 
-  it('shows street without number, and number without street', () => {
+  it('shows a street without a number and omits an orphan number', () => {
     expect(formatLeadAddress({ street: 'Rua das Flores', neighborhood: 'Centro' })).toBe(
       'Rua das Flores'
     )
-    expect(formatLeadAddress({ number: '52', city: 'Volta Redonda' })).toBe('52')
+    expect(formatLeadAddress({ number: '52' })).toBeNull()
+    expect(
+      formatLeadAddress({ number: '52', neighborhood: 'Centro', city: 'Volta Redonda' })
+    ).toBe('Centro, Volta Redonda')
   })
 
   it('falls back to neighborhood+city when street and number are missing', () => {
@@ -52,7 +55,7 @@ describe('formatLeadAddress', () => {
   })
 
   it('never renders a lone comma for missing parts', () => {
-    expect(formatLeadAddress({ street: '', number: '671' })).toBe('671')
+    expect(formatLeadAddress({ street: '', number: '671' })).toBeNull()
     expect(formatLeadAddress({ street: 'Rua X', number: '   ' })).toBe('Rua X')
     expect(formatLeadAddress({ neighborhood: '', city: 'Volta Redonda' })).toBe('Volta Redonda')
     expect(formatLeadAddress({ neighborhood: 'Aterrado', city: '  ' })).toBe('Aterrado')
