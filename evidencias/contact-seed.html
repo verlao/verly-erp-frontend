@@ -1,0 +1,7 @@
+<script>
+localStorage.setItem('token','eyJhbGciOiJub25lIn0.eyJzdWIiOiJ2ZXJsYW8iLCJleHAiOjk5OTk5OTk5OTl9.x');
+localStorage.setItem('user', JSON.stringify({id:1,username:'verlao',roles:['ROLE_ADMIN']}));
+localStorage.setItem('sidebar-collapsed','true');
+const leadId = new URLSearchParams(location.search).get('leadId') || '1';
+location.replace(`/leads?leadId=${leadId}`);
+</script>

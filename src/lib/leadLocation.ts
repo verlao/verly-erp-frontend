@@ -45,11 +45,13 @@ function joinParts(parts: unknown[], separator = ', '): string | null {
 }
 
 /**
- * Visible address: street+number when any of those exist, else neighborhood+city,
- * else nothing. Missing parts are omitted — never an empty label or a lone comma.
+ * Visible address: street with its optional number, else neighborhood+city,
+ * else nothing. A number without a street is not a useful address and is omitted.
  */
 export function formatLeadAddress(input: LeadLocationInput): string | null {
-  return joinParts([input.street, input.number]) ?? joinParts([input.neighborhood, input.city])
+  const street = nonempty(input.street)
+  return (street ? joinParts([street, input.number]) : null)
+    ?? joinParts([input.neighborhood, input.city])
 }
 
 /** Human location hint ("em frente à padaria"), or null when absent. */

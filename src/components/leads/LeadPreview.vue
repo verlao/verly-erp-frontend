@@ -9,6 +9,7 @@ import Avatar from '../ui/Avatar.vue'
 import Accordion from '../ui/Accordion.vue'
 import type { LeadDTO } from '../../services/lead'
 import { useLeadSignals, fmtTime, statusBadgeConfig, tierBadgeClass as tierBadgeClassFor, isPaymentAwaitingReceipt } from '../../composables/useLeadSignals'
+import { isSyntheticEmail } from '../../lib/leadContact'
 import {
   formatLeadAddress,
   formatLeadReference,
@@ -65,9 +66,13 @@ const whatsappLink = computed(() => {
 })
 
 const emailLink = computed(() => {
-  if (!props.lead?.email) return ''
+  if (!props.lead?.email || isSyntheticEmail(props.lead.email)) return ''
   return `mailto:${props.lead.email}`
 })
+
+const hasPresentableEmail = computed(() =>
+  Boolean(props.lead?.email && !isSyntheticEmail(props.lead.email))
+)
 
 const location = computed(() => leadLocationInput(props.lead))
 const formattedAddress = computed(() => formatLeadAddress(location.value))
@@ -314,7 +319,7 @@ async function copySuggestedReply() {
         <section>
           <h3 class="text-xs md:text-sm font-semibold text-foreground mb-2 md:mb-3">Informações de Contato</h3>
           <div class="space-y-1.5 md:space-y-2">
-            <div v-if="lead.email" class="flex items-center gap-2 md:gap-3 text-xs md:text-sm">
+            <div v-if="hasPresentableEmail" class="flex items-center gap-2 md:gap-3 text-xs md:text-sm">
               <Mail class="w-3.5 h-3.5 md:w-4 md:h-4 text-muted-foreground shrink-0" />
               <a
                 :href="emailLink"
@@ -341,7 +346,7 @@ async function copySuggestedReply() {
               class="flex items-start gap-2 md:gap-3 text-xs md:text-sm"
             >
               <MapPin class="w-3.5 h-3.5 md:w-4 md:h-4 text-muted-foreground shrink-0 mt-0.5" />
-              <div class="min-w-0">
+              <div class="min-w-0 flex flex-col items-start">
                 <span v-if="formattedAddress" class="text-foreground">{{ formattedAddress }}</span>
                 <p v-if="locationReference" class="text-muted-foreground" :class="formattedAddress ? 'mt-0.5' : ''">
                   {{ locationReference }}
@@ -360,7 +365,7 @@ async function copySuggestedReply() {
             </div>
             <div v-if="formattedDate" class="flex items-center gap-2 md:gap-3 text-xs md:text-sm">
               <Calendar class="w-3.5 h-3.5 md:w-4 md:h-4 text-muted-foreground shrink-0" />
-              <span class="text-foreground">{{ formattedDate }}</span>
+              <span class="text-foreground">Recebido em {{ formattedDate }}</span>
             </div>
           </div>
         </section>
@@ -481,7 +486,7 @@ async function copySuggestedReply() {
             Qualificado
           </Button>
           <Button
-            v-if="lead.email"
+            v-if="hasPresentableEmail"
             variant="outline"
             size="sm"
             class="flex-1"

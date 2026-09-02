@@ -6,6 +6,7 @@ import Avatar from '../ui/Avatar.vue'
 import Checkbox from '../ui/Checkbox.vue'
 import type { LeadDTO } from '../../services/lead'
 import { isHotLead, parseLeadData, getNextAction, statusBadgeConfig, tierBadgeClass, negotiatedInfo, isPaymentAwaitingReceipt } from '../../composables/useLeadSignals'
+import { isSyntheticEmail } from '../../lib/leadContact'
 
 const props = defineProps<{
   lead: LeadDTO
@@ -22,6 +23,9 @@ const emit = defineEmits<{
 const statusConfig = computed(() => statusBadgeConfig(props.lead.status))
 
 const isUnread = computed(() => !props.lead.isRead)
+const hasPresentableEmail = computed(() =>
+  Boolean(props.lead.email && !isSyntheticEmail(props.lead.email))
+)
 
 const timeAgo = computed(() => {
   if (!props.lead.createdDate) return ''
@@ -217,6 +221,7 @@ const negotiatedDisplay = computed(() => brl(negotiated.value?.value))
           <Phone class="w-4 h-4 text-muted-foreground" />
         </button>
         <button
+          v-if="hasPresentableEmail"
           class="p-1.5 hover:bg-accent rounded-md transition-colors"
           title="Enviar email"
           @click.stop="emit('quickAction', 'email')"
