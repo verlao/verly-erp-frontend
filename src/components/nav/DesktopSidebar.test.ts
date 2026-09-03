@@ -12,17 +12,17 @@ function createTestRouter() {
   return createRouter({
     history: createMemoryHistory(),
     routes: [
-      '/leads',
-      '/kanban',
-      '/customers',
-      '/partners',
-      '/products',
-      '/new-quote',
-      '/quotes',
-      '/orders',
-      '/ledger',
-      '/users',
-    ].map((path) => ({ path, component: EmptyView })),
+      ['Leads', '/leads'],
+      ['Kanban', '/kanban'],
+      ['Customers', '/customers'],
+      ['Partners', '/partners'],
+      ['Products', '/products'],
+      ['NewQuote', '/new-quote'],
+      ['Quotes', '/quotes'],
+      ['Orders', '/orders'],
+      ['Ledger', '/ledger'],
+      ['Users', '/users'],
+    ].map(([name, path]) => ({ name, path, component: EmptyView })),
   })
 }
 

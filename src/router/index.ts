@@ -1,90 +1,10 @@
-import { createRouter, createWebHistory, type RouteLocationGeneric } from 'vue-router'
+import { createRouter, createWebHistory } from 'vue-router'
 import { postLoginRoute } from '../lib/routes'
 import { isTokenExpired } from '../lib/jwt'
+import { validateNavigationRoutes } from './navigation'
+import { routes } from './routes'
 
-const routes = [
-  {
-    path: '/',
-    name: 'Login',
-    component: () => import('../views/Login.vue'),
-    meta: { requiresAuth: false }
-  },
-  {
-    path: '/',
-    component: () => import('../layouts/MainLayout.vue'),
-    meta: { requiresAuth: true },
-    children: [
-      {
-        path: 'dashboard',
-        name: 'Dashboard',
-        component: () => import('../views/Dashboard.vue'),
-      },
-      {
-        path: 'customers',
-        name: 'Customers',
-        component: () => import('../views/Customers.vue'),
-      },
-      {
-        path: 'products',
-        name: 'Products',
-        component: () => import('../views/Products.vue'),
-      },
-      {
-        path: 'quotes',
-        name: 'Quotes',
-        component: () => import('../views/Quotes.vue'),
-      },
-      {
-        path: 'new-quote',
-        name: 'NewQuote',
-        component: () => import('../views/NewQuote.vue'),
-      },
-      {
-        path: 'orders',
-        name: 'Orders',
-        component: () => import('../views/Orders.vue'),
-      },
-      {
-        path: 'ledger',
-        name: 'Ledger',
-        component: () => import('../views/Ledger.vue'),
-      },
-      {
-        path: 'leads',
-        name: 'Leads',
-        component: () => import('../views/Leads.vue'),
-      },
-      {
-        path: 'leads/:id/orcamento',
-        name: 'LeadQuote',
-        component: () => import('../views/LeadQuote.vue'),
-      },
-      {
-        // Redirect for a URL shape users naturally try (/leads/:id/quotes) that never
-        // had a matching route, so it fell through to a blank/broken screen instead of
-        // the existing quote-review screen at leads/:id/orcamento.
-        path: 'leads/:id/quotes',
-        redirect: (to: RouteLocationGeneric) => ({ name: 'LeadQuote', params: to.params }),
-      },
-      {
-        path: 'partners',
-        name: 'Partners',
-        component: () => import('../views/Partners.vue'),
-      },
-      {
-        path: 'kanban',
-        name: 'Kanban',
-        component: () => import('../views/Kanban.vue'),
-      },
-      {
-        path: 'users',
-        name: 'Users',
-        component: () => import('../views/Users.vue'),
-        meta: { requiresAdmin: true }
-      },
-    ]
-  }
-]
+validateNavigationRoutes(routes)
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
