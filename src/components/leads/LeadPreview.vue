@@ -140,7 +140,7 @@ async function copySuggestedReply() {
           <Avatar :name="lead.name" class="h-10 w-10 md:h-12 md:w-12 shrink-0" />
           <div class="flex-1 min-w-0">
             <h2 class="text-lg md:text-2xl font-bold text-foreground truncate">{{ lead.name }}</h2>
-            <div class="flex items-center gap-2 mt-1 md:mt-2">
+            <div class="flex flex-wrap items-center gap-2 mt-1 md:mt-2">
               <Badge :variant="statusConfig.variant">
                 {{ statusConfig.label }}
               </Badge>
@@ -149,6 +149,13 @@ async function copySuggestedReply() {
                 :class="['inline-flex items-center px-2 py-0.5 rounded font-bold text-xs', tierBadgeClass]"
               >
                 {{ lead.tier }}
+              </span>
+              <span
+                v-if="lead.extractionConfirmedAt"
+                class="inline-flex items-center rounded-full bg-success/15 px-2 py-0.5 text-xs font-semibold text-success"
+                :title="`Extração confirmada em ${lead.extractionConfirmedAt}`"
+              >
+                ✓ Conferido
               </span>
               <span
                 v-if="awaitingReceipt"
@@ -190,6 +197,7 @@ async function copySuggestedReply() {
               {{ lead.description || 'Sem descrição' }}
             </p>
             <button
+              v-if="!lead.extractionConfirmedAt"
               type="button"
               class="mt-2 text-left text-[11px] md:text-xs text-muted-foreground hover:text-primary flex items-start gap-1 transition-colors"
               @click="goToQuote"

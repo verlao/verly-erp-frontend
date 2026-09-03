@@ -10,7 +10,15 @@
         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6" /></svg>
       </button>
       <div>
-        <h1 class="text-xl md:text-2xl font-semibold text-foreground">Conferência do orçamento</h1>
+        <div class="flex flex-wrap items-center gap-2">
+          <h1 class="text-xl md:text-2xl font-semibold text-foreground">Conferência do orçamento</h1>
+          <span
+            v-if="lead?.extractionConfirmedAt"
+            class="inline-flex items-center rounded-full bg-success/15 px-2 py-0.5 text-xs font-semibold text-success"
+          >
+            ✓ Conferido
+          </span>
+        </div>
         <p v-if="lead" class="text-sm text-muted-foreground">{{ lead.name }} · {{ lead.phone }}</p>
       </div>
     </div>
@@ -230,6 +238,7 @@ import type { LeadDTO } from '../services/lead'
 import productService from '../services/product'
 import quoteService from '../services/quote'
 import type { CreateQuoteFromLeadPayload } from '../services/quote'
+import { confirmLeadExtraction } from '../services/extractionConfirmation'
 import { buildRichQuoteMessage, buildWhatsAppUrl } from '../lib/whatsapp'
 import { useLeadSignals, fmtTime } from '../composables/useLeadSignals'
 import { useCurrency } from '../composables/useCurrency'
@@ -467,11 +476,17 @@ async function save(): Promise<{ id: number; daysUntilExpiration?: number } | nu
   }
   saving.value = true
   try {
-    const created = await quoteService.createFromLead(buildPayload())
-    notification.success('Sucesso', 'Orçamento salvo')
-    return created
+    const result = await confirmLeadExtraction(buildPayload())
+    // Só publica o estado confirmado depois que o backend o devolve. Assim uma
+    // recusa do POST nunca produz badge otimista nem números calculados no front.
+    lead.value = result.lead
+    notification.success('Conferência salva', 'Lead, total e tier atualizados')
+    return result.quote
   } catch (e: any) {
-    notification.error('Erro', e.response?.data?.message || 'Não foi possível salvar o orçamento')
+    notification.error(
+      'Erro ao confirmar',
+      e.response?.data?.message || e.message || 'Não foi possível salvar a conferência',
+    )
     return null
   } finally {
     saving.value = false
