@@ -23,6 +23,7 @@ export interface ParsedLeadCoordinates {
   latitude: number
   longitude: number
   mapsUrl: string
+  embedUrl: string
   provenance: string | null
 }
 
@@ -84,6 +85,26 @@ export function googleMapsSearchUrl(latitude: number, longitude: number): string
   return `https://www.google.com/maps/search/?api=1&query=${latitude},${longitude}`
 }
 
+/**
+ * Keyless OpenStreetMap embed around one pin. Bounds are clamped so valid
+ * coordinates at the edges of the world still produce a valid viewport.
+ */
+export function openStreetMapEmbedUrl(latitude: number, longitude: number): string {
+  const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value))
+  const format = (value: number) => Number(value.toFixed(6)).toString()
+  const bounds = [
+    clamp(longitude - 0.008, -180, 180),
+    clamp(latitude - 0.006, -90, 90),
+    clamp(longitude + 0.008, -180, 180),
+    clamp(latitude + 0.006, -90, 90),
+  ].map(format)
+  const url = new URL('https://www.openstreetmap.org/export/embed.html')
+  url.searchParams.set('bbox', bounds.join(','))
+  url.searchParams.set('layer', 'mapnik')
+  url.searchParams.set('marker', `${format(latitude)},${format(longitude)}`)
+  return url.toString()
+}
+
 export function formatCaptureProvenance(raw?: string | null): string | null {
   const key = nonempty(raw)
   if (!key) return null
@@ -102,6 +123,7 @@ export function parseLeadCoordinates(input: LeadLocationInput): ParsedLeadCoordi
     latitude,
     longitude,
     mapsUrl: googleMapsSearchUrl(latitude, longitude),
+    embedUrl: openStreetMapEmbedUrl(latitude, longitude),
     provenance: formatCaptureProvenance(input.locationSource),
   }
 }

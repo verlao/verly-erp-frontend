@@ -6,7 +6,6 @@ import Button from '../ui/Button.vue'
 import Badge from '../ui/Badge.vue'
 import Separator from '../ui/Separator.vue'
 import Avatar from '../ui/Avatar.vue'
-import Accordion from '../ui/Accordion.vue'
 import type { LeadDTO } from '../../services/lead'
 import { useLeadSignals, fmtTime, statusBadgeConfig, tierBadgeClass as tierBadgeClassFor, isPaymentAwaitingReceipt } from '../../composables/useLeadSignals'
 import { isSyntheticEmail } from '../../lib/leadContact'
@@ -402,27 +401,30 @@ async function copySuggestedReply() {
           </div>
         </section>
 
-        <Accordion
-          v-if="coordinates"
-          :key="lead.id"
-          title="Coordenadas"
-          variant="default"
-        >
-          <dl class="space-y-1.5 text-xs md:text-sm">
-            <div class="flex items-start gap-2 md:gap-3">
-              <dt class="text-muted-foreground shrink-0 w-20 md:w-24">Latitude</dt>
-              <dd class="text-foreground font-mono">{{ coordinates.latitude }}</dd>
-            </div>
-            <div class="flex items-start gap-2 md:gap-3">
-              <dt class="text-muted-foreground shrink-0 w-20 md:w-24">Longitude</dt>
-              <dd class="text-foreground font-mono">{{ coordinates.longitude }}</dd>
-            </div>
-            <div v-if="coordinates.provenance" class="flex items-start gap-2 md:gap-3">
-              <dt class="text-muted-foreground shrink-0 w-20 md:w-24">Origem</dt>
-              <dd class="text-foreground">{{ coordinates.provenance }}</dd>
-            </div>
-          </dl>
-        </Accordion>
+        <!-- O iframe é lazy e isolado: o painel não depende do OSM para renderizar. -->
+        <section v-if="coordinates">
+          <h3 class="text-xs md:text-sm font-semibold text-foreground mb-2 md:mb-3">
+            Localização
+          </h3>
+          <div class="overflow-hidden rounded-lg border border-border bg-muted">
+            <iframe
+              :key="lead.id"
+              :src="coordinates.embedUrl"
+              :title="`Mapa da localização de ${lead.name}`"
+              class="block h-40 w-full md:h-48"
+              loading="lazy"
+              referrerpolicy="no-referrer"
+            />
+          </div>
+          <div class="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted-foreground">
+            <span>Enviada por {{ lead.name }}</span>
+            <span v-if="formattedDate">Recebida em {{ formattedDate }}</span>
+            <span v-if="coordinates.provenance">Origem: {{ coordinates.provenance }}</span>
+          </div>
+          <p class="mt-1 text-[11px] text-muted-foreground">
+            Se o mapa estiver indisponível, use “Ver no mapa” acima.
+          </p>
+        </section>
 
         <!-- Rastreamento — colapsado / de-emphasized -->
         <details v-if="lead.utmSource || lead.deviceType || lead.referrer" class="group">
