@@ -78,7 +78,7 @@ const fmt = (v?: number) => currency.formatCurrency(v ?? 0)
         <Skeleton v-else class="h-5 md:h-7 w-20 mt-1" />
       </Card>
       <Card class="p-3 md:p-4">
-        <p class="text-xs md:text-sm text-muted-foreground font-medium">Pendentes</p>
+        <p class="text-xs md:text-sm text-muted-foreground font-medium">Pendentes no período</p>
         <template v-if="!loading">
           <p class="text-base md:text-2xl font-bold text-warning truncate">
             {{ fmt(summary.pendingAmount) }}
