@@ -162,18 +162,8 @@ watch(isWide, () => {
 })
 
 const pageTitle = computed(() => {
-  if (route.path.endsWith('dashboard')) return 'Dashboard'
-  if (route.path.endsWith('customers')) return 'Clientes'
-  if (route.path.endsWith('products')) return 'Produtos'
-  if (route.path.endsWith('new-quote')) return 'Novo Orçamento'
-  if (route.path.endsWith('quotes')) return 'Orçamentos'
-  if (route.path.endsWith('orders')) return 'Pedidos'
-  if (route.path.endsWith('ledger')) return 'Financeiro'
-  if (route.path.endsWith('leads')) return 'Leads'
-  if (route.path.endsWith('partners')) return 'Parceiros'
-  if (route.path.endsWith('kanban')) return 'Funil'
-  if (route.path.endsWith('users')) return 'Usuários'
-  return 'Verly ERP'
+  const nav = route.meta.nav
+  return route.meta.pageTitle ?? nav?.accessibleLabel ?? nav?.label ?? 'Verly ERP'
 })
 
 const logout = () => {

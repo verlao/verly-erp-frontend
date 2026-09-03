@@ -15,13 +15,19 @@ function createTestRouter() {
     routes: [
       {
         path: '/ledger',
+        name: 'Ledger',
         component: RouteView,
         children: [{ path: 'entries/:id', component: EmptyView }],
       },
-      { path: '/products', component: EmptyView },
-      { path: '/leads', component: EmptyView },
-      { path: '/new-quote', component: EmptyView },
-      { path: '/quotes', component: EmptyView },
+      { path: '/products', name: 'Products', component: EmptyView },
+      { path: '/leads', name: 'Leads', component: EmptyView },
+      { path: '/new-quote', name: 'NewQuote', component: EmptyView },
+      { path: '/quotes', name: 'Quotes', component: EmptyView },
+      { path: '/kanban', name: 'Kanban', component: EmptyView },
+      { path: '/customers', name: 'Customers', component: EmptyView },
+      { path: '/partners', name: 'Partners', component: EmptyView },
+      { path: '/orders', name: 'Orders', component: EmptyView },
+      { path: '/users', name: 'Users', component: EmptyView },
     ],
   })
 }
