@@ -48,7 +48,11 @@ function openConversation(l: LedgerResponseDTO) {
       <Badge variant="warning" class="ml-auto">{{ entries.length }} pendente{{ entries.length > 1 ? 's' : '' }}</Badge>
     </div>
 
-    <ul class="divide-y divide-border">
+    <ul
+      class="divide-y divide-border max-h-64 overflow-y-auto overscroll-contain"
+      aria-label="Comprovantes pendentes"
+      tabindex="0"
+    >
       <li
         v-for="l in entries"
         :key="l.id"

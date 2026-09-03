@@ -39,6 +39,12 @@
         </div>
       </div>
 
+      <!-- Período -->
+      <PeriodChips :start-date="filters.startDate" :end-date="filters.endDate" @change="onPeriodChange" />
+
+      <!-- Resumo + breakdowns (calculados no backend) -->
+      <FinanceSummary :summary="summary" :loading="loadingSummary" class="mb-4" />
+
       <!-- Comprovantes PIX detectados no WhatsApp -->
       <WhatsAppPendingSection
         :entries="waPending"
@@ -47,12 +53,6 @@
         @cancel="cancelLedger"
         @receipt="openReceiptDialog"
       />
-
-      <!-- Período -->
-      <PeriodChips :start-date="filters.startDate" :end-date="filters.endDate" @change="onPeriodChange" />
-
-      <!-- Resumo + breakdowns (calculados no backend) -->
-      <FinanceSummary :summary="summary" :loading="loadingSummary" class="mb-4" />
 
       <!-- Fluxo diário -->
       <DailyFlowChart v-if="dailySeries.length" :series="dailySeries" />
