@@ -27,7 +27,7 @@ const lead: LeadDTO = {
   ],
 }
 
-async function mountPreview() {
+async function mountPreview(selectedLead: LeadDTO = lead) {
   const router = createRouter({
     history: createMemoryHistory(),
     routes: [
@@ -41,7 +41,7 @@ async function mountPreview() {
   return {
     router,
     wrapper: mount(LeadPreview, {
-      props: { lead },
+      props: { lead: selectedLead },
       global: { plugins: [router] },
     }),
   }
@@ -82,5 +82,28 @@ describe('lead panel actions', () => {
     await wrapper.get('[title="Conferir extração"]').trigger('click')
 
     expect(wrapper.emitted('quickAction')).toEqual([['review-extraction']])
+  })
+
+  it('shows the confirmed badge in the panel and removes the review warning', async () => {
+    const { wrapper } = await mountPreview({
+      ...lead,
+      extractionConfirmedAt: '2026-09-02T22:00:00',
+    })
+
+    expect(wrapper.text()).toContain('✓ Conferido')
+    expect(wrapper.text()).not.toContain('Extraído automaticamente — confira antes de enviar')
+  })
+
+  it('shows the confirmed badge in the lead list', () => {
+    const wrapper = mount(LeadListItem, {
+      props: {
+        lead: {
+          ...lead,
+          extractionConfirmedAt: '2026-09-02T22:00:00',
+        },
+      },
+    })
+
+    expect(wrapper.text()).toContain('✓ Conferido')
   })
 })

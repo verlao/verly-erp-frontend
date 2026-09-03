@@ -205,6 +205,7 @@ import Button from '../components/ui/Button.vue'
 import leadService from '../services/lead'
 import type { LeadCounts, LeadDTO, LeadStatus, PaginatedResponse } from '../services/lead'
 import { isSyntheticEmail } from '../lib/leadContact'
+import { reconcileLeadList } from '../lib/leadConfirmation'
 import { buildWhatsAppUrl } from '../lib/whatsapp'
 import { shouldMarkContactedOnWhatsapp } from '../lib/leadStatus'
 import { useLeadSelection } from '../composables/useLeadSelection'
@@ -349,12 +350,15 @@ const fetchLeads = async (append = false) => {
     })
 
     if (response && typeof response === 'object' && 'content' in response) {
-      leads.value = append ? [...leads.value, ...response.content] : response.content
+      const reconciled = reconcileLeadList(leads.value, response.content)
+      leads.value = append ? [...leads.value, ...reconciled] : reconciled
       totalItems.value = response.totalElements
       totalPages.value = response.totalPages
     } else if (!append) {
       const fallbackResponse = await leadService.getAllNonPaginated()
-      leads.value = Array.isArray(fallbackResponse) ? fallbackResponse : []
+      leads.value = Array.isArray(fallbackResponse)
+        ? reconcileLeadList(leads.value, fallbackResponse)
+        : leads.value
       totalItems.value = leads.value.length
       totalPages.value = 1
     }
@@ -363,12 +367,13 @@ const fetchLeads = async (append = false) => {
     if (!append) {
       try {
         const fallbackResponse = await leadService.getAllNonPaginated()
-        leads.value = Array.isArray(fallbackResponse) ? fallbackResponse : []
+        if (Array.isArray(fallbackResponse)) {
+          leads.value = reconcileLeadList(leads.value, fallbackResponse)
+        }
         totalItems.value = leads.value.length
         totalPages.value = 1
       } catch (fallbackError) {
         console.error('Erro no fallback:', fallbackError)
-        leads.value = []
       }
     }
   } finally {

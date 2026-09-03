@@ -73,6 +73,8 @@ export interface LeadDTO {
   tier?: LeadTier
   sourceExtractionId?: number
   source?: string
+  extractionConfirmedAt?: string | null
+  originalExtractedItems?: LeadItemDTO[]
 
   // Suggested next-best-question (deterministic ladder, computed on the backend).
   // suggestedReply is null when nothing essential is missing.
@@ -183,6 +185,15 @@ const leadService = {
   
   getById: async (id: number) => {
     const response = await api.get(`/leads/${id}`)
+    return response.data
+  },
+
+  // Bypasses the PWA's short-lived API cache after a confirmation write. The
+  // backend response is the source of truth for the badge and corrected totals.
+  getFreshById: async (id: number): Promise<LeadDTO> => {
+    const response = await api.get(`/leads/${id}`, {
+      params: { confirmationRead: Date.now() }
+    })
     return response.data
   },
   

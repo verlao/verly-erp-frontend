@@ -135,6 +135,13 @@ const negotiatedDisplay = computed(() => brl(negotiated.value?.value))
             </h4>
             <span v-if="hot" class="shrink-0" title="Lead quente — sinal de compra ou alto valor">🔥</span>
             <span
+              v-if="lead.extractionConfirmedAt"
+              class="shrink-0 inline-flex items-center rounded-full bg-success/15 px-1.5 py-0.5 text-[10px] font-semibold text-success"
+              :title="`Extração confirmada em ${lead.extractionConfirmedAt}`"
+            >
+              ✓ Conferido
+            </span>
+            <span
               v-if="awaitingReceipt"
               class="shrink-0 inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-semibold bg-success/15 text-success"
               title="Cliente afirmou pagamento — confirmar comprovante"
