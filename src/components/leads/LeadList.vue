@@ -17,12 +17,16 @@ const emit = defineEmits<{
   toggleAll: []
 }>()
 
-// Bloco "Novos hoje": leads com atividade hoje (criados OU re-sintetizados pelo bot —
-// lastActivityDate vem do backend, que já os entrega contíguos no topo). Membership é
-// por DATA de atividade, não por não-lido: ler um lead só tira o negrito, ele fica no
-// bloco até o dia virar. Headers são visuais — a ordem do array não muda, então a
-// navegação j/k (que anda o array cru) continua consistente com a tela.
-const isToday = (lead: LeadDTO): boolean => {
+// Bloco de ATIVIDADE RECENTE: o backend marca `recentActivity` com a MESMA fronteira que
+// usa pra rankear (LeadService.recentActivityBoundary, janela rolante de 48h) e entrega
+// esses leads contíguos no topo. O cliente só rotula — recalcular a janela aqui foi o que
+// fez um lead atendido ontem aparecer no topo e cair sob "Anteriores".
+//
+// Fallback pro check de dia de calendário enquanto o backend que manda o flag não estiver
+// em prod: os dois repos deployam separados no merge, e sem isso a lista degradaria pra
+// plana no intervalo entre os dois deploys. Remover quando verly-service#94 estiver servindo.
+// Membership é por ATIVIDADE, não por não-lido: ler um lead só tira o negrito.
+const isLegacyToday = (lead: LeadDTO): boolean => {
   const stamp = lead.lastActivityDate ?? lead.createdDate
   if (!stamp) return false
   const d = new Date(stamp)
@@ -32,8 +36,10 @@ const isToday = (lead: LeadDTO): boolean => {
     && d.getDate() === now.getDate()
 }
 
-const todayLeads = computed(() => props.leads.filter(isToday))
-const earlierLeads = computed(() => props.leads.filter(lead => !isToday(lead)))
+const isRecent = (lead: LeadDTO): boolean => lead.recentActivity ?? isLegacyToday(lead)
+
+const todayLeads = computed(() => props.leads.filter(isRecent))
+const earlierLeads = computed(() => props.leads.filter(lead => !isRecent(lead)))
 // Headers só quando a lista está de fato particionada — com filtros esvaziando um dos
 // lados, a lista volta a ser plana e sem rótulos.
 const showHeaders = computed(() => todayLeads.value.length > 0 && earlierLeads.value.length > 0)
@@ -60,13 +66,13 @@ const showHeaders = computed(() => todayLeads.value.length > 0 && earlierLeads.v
       </p>
     </div>
 
-    <!-- Lead List: bloco "Novos hoje" (atividade hoje) + demais em ordem de prioridade -->
+    <!-- Lead List: bloco de atividade recente (flag do backend) + demais por prioridade -->
     <div v-else>
       <p
         v-if="showHeaders"
         class="px-4 pt-3 pb-1 text-xs font-medium text-muted-foreground uppercase tracking-wide"
       >
-        Novos hoje ({{ todayLeads.length }})
+        Atividade recente ({{ todayLeads.length }})
       </p>
       <LeadListItem
         v-for="lead in todayLeads"
