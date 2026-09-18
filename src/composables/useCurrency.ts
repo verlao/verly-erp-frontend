@@ -16,13 +16,18 @@ export function useCurrency() {
   }
 
   /**
-   * Parse a currency string to number
+   * Parse a currency string to number, preserving the difference between
+   * "vazio", "inválido" e "zero" — quem chama decide o que fazer com cada
+   * caso (ex: bloquear persistência). Isto é proposital: colapsar tudo em 0
+   * antes da validação foi a causa raiz de orçamentos salvos com termos
+   * zerados por um blur com campo vazio ou com lixo digitado.
    * @param input - The currency string (e.g., "R$ 1.234,56" or "1234,56")
-   * @returns Numeric value
+   * @returns `null` se o campo estiver vazio, `NaN` se o conteúdo não for um
+   * número válido, ou o número (podendo ser 0) se o valor for válido.
    */
-  const parseCurrency = (input: string): number => {
-    if (!input || typeof input !== 'string') {
-      return 0
+  const parseCurrency = (input: string): number | null => {
+    if (typeof input !== 'string' || input.trim() === '') {
+      return null
     }
 
     // Remove R$, spaces, and dots (thousand separators)
@@ -31,8 +36,13 @@ export function useCurrency() {
     // Replace comma with dot for decimal separator
     cleaned = cleaned.replace(',', '.')
 
-    const parsed = parseFloat(cleaned)
-    return isNaN(parsed) ? 0 : parsed
+    if (cleaned === '') {
+      return null
+    }
+
+    // NaN aqui é proposital: sinaliza "inválido" pra quem consome, em vez de
+    // ser reescrito para 0 como antes.
+    return parseFloat(cleaned)
   }
 
   /**
