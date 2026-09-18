@@ -35,21 +35,21 @@
            válido", só o zero do estado inicial. O texto não pode prometer um
            valor que nunca chegou, e a stats strip fica fora da tela. -->
       <div v-if="countsUnavailable" class="flex items-center gap-1.5">
-        <AlertTriangle class="w-3.5 h-3.5 shrink-0" />
+        <TriangleAlert class="w-3.5 h-3.5 shrink-0" />
         Contadores indisponíveis — o servidor não respondeu os números. Os totais do funil ficam ocultos até ele responder.
       </div>
       <div v-else-if="countsStale" class="flex items-center gap-1.5">
-        <AlertTriangle class="w-3.5 h-3.5 shrink-0" />
+        <TriangleAlert class="w-3.5 h-3.5 shrink-0" />
         Contadores desatualizados — o servidor não confirmou os números (mostrando o último valor válido).
       </div>
       <div v-if="leadsDegraded" class="flex items-center gap-1.5">
-        <AlertTriangle class="w-3.5 h-3.5 shrink-0" />
+        <TriangleAlert class="w-3.5 h-3.5 shrink-0" />
         Paginação indisponível — a lista pode estar incompleta ou fora da ordem de prioridade.
       </div>
       <!-- Causa distinta da de cima: a paginação funciona, uma página só não
            veio. A lista está incompleta, mas na ordem certa. -->
       <div v-if="loadMoreFailed" class="flex items-center gap-1.5">
-        <AlertTriangle class="w-3.5 h-3.5 shrink-0" />
+        <TriangleAlert class="w-3.5 h-3.5 shrink-0" />
         Uma página de leads não carregou — a lista está incompleta. Use “tentar de novo” no fim da lista.
       </div>
     </div>
@@ -272,7 +272,7 @@
 import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useWindowSize, useIntersectionObserver, useWindowScroll } from '@vueuse/core'
-import { AlertTriangle } from 'lucide-vue-next'
+import { TriangleAlert } from 'lucide-vue-next'
 import { useNotificationStore } from '../stores/notification'
 import LeadList from '../components/leads/LeadList.vue'
 import LeadPreview from '../components/leads/LeadPreview.vue'
