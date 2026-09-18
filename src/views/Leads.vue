@@ -16,6 +16,29 @@
       @clear="clearFilters"
     />
 
+    <!-- Escopo explícito da busca: roda só sobre a página já carregada (client-side),
+         não sobre o banco inteiro — /leads/paginated não aceita parâmetro de busca. -->
+    <p v-if="search" class="-mt-2 mb-3 shrink-0 text-[11px] text-muted-foreground">
+      Busca restrita aos {{ leads.length }} leads já carregados nesta página — não busca no servidor.
+    </p>
+
+    <!-- Degradação: só aparece quando /leads/counts ou /leads/paginated falham.
+         Com o backend saudável isto nunca renderiza. -->
+    <div
+      v-if="countsStale || leadsDegraded"
+      class="mb-3 shrink-0 rounded-md border border-warning/40 bg-warning/10 px-3 py-2 text-xs text-warning flex flex-col gap-1"
+      role="status"
+    >
+      <div v-if="countsStale" class="flex items-center gap-1.5">
+        <TriangleAlert class="w-3.5 h-3.5 shrink-0" />
+        Contadores desatualizados — o servidor não confirmou os números (mostrando o último valor válido).
+      </div>
+      <div v-if="leadsDegraded" class="flex items-center gap-1.5">
+        <TriangleAlert class="w-3.5 h-3.5 shrink-0" />
+        Paginação indisponível — a lista pode estar incompleta ou fora da ordem de prioridade.
+      </div>
+    </div>
+
     <!-- Stats strip compacta -->
     <LeadStats :leads="leads" :counts="counts" :loading="loading" class="mb-3 shrink-0" />
 
@@ -43,6 +66,23 @@
             @toggle-all="toggleAll"
             @quick-action="handleQuickAction"
           />
+
+          <!-- Sentinela de scroll infinito (desktop): este painel rola sozinho
+               (overflow-y-auto), então a sentinela vive dentro dele, não na página. -->
+          <div ref="loadMoreSentinelDesktop" class="h-px"></div>
+          <div v-if="loadingMore" class="p-4 flex items-center justify-center gap-2 text-sm text-muted-foreground">
+            <svg class="animate-spin h-4 w-4 text-muted-foreground" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+              <path class="opacity-75" fill="currentColor" d="m4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            Carregando mais...
+          </div>
+          <div
+            v-else-if="!hasMore && filteredLeads.length > 0"
+            class="p-4 text-center text-xs text-muted-foreground"
+          >
+            Todos os leads carregados
+          </div>
         </div>
 
         <!-- Preview (60%) — command center quando nada selecionado -->
@@ -193,6 +233,7 @@
 import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useWindowSize, useIntersectionObserver, useWindowScroll } from '@vueuse/core'
+import { TriangleAlert } from 'lucide-vue-next'
 import { useNotificationStore } from '../stores/notification'
 import LeadList from '../components/leads/LeadList.vue'
 import LeadPreview from '../components/leads/LeadPreview.vue'
@@ -242,6 +283,15 @@ const pageSize = ref(20)
 const totalItems = ref(0)
 const totalPages = ref(0)
 
+// Degradação: true quando /leads/paginated falha e caímos pro fallback não
+// paginado. A lista continua aparecendo, mas pode estar incompleta e fora da
+// ordem de prioridade — por isso isso precisa ficar visível, não calado.
+const leadsDegraded = ref(false)
+// Degradação: true quando /leads/counts falha. Os `counts` mostrados ficam
+// congelados no último valor válido (NUNCA recalculados a partir de
+// `leads.value`, que é só a página carregada e mentiria pro dono).
+const countsStale = ref(false)
+
 // Selection
 const {
   selectedId,
@@ -273,8 +323,11 @@ const hasActiveFilters = computed(() =>
   Boolean(search.value || statusFilter.value !== 'all' || tierFilter.value !== 'all')
 )
 
-// Sentinela do scroll infinito (mobile)
+// Sentinela do scroll infinito (mobile e desktop). Só uma fica no DOM visível
+// por vez (as duas seções são `md:hidden` / `hidden md:flex`), então nunca
+// disparam as duas juntas.
 const loadMoreSentinel = ref<HTMLElement | null>(null)
+const loadMoreSentinelDesktop = ref<HTMLElement | null>(null)
 
 async function loadMore() {
   if (loading.value || loadingMore.value || !hasMore.value) return
@@ -287,10 +340,18 @@ async function loadMore() {
   }
 }
 
-// Dispara o carregamento da próxima página quando a sentinela entra na
-// viewport. Só relevante no mobile (a sentinela vive dentro do bloco md:hidden).
+// Dispara o carregamento da próxima página quando a sentinela entra na viewport.
 useIntersectionObserver(
   loadMoreSentinel,
+  ([entry]) => {
+    if (entry?.isIntersecting) loadMore()
+  },
+  { rootMargin: '200px' }
+)
+
+// Mesmo gatilho, agora para o painel de lista do desktop (antes preso na página 1).
+useIntersectionObserver(
+  loadMoreSentinelDesktop,
   ([entry]) => {
     if (entry?.isIntersecting) loadMore()
   },
@@ -354,7 +415,10 @@ const fetchLeads = async (append = false) => {
       leads.value = append ? [...leads.value, ...reconciled] : reconciled
       totalItems.value = response.totalElements
       totalPages.value = response.totalPages
+      leadsDegraded.value = false
     } else if (!append) {
+      // Resposta sem `content`: backend respondeu, só que num formato não-paginado
+      // (compat). Não é o caminho de erro — não sinaliza degradação.
       const fallbackResponse = await leadService.getAllNonPaginated()
       leads.value = Array.isArray(fallbackResponse)
         ? reconcileLeadList(leads.value, fallbackResponse)
@@ -364,7 +428,14 @@ const fetchLeads = async (append = false) => {
     }
   } catch (error) {
     console.error('Erro ao carregar leads:', error)
-    if (!append) {
+    if (append) {
+      // "Carregar mais" falhou: desfaz o avanço otimista de página (feito em
+      // loadMore antes do await) pra não travar hasMore num estado inconsistente,
+      // e avisa — em vez de deixar o usuário rolando sem nunca ver mais nada.
+      currentPage.value--
+      leadsDegraded.value = true
+      notification.error('Não foi possível carregar mais leads. Tente novamente.')
+    } else {
       try {
         const fallbackResponse = await leadService.getAllNonPaginated()
         if (Array.isArray(fallbackResponse)) {
@@ -375,6 +446,12 @@ const fetchLeads = async (append = false) => {
       } catch (fallbackError) {
         console.error('Erro no fallback:', fallbackError)
       }
+      // `/leads/paginated` falhou e caímos pro fallback não-paginado: a lista
+      // pode estar incompleta (o fallback tem seu próprio limite no backend) e
+      // fora da ordem de prioridade. `totalPages = 1` aqui NÃO significa "isso
+      // é tudo" — precisa ficar visível que é degradação, não fato.
+      leadsDegraded.value = true
+      notification.error('Paginação de leads indisponível. Mostrando lista sem paginação — pode estar incompleta.')
     }
   } finally {
     if (!append) loading.value = false
@@ -386,21 +463,16 @@ const fetchCounts = async () => {
   try {
     const response = await leadService.getCounts()
     counts.value = response
+    countsStale.value = false
   } catch (error) {
-    // Calcular counts localmente se o endpoint não existir
-    const statusCounts = leads.value.reduce((acc, lead) => {
-      const status = lead.status || 'NEW'
-      acc[status.toLowerCase() as keyof typeof acc] = (acc[status.toLowerCase() as keyof typeof acc] || 0) + 1
-      return acc
-    }, {
-      all: leads.value.length,
-      new: 0,
-      contacted: 0,
-      qualified: 0,
-      converted: 0,
-      lost: 0
-    })
-    counts.value = statusCounts
+    // NÃO recalcular a partir de `leads.value`: isso é só a página carregada
+    // (até 20 leads) e produziria um número plausível mas ERRADO — o dono
+    // decidiria em cima dele sem saber que está olhando pra página, não pro
+    // total. Mantém o último valor válido de `counts` e sinaliza que ele
+    // pode estar desatualizado.
+    console.error('Erro ao carregar contadores:', error)
+    countsStale.value = true
+    notification.error('Não foi possível atualizar os contadores. Os números exibidos podem estar desatualizados.')
   }
 }
 
