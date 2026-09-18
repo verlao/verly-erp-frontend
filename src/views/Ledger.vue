@@ -43,7 +43,25 @@
       <PeriodChips :start-date="filters.startDate" :end-date="filters.endDate" @change="onPeriodChange" />
 
       <!-- Resumo + breakdowns (calculados no backend) -->
-      <FinanceSummary :summary="summary" :loading="loadingSummary" class="mb-4" />
+      <!-- Falha na mesma leitura do período atual: mantém os últimos números
+           válidos visíveis, mas com aviso e carimbo de frescor (nunca silencioso). -->
+      <div
+        v-if="summaryError && summaryIsCurrentPeriod"
+        class="flex items-center justify-between gap-3 rounded-lg border border-warning/40 bg-warning/10 px-4 py-3 mb-2"
+      >
+        <div class="flex items-center gap-2 text-sm text-foreground">
+          <AlertTriangle class="w-4 h-4 text-warning shrink-0" />
+          <span>Não foi possível atualizar o resumo. Os valores abaixo são de {{ formatFreshness(summaryUpdatedAt) }}.</span>
+        </div>
+        <Button variant="outline" size="sm" @click="loadSummary">Tentar de novo</Button>
+      </div>
+      <!-- Falha sem nenhum dado confiável para este período: não inventa zero. -->
+      <div v-else-if="summaryError" class="rounded-lg border border-border bg-card p-8 text-center mb-4">
+        <AlertTriangle class="w-6 h-6 text-destructive mx-auto mb-2" />
+        <p class="text-sm text-foreground mb-3">Não foi possível carregar o resumo financeiro.</p>
+        <Button variant="outline" size="sm" @click="loadSummary">Tentar de novo</Button>
+      </div>
+      <FinanceSummary v-if="!summaryError || summaryIsCurrentPeriod" :summary="summary" :loading="loadingSummary" class="mb-4" />
 
       <!-- Comprovantes PIX detectados no WhatsApp -->
       <WhatsAppPendingSection
@@ -54,6 +72,7 @@
         @receipt="openReceiptDialog"
       />
 
+
       <!-- Fluxo diário -->
       <DailyFlowChart v-if="dailySeries.length" :series="dailySeries" />
 
@@ -62,6 +81,14 @@
         <div v-if="loading" class="p-8 text-center">
           <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
           <p class="mt-2 text-sm text-muted-foreground">Carregando lançamentos...</p>
+        </div>
+
+        <!-- Falha de leitura: nunca mostra a lista antiga (de outro período ou
+             carregamento anterior) como se fosse a atual. -->
+        <div v-else-if="ledgersError" class="p-8 text-center">
+          <AlertTriangle class="w-6 h-6 text-destructive mx-auto mb-2" />
+          <p class="text-sm text-foreground mb-3">Não foi possível carregar os lançamentos.</p>
+          <Button variant="outline" size="sm" @click="loadLedgers">Tentar de novo</Button>
         </div>
 
         <div v-else-if="ledgers.length === 0" class="p-12 text-center">
@@ -89,7 +116,7 @@
           />
         </div>
 
-        <div v-if="totalItems > 0" class="border-t border-border px-4 py-2">
+        <div v-if="totalItems > 0 && !ledgersError" class="border-t border-border px-4 py-2">
           <Pagination
             :current-page="currentPage"
             :total-items="totalItems"
@@ -110,8 +137,8 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
-import { DollarSign, Wallet } from 'lucide-vue-next'
+import { computed, onMounted, ref } from 'vue'
+import { AlertTriangle, DollarSign, Wallet } from 'lucide-vue-next'
 import Button from '../components/ui/Button.vue'
 import Pagination from '../components/ui/Pagination.vue'
 import WhatsAppPendingSection from '../components/ledger/WhatsAppPendingSection.vue'
@@ -144,6 +171,18 @@ const summary = ref<LedgerSummaryDTO>({
   pixIn: 0,
   pixOut: 0,
 })
+// Falha de leitura do resumo não pode virar "zero vendas" silencioso: só
+// mostramos summary.value de novo se ele for do MESMO período em que a
+// falha ocorreu (senão seria o período anterior disfarçado de atual).
+const summaryError = ref(false)
+const summaryUpdatedAt = ref<Date | null>(null)
+const summaryPeriod = ref<{ startDate: string; endDate: string } | null>(null)
+const summaryIsCurrentPeriod = computed(() =>
+  summaryPeriod.value !== null &&
+  summaryPeriod.value.startDate === filters.value.startDate &&
+  summaryPeriod.value.endDate === filters.value.endDate
+)
+const ledgersError = ref(false)
 const dailySeries = ref<DailyFlowDTO[]>([])
 const waPending = ref<LedgerResponseDTO[]>([])
 
@@ -161,6 +200,17 @@ const filters = ref({
   startDate: iso(new Date(today.getFullYear(), today.getMonth(), 1)),
   endDate: iso(today),
 })
+
+// Carimbo de frescor ("dados de DD/MM HH:mm") mostrado quando o resumo
+// exibido não é da leitura mais recente (última leitura falhou).
+function formatFreshness(date: Date | null): string {
+  if (!date) return ''
+  const dd = String(date.getDate()).padStart(2, '0')
+  const mm = String(date.getMonth() + 1).padStart(2, '0')
+  const hh = String(date.getHours()).padStart(2, '0')
+  const min = String(date.getMinutes()).padStart(2, '0')
+  return `${dd}/${mm} ${hh}:${min}`
+}
 
 // Dialogs
 const showPaymentModal = ref(false)
@@ -182,8 +232,12 @@ async function loadLedgers() {
     )
     ledgers.value = response.content
     totalItems.value = response.totalElements
+    ledgersError.value = false
   } catch (error) {
     console.error('Erro ao carregar lançamentos:', error)
+    // Não deixa a lista antiga (de outro período/carregamento) na tela como
+    // se fosse atual: o template esconde a tabela e mostra erro + retry.
+    ledgersError.value = true
   } finally {
     loading.value = false
   }
@@ -193,8 +247,12 @@ async function loadSummary() {
   loadingSummary.value = true
   try {
     summary.value = await ledgerService.getSummary(filters.value.startDate, filters.value.endDate)
+    summaryError.value = false
+    summaryUpdatedAt.value = new Date()
+    summaryPeriod.value = { startDate: filters.value.startDate, endDate: filters.value.endDate }
   } catch (error) {
     console.error('Erro ao carregar resumo:', error)
+    summaryError.value = true
   } finally {
     loadingSummary.value = false
   }
