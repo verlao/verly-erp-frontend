@@ -46,6 +46,10 @@ export interface LeadDTO {
   createdDate: string
   // V2_37: último create OU re-síntese do bot; ancora o bloco "Novos hoje" do inbox.
   lastActivityDate?: string
+  // Server-derived: the lead is inside the recent-activity window that /leads/paginated
+  // ranks above higher-profit idle leads. Never recompute this — the window lives in
+  // LeadService.RECENT_ACTIVITY_WINDOW_HOURS and the client cannot know it.
+  recentActivity?: boolean
   userAgent?: string
   latitude?: string
   longitude?: string

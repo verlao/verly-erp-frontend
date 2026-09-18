@@ -6,6 +6,7 @@ import Avatar from '../ui/Avatar.vue'
 import Checkbox from '../ui/Checkbox.vue'
 import type { LeadDTO } from '../../services/lead'
 import { isHotLead, parseLeadData, getNextAction, statusBadgeConfig, tierBadgeClass, negotiatedInfo, isPaymentAwaitingReceipt } from '../../composables/useLeadSignals'
+import { formatFreshness, freshnessStamp } from '../../lib/leadFreshness'
 
 const props = defineProps<{
   lead: LeadDTO
@@ -23,25 +24,18 @@ const statusConfig = computed(() => statusBadgeConfig(props.lead.status))
 
 const isUnread = computed(() => !props.lead.isRead)
 
-const timeAgo = computed(() => {
-  if (!props.lead.createdDate) return ''
+const timeAgo = computed(() => formatFreshness(props.lead))
 
-  try {
-    const date = new Date(props.lead.createdDate)
-    const now = new Date()
-    const diffMs = now.getTime() - date.getTime()
-    const diffMins = Math.floor(diffMs / 60000)
-    const diffHours = Math.floor(diffMins / 60)
-    const diffDays = Math.floor(diffHours / 24)
-
-    if (diffMins < 1) return 'agora'
-    if (diffMins < 60) return `há ${diffMins}min`
-    if (diffHours < 24) return `há ${diffHours}h`
-    if (diffDays < 7) return `há ${diffDays} dia${diffDays > 1 ? 's' : ''}`
-    return date.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })
-  } catch {
-    return ''
-  }
+// The row shows ONE relative age, so spell out which date it came from — otherwise a
+// July lead reading "há 8h" looks like a data error to whoever knows when it came in.
+const freshnessTitle = computed(() => {
+  const created = props.lead.createdDate
+    ? new Date(props.lead.createdDate).toLocaleString('pt-BR')
+    : '—'
+  const activity = freshnessStamp(props.lead) === props.lead.lastActivityDate && props.lead.lastActivityDate
+    ? new Date(props.lead.lastActivityDate).toLocaleString('pt-BR')
+    : 'sem atividade registrada'
+  return `Entrou: ${created}\nÚltima atividade: ${activity}`
 })
 
 const priority = computed(() => props.lead.priority || 'MEDIUM')
@@ -198,7 +192,7 @@ const negotiatedDisplay = computed(() => brl(negotiated.value?.value))
             <MapPin class="w-3 h-3 shrink-0" />
             <span class="truncate">{{ lead.neighborhood }}</span>
           </span>
-          <span class="text-muted-foreground whitespace-nowrap ml-auto">
+          <span :title="freshnessTitle" class="text-muted-foreground whitespace-nowrap ml-auto">
             {{ timeAgo }}
           </span>
         </div>
