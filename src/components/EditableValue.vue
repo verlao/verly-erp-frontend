@@ -172,7 +172,9 @@ const formattedValue = computed(() => {
 })
 
 // Setup inline edit composable
-const edit = useInlineEdit({
+// Tipo explícito (inclui `null`) porque o parser de moeda agora distingue
+// vazio (null) / inválido (NaN) / zero (0) em vez de colapsar tudo em 0.
+const edit = useInlineEdit<number | string | null>({
   initialValue: props.modelValue ?? 0,
   formatter: (value) => {
     if (props.type === 'currency') {
@@ -198,6 +200,12 @@ const edit = useInlineEdit({
     }
 
     if (props.type === 'number' || props.type === 'currency') {
+      // null = campo vazio no blur. Não é o mesmo que 0 (zero é um valor
+      // válido) nem é decisão desta lane exigir confirmação para zero —
+      // só bloqueamos o que nunca deveria ter sido persistido: vazio/inválido.
+      if (value === null) {
+        return 'Campo obrigatório'
+      }
       const num = Number(value)
       if (isNaN(num)) {
         return 'Valor inválido'
@@ -213,6 +221,12 @@ const edit = useInlineEdit({
     return true
   },
   onSave: async (value) => {
+    // Guarda defensiva: o validator acima já bloqueia null/NaN antes do
+    // saveEdit chamar onSave. Isto só existe pro TypeScript e como rede de
+    // segurança caso a ordem de checagem mude no futuro.
+    if (value === null) {
+      return
+    }
     emit('update:modelValue', value)
     emit('save', value)
   }
