@@ -48,7 +48,7 @@
               : inputClasses,
             'focus:outline-none focus:ring-2'
           )"
-          @blur="edit.saveEdit"
+          @blur="handleBlur"
           @keydown="edit.handleKeydown"
         />
         
@@ -171,10 +171,53 @@ const formattedValue = computed(() => {
   return String(props.modelValue)
 })
 
+type EditableModel = number | string | null
+
+// Parser e validator ficam em funções nomeadas (em vez de inline no
+// useInlineEdit) porque o handler de blur abaixo precisa fazer a MESMA
+// pergunta antes de decidir entre salvar e reverter.
+const parseEditInput = (input: string): EditableModel => {
+  if (props.type === 'currency') {
+    return parseCurrency(input)
+  }
+  if (props.type === 'number' || isPercentage.value) {
+    return parsePercentage(input)
+  }
+  return input
+}
+
+const validateEditValue = (value: EditableModel): boolean | string => {
+  if (props.validator) {
+    return props.validator(value)
+  }
+
+  if (props.type === 'number' || props.type === 'currency') {
+    // null = campo vazio no blur. Não é o mesmo que 0 (zero é um valor
+    // válido) nem é decisão desta lane exigir confirmação para zero —
+    // só bloqueamos o que nunca deveria ter sido persistido: vazio/inválido.
+    if (value === null) {
+      return 'Campo obrigatório'
+    }
+    const num = Number(value)
+    if (isNaN(num)) {
+      return 'Valor inválido'
+    }
+    if (props.min !== undefined && num < props.min) {
+      return `Valor mínimo: ${props.min}`
+    }
+    if (props.max !== undefined && num > props.max) {
+      return `Valor máximo: ${props.max}`
+    }
+  }
+
+  return true
+}
+
 // Setup inline edit composable
-// Tipo explícito (inclui `null`) porque o parser de moeda agora distingue
-// vazio (null) / inválido (NaN) / zero (0) em vez de colapsar tudo em 0.
-const edit = useInlineEdit<number | string | null>({
+// Tipo explícito (inclui `null`) porque os parsers de moeda e de percentual
+// agora distinguem vazio (null) / inválido (NaN) / zero (0) em vez de
+// colapsar tudo em 0.
+const edit = useInlineEdit<EditableModel>({
   initialValue: props.modelValue ?? 0,
   formatter: (value) => {
     if (props.type === 'currency') {
@@ -185,52 +228,37 @@ const edit = useInlineEdit<number | string | null>({
     }
     return String(value)
   },
-  parser: (input) => {
-    if (props.type === 'currency') {
-      return parseCurrency(input)
-    }
-    if (props.type === 'number' || isPercentage.value) {
-      return parsePercentage(input)
-    }
-    return input
-  },
-  validator: (value) => {
-    if (props.validator) {
-      return props.validator(value)
-    }
-
-    if (props.type === 'number' || props.type === 'currency') {
-      // null = campo vazio no blur. Não é o mesmo que 0 (zero é um valor
-      // válido) nem é decisão desta lane exigir confirmação para zero —
-      // só bloqueamos o que nunca deveria ter sido persistido: vazio/inválido.
-      if (value === null) {
-        return 'Campo obrigatório'
-      }
-      const num = Number(value)
-      if (isNaN(num)) {
-        return 'Valor inválido'
-      }
-      if (props.min !== undefined && num < props.min) {
-        return `Valor mínimo: ${props.min}`
-      }
-      if (props.max !== undefined && num > props.max) {
-        return `Valor máximo: ${props.max}`
-      }
-    }
-
-    return true
-  },
+  parser: parseEditInput,
+  validator: validateEditValue,
   onSave: async (value) => {
-    // Guarda defensiva: o validator acima já bloqueia null/NaN antes do
-    // saveEdit chamar onSave. Isto só existe pro TypeScript e como rede de
-    // segurança caso a ordem de checagem mude no futuro.
-    if (value === null) {
+    // Rede de segurança: o validator acima já bloqueia vazio (null) e
+    // inválido (NaN) antes do saveEdit chamar onSave. Isto existe pro
+    // TypeScript e caso a ordem de checagem mude no futuro — e por isso
+    // precisa cobrir os DOIS casos, não só o null.
+    if (value === null || (typeof value === 'number' && Number.isNaN(value))) {
       return
     }
     emit('update:modelValue', value)
     emit('save', value)
   }
 })
+
+// `@blur` chamava `edit.saveEdit` direto. Quando o validator rejeita,
+// useInlineEdit grava o erro e dá `return` ANTES de fechar o editor — mas o
+// foco já saiu, então o editor fica aberto com texto inválido e `cancelEdit`
+// só é alcançável por Escape, que exige foco no input. Na prática dava dois
+// editores abertos ao mesmo tempo, um preso indefinidamente.
+// No blur, portanto, um valor que o validator recusa REVERTE (cancelEdit, que
+// restaura o texto formatado e limpa o erro) em vez de prender o editor. O
+// caminho deliberado — Enter — continua igual: mostra o erro inline com o
+// foco ainda no input, onde Escape funciona. O caminho de sucesso não muda.
+const handleBlur = () => {
+  if (validateEditValue(parseEditInput(edit.inputValue.value)) !== true) {
+    edit.cancelEdit()
+    return
+  }
+  edit.saveEdit()
+}
 
 // Watch for external changes to modelValue
 watch(() => props.modelValue, (newValue) => {
