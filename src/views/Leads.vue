@@ -16,20 +16,29 @@
       @clear="clearFilters"
     />
 
-    <!-- Escopo explícito da busca: roda só sobre a página já carregada (client-side),
-         não sobre o banco inteiro — /leads/paginated não aceita parâmetro de busca. -->
+    <!-- Escopo explícito da busca: roda só sobre os leads já carregados (client-side),
+         não sobre o banco inteiro — /leads/paginated não aceita parâmetro de busca.
+         Com scroll infinito `leads` é o ACUMULADO das páginas buscadas até agora,
+         não "esta página" — por isso o texto fala em "carregados até agora". -->
     <p v-if="search" class="-mt-2 mb-3 shrink-0 text-[11px] text-muted-foreground">
-      Busca restrita aos {{ leads.length }} leads já carregados nesta página — não busca no servidor.
+      Busca restrita aos {{ leads.length }} leads carregados até agora — não busca no servidor.
     </p>
 
     <!-- Degradação: só aparece quando /leads/counts ou /leads/paginated falham.
          Com o backend saudável isto nunca renderiza. -->
     <div
-      v-if="countsStale || leadsDegraded"
+      v-if="countsUnavailable || countsStale || leadsDegraded || loadMoreFailed"
       class="mb-3 shrink-0 rounded-md border border-warning/40 bg-warning/10 px-3 py-2 text-xs text-warning flex flex-col gap-1"
       role="status"
     >
-      <div v-if="countsStale" class="flex items-center gap-1.5">
+      <!-- Primeira leitura de /leads/counts falhou: não existe "último valor
+           válido", só o zero do estado inicial. O texto não pode prometer um
+           valor que nunca chegou, e a stats strip fica fora da tela. -->
+      <div v-if="countsUnavailable" class="flex items-center gap-1.5">
+        <TriangleAlert class="w-3.5 h-3.5 shrink-0" />
+        Contadores indisponíveis — o servidor não respondeu os números. Os totais do funil ficam ocultos até ele responder.
+      </div>
+      <div v-else-if="countsStale" class="flex items-center gap-1.5">
         <TriangleAlert class="w-3.5 h-3.5 shrink-0" />
         Contadores desatualizados — o servidor não confirmou os números (mostrando o último valor válido).
       </div>
@@ -37,10 +46,19 @@
         <TriangleAlert class="w-3.5 h-3.5 shrink-0" />
         Paginação indisponível — a lista pode estar incompleta ou fora da ordem de prioridade.
       </div>
+      <!-- Causa distinta da de cima: a paginação funciona, uma página só não
+           veio. A lista está incompleta, mas na ordem certa. -->
+      <div v-if="loadMoreFailed" class="flex items-center gap-1.5">
+        <TriangleAlert class="w-3.5 h-3.5 shrink-0" />
+        Uma página de leads não carregou — a lista está incompleta. Use “tentar de novo” no fim da lista.
+      </div>
     </div>
 
-    <!-- Stats strip compacta -->
-    <LeadStats :leads="leads" :counts="counts" :loading="loading" class="mb-3 shrink-0" />
+    <!-- Stats strip compacta. Escondida quando /leads/counts nunca respondeu:
+         todo número dela (Novos, Conv., pipeline) sairia do zero inicial ou da
+         página carregada, e zero é um valor de negócio plausível — seria lido
+         como verdade. -->
+    <LeadStats v-if="!countsUnavailable" :leads="leads" :counts="counts" :loading="loading" class="mb-3 shrink-0" />
 
     <!-- Filtros inline -->
     <LeadFilters
@@ -54,8 +72,8 @@
     <div class="bg-card rounded-lg shadow-sm border border-border overflow-hidden md:flex-1 md:min-h-0 md:flex md:flex-col">
       <!-- Desktop: Split View -->
       <div class="hidden md:flex flex-1 min-h-0">
-        <!-- Lista Leads (40%) -->
-        <div class="w-2/5 border-r border-border overflow-y-auto">
+        <!-- Lista Leads (40%) — este painel é o root do observer do desktop -->
+        <div ref="leadListPanel" class="w-2/5 border-r border-border overflow-y-auto">
           <LeadList
             :leads="filteredLeads"
             :selected-id="selectedId"
@@ -76,6 +94,19 @@
               <path class="opacity-75" fill="currentColor" d="m4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
             </svg>
             Carregando mais...
+          </div>
+          <!-- "Carregar mais" falhou: nada foi anexado, a geometria não muda e o
+               IntersectionObserver não reentrega o callback. Sem este bloco o
+               usuário vê um toast de 5s e depois nada, sem retry. -->
+          <div v-else-if="loadMoreFailed" class="p-4 flex flex-col items-center gap-2 text-center">
+            <p class="text-xs text-warning">Não foi possível carregar mais leads.</p>
+            <Button variant="outline" size="sm" @click="loadMore">Tentar de novo</Button>
+          </div>
+          <!-- Com filtro ativo o auto-load fica desligado (ver autoLoadMore) —
+               então o carregamento precisa ter um caminho manual. -->
+          <div v-else-if="hasMore && hasActiveFilters" class="p-4 flex flex-col items-center gap-2 text-center">
+            <p class="text-xs text-muted-foreground">Com filtro ativo, as próximas páginas não carregam sozinhas.</p>
+            <Button variant="outline" size="sm" @click="loadMore">Carregar mais leads</Button>
           </div>
           <div
             v-else-if="!hasMore && filteredLeads.length > 0"
@@ -127,6 +158,14 @@
             <path class="opacity-75" fill="currentColor" d="m4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
           </svg>
           Carregando mais...
+        </div>
+        <div v-else-if="loadMoreFailed" class="p-4 flex flex-col items-center gap-2 text-center">
+          <p class="text-xs text-warning">Não foi possível carregar mais leads.</p>
+          <Button variant="outline" size="sm" @click="loadMore">Tentar de novo</Button>
+        </div>
+        <div v-else-if="hasMore && hasActiveFilters" class="p-4 flex flex-col items-center gap-2 text-center">
+          <p class="text-xs text-muted-foreground">Com filtro ativo, as próximas páginas não carregam sozinhas.</p>
+          <Button variant="outline" size="sm" @click="loadMore">Carregar mais leads</Button>
         </div>
         <div
           v-else-if="!hasMore && filteredLeads.length > 0"
@@ -287,10 +326,21 @@ const totalPages = ref(0)
 // paginado. A lista continua aparecendo, mas pode estar incompleta e fora da
 // ordem de prioridade — por isso isso precisa ficar visível, não calado.
 const leadsDegraded = ref(false)
-// Degradação: true quando /leads/counts falha. Os `counts` mostrados ficam
-// congelados no último valor válido (NUNCA recalculados a partir de
-// `leads.value`, que é só a página carregada e mentiria pro dono).
+// Causa DISTINTA de leadsDegraded: a paginação funciona, uma página só não
+// veio. A lista fica incompleta mas na ordem certa, e o retry é por página —
+// misturar as duas na mesma flag faz o banner descrever a falha errada.
+const loadMoreFailed = ref(false)
+// true depois da PRIMEIRA resposta de /leads/counts. Antes disso `counts` é o
+// zero do estado inicial: não é um valor velho, é a ausência de valor. Sem
+// essa distinção o banner de "último valor válido" afirma algo que não existe.
+const countsLoaded = ref(false)
+// Degradação: /leads/counts falhou DEPOIS de ter respondido ao menos uma vez.
+// Os `counts` ficam congelados no último valor válido (NUNCA recalculados a
+// partir de `leads.value`, que é só o acumulado carregado e mentiria pro dono).
 const countsStale = ref(false)
+// Degradação: /leads/counts nunca respondeu. Não há número nenhum pra mostrar,
+// então nenhum número vai pra tela (a stats strip fica oculta).
+const countsUnavailable = ref(false)
 
 // Selection
 const {
@@ -328,11 +378,14 @@ const hasActiveFilters = computed(() =>
 // disparam as duas juntas.
 const loadMoreSentinel = ref<HTMLElement | null>(null)
 const loadMoreSentinelDesktop = ref<HTMLElement | null>(null)
+// Painel de lista do desktop: é ELE que rola (overflow-y-auto), não a página.
+const leadListPanel = ref<HTMLElement | null>(null)
 
 async function loadMore() {
   if (loading.value || loadingMore.value || !hasMore.value) return
   try {
     loadingMore.value = true
+    loadMoreFailed.value = false
     currentPage.value++
     await fetchLeads(true)
   } finally {
@@ -340,22 +393,36 @@ async function loadMore() {
   }
 }
 
+// Auto-load só sem filtro ativo. Com filtro, a lista filtrada pode ser curta o
+// bastante pra sentinela já estar dentro do root na PRIMEIRA medição (ainda mais
+// com rootMargin de 200px): o observer dispararia página após página sem o
+// usuário rolar nada, exatamente quando ele está tentando estreitar a lista.
+// Nesse caso o carregamento vira manual (botão no fim da lista).
+// Também não re-dispara depois de uma falha — quem decide o retry é o usuário.
+function autoLoadMore() {
+  if (hasActiveFilters.value || loadMoreFailed.value) return
+  loadMore()
+}
+
 // Dispara o carregamento da próxima página quando a sentinela entra na viewport.
+// Aqui o root É a viewport: no mobile quem rola é a página.
 useIntersectionObserver(
   loadMoreSentinel,
   ([entry]) => {
-    if (entry?.isIntersecting) loadMore()
+    if (entry?.isIntersecting) autoLoadMore()
   },
   { rootMargin: '200px' }
 )
 
 // Mesmo gatilho, agora para o painel de lista do desktop (antes preso na página 1).
+// `root` precisa ser o painel: sem ele a interseção é medida contra a janela, e
+// não contra o container que o usuário rola.
 useIntersectionObserver(
   loadMoreSentinelDesktop,
   ([entry]) => {
-    if (entry?.isIntersecting) loadMore()
+    if (entry?.isIntersecting) autoLoadMore()
   },
-  { rootMargin: '200px' }
+  { root: leadListPanel, rootMargin: '200px' }
 )
 
 // Botão "voltar ao topo" (mobile): aparece depois de rolar um pouco
@@ -433,7 +500,8 @@ const fetchLeads = async (append = false) => {
       // loadMore antes do await) pra não travar hasMore num estado inconsistente,
       // e avisa — em vez de deixar o usuário rolando sem nunca ver mais nada.
       currentPage.value--
-      leadsDegraded.value = true
+      // NÃO é leadsDegraded: a paginação está de pé, só esta página falhou.
+      loadMoreFailed.value = true
       notification.error('Não foi possível carregar mais leads. Tente novamente.')
     } else {
       try {
@@ -463,16 +531,26 @@ const fetchCounts = async () => {
   try {
     const response = await leadService.getCounts()
     counts.value = response
+    countsLoaded.value = true
     countsStale.value = false
+    countsUnavailable.value = false
   } catch (error) {
-    // NÃO recalcular a partir de `leads.value`: isso é só a página carregada
-    // (até 20 leads) e produziria um número plausível mas ERRADO — o dono
-    // decidiria em cima dele sem saber que está olhando pra página, não pro
-    // total. Mantém o último valor válido de `counts` e sinaliza que ele
-    // pode estar desatualizado.
+    // NÃO recalcular a partir de `leads.value`: isso é só o acumulado carregado
+    // (múltiplos de 20 leads) e produziria um número plausível mas ERRADO — o
+    // dono decidiria em cima dele sem saber que está olhando pra página, não pro
+    // total.
     console.error('Erro ao carregar contadores:', error)
-    countsStale.value = true
-    notification.error('Não foi possível atualizar os contadores. Os números exibidos podem estar desatualizados.')
+    if (countsLoaded.value) {
+      // Existe um último valor válido: mantém e marca como possivelmente velho.
+      countsStale.value = true
+      notification.error('Não foi possível atualizar os contadores. Os números exibidos podem estar desatualizados.')
+    } else {
+      // Primeira leitura: `counts` é o zero do estado inicial. Não há "último
+      // valor válido" pra mostrar, e zero é um valor de negócio plausível —
+      // seria lido como verdade. Então nenhum contador vai pra tela.
+      countsUnavailable.value = true
+      notification.error('Não foi possível carregar os contadores. Os totais do funil ficam indisponíveis até o servidor responder.')
+    }
   }
 }
 
