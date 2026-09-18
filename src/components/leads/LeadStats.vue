@@ -22,13 +22,14 @@ const pipeline = computed(() => selectPipeline(props.counts))
 // e altura). Exclui CONVERTED e LOST. Hoje coincide com measuredTotals.all
 // porque converted=lost=0 — a escolha errada (usar `all`, ou `totals` em
 // vez de `measuredTotals`) ficaria invisível agora e errada depois.
-const pipelineValue = computed(() => {
-  if (pipeline.value.value != null) return formatBrl(pipeline.value.value)
-  const total = props.leads
-    .filter(l => l.status !== 'CONVERTED' && l.status !== 'LOST')
-    .reduce((s, l) => s + (l.totalEstimatedValue || 0), 0)
-  return formatBrl(total)
-})
+//
+// Sem a série do servidor NÃO há fallback somando `props.leads`: aquilo somava
+// só os leads já carregados (uma ou mais páginas de 20) e rotulava o resultado
+// de "Pipeline", entregando um número plausível e menor que o real. Quando a
+// série falta, o certo é dizer que não se sabe.
+const pipelineValue = computed(() =>
+  pipeline.value.value != null ? formatBrl(pipeline.value.value) : '—'
+)
 
 const unmeasuredLabel = computed(() => {
   const gap = pipeline.value.unmeasured
@@ -46,6 +47,8 @@ const hotCount = computed(() =>
   props.leads.filter(l => l.status !== 'CONVERTED' && l.status !== 'LOST' && isHotLead(l)).length
 )
 
+// `all === 0` pode ser "nenhum lead" ou "não sei" — quem distingue é a view,
+// que esconde a strip inteira quando /leads/counts nunca respondeu.
 const conversionRatePct = computed(() => {
   if (!props.counts.all) return '0%'
   return `${Math.round((props.counts.converted / props.counts.all) * 100)}%`
@@ -69,7 +72,9 @@ const { containerRef, maskStyle } = useHorizontalOverflow()
       <template v-else>
         <div
           class="flex items-baseline gap-1.5 shrink-0"
-          title="Itens com largura e altura. O restante (sem medida) aparece ao lado."
+          :title="pipelineValue === '—'
+            ? 'O servidor não informou o total do pipeline — este valor não é calculado a partir da lista carregada.'
+            : 'Itens com largura e altura. O restante (sem medida) aparece ao lado.'"
         >
           <span class="text-xs text-muted-foreground">Pipeline</span>
           <span class="text-sm font-bold text-foreground">{{ pipelineValue }}</span>
