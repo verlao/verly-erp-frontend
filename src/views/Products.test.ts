@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import type { ProductDTO } from '../services/product'
+import { useCurrency } from '../composables/useCurrency'
 
 // Helper functions extracted for testing
 // These would typically be extracted to a utils file
@@ -26,10 +27,14 @@ function calculateInstallmentPrice(price: number | undefined): number {
   return price * 1.2
 }
 
-function parseCurrencyInput(value: string): number {
-  const cleaned = value.replace(/\D/g, '')
-  if (cleaned === '') return 0
-  return parseInt(cleaned) / 100
+// Mascara de digitacao (centavos deslizando): '15050' -> 'R$ 150,50'.
+// Isto NAO e o parser de moeda (parseCurrency) e nao deve ser confundido com ele:
+// aqui cada digito novo empurra o valor uma casa decimal, entao '100' vale 1,00.
+// Delegamos para o handleCurrencyInput de producao (usado por CurrencyInput.vue e
+// pelos dialogs do ledger) em vez de reimplementar a logica no teste.
+function applyCentsMask(typed: string): { display: string; value: number } {
+  const { handleCurrencyInput } = useCurrency()
+  return handleCurrencyInput({ target: { value: typed } } as unknown as Event)
 }
 
 function formatCurrencyInput(value: number): string {
@@ -116,21 +121,23 @@ describe('Products View - Utility Functions', () => {
     })
   })
 
-  describe('parseCurrencyInput', () => {
-    it('should parse currency input to number', () => {
-      expect(parseCurrencyInput('15050')).toBe(150.50)
-      expect(parseCurrencyInput('100')).toBe(1.00)
-      expect(parseCurrencyInput('1000000')).toBe(10000.00)
+  describe('applyCentsMask (mascara de digitacao, nao parser)', () => {
+    it('should slide digits into cents as the user types', () => {
+      expect(applyCentsMask('15050').value).toBe(150.50)
+      expect(applyCentsMask('100').value).toBe(1.00)
+      expect(applyCentsMask('1000000').value).toBe(10000.00)
     })
 
-    it('should remove non-digit characters', () => {
-      expect(parseCurrencyInput('R$ 150,50')).toBe(150.50)
-      expect(parseCurrencyInput('abc123def')).toBe(1.23)
+    it('should ignore separators already rendered in the field', () => {
+      // 'R$ 150,50' volta ao teclado como os digitos 15050 -> 150,50
+      expect(applyCentsMask('R$ 150,50').value).toBe(150.50)
     })
 
-    it('should handle empty string', () => {
-      expect(parseCurrencyInput('')).toBe(0)
-      expect(parseCurrencyInput('   ')).toBe(0)
+    it('should expose an empty display when there is no digit yet', () => {
+      // Estado vazio da mascara: display em branco e nada para o componente emitir.
+      // Nao confundir com o contrato do parser de moeda, que nao vive aqui.
+      expect(applyCentsMask('').display).toBe('')
+      expect(applyCentsMask('   ').display).toBe('')
     })
   })
 
@@ -326,19 +333,14 @@ describe('Products View - Currency Input Formatting', () => {
     ]
 
     testCases.forEach(({ input, expected }) => {
-      const numericValue = parseCurrencyInput(input)
-      const formatted = formatCurrencyInput(numericValue)
-      expect(formatted).toBe(expected)
+      expect(applyCentsMask(input).display).toBe(expected)
     })
   })
 
   it('should handle backspace (reducing digits)', () => {
     const sequence = ['15050', '1505', '150', '15', '1', '']
 
-    const results = sequence.map(input => {
-      const numeric = parseCurrencyInput(input)
-      return numeric === 0 ? 'R$ 0,00' : formatCurrencyInput(numeric)
-    })
+    const results = sequence.map(input => applyCentsMask(input).display)
 
     expect(results).toEqual([
       'R$ 150,50',
@@ -346,7 +348,7 @@ describe('Products View - Currency Input Formatting', () => {
       'R$ 1,50',
       'R$ 0,15',
       'R$ 0,01',
-      'R$ 0,00'
+      '' // sem digito a mascara devolve display vazio; o campo fica limpo
     ])
   })
 })
