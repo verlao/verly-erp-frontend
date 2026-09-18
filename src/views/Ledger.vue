@@ -46,22 +46,24 @@
       <!-- Falha na mesma leitura do período atual: mantém os últimos números
            válidos visíveis, mas com aviso e carimbo de frescor (nunca silencioso). -->
       <div
-        v-if="summaryError && summaryIsCurrentPeriod"
+        v-if="showSummaryError && summaryIsCurrentPeriod"
         class="flex items-center justify-between gap-3 rounded-lg border border-warning/40 bg-warning/10 px-4 py-3 mb-2"
       >
         <div class="flex items-center gap-2 text-sm text-foreground">
           <AlertTriangle class="w-4 h-4 text-warning shrink-0" />
           <span>Não foi possível atualizar o resumo. Os valores abaixo são de {{ formatFreshness(summaryUpdatedAt) }}.</span>
         </div>
-        <Button variant="outline" size="sm" @click="loadSummary">Tentar de novo</Button>
+        <Button variant="outline" size="sm" :disabled="loadingSummary" @click="loadSummary">Tentar de novo</Button>
       </div>
       <!-- Falha sem nenhum dado confiável para este período: não inventa zero. -->
-      <div v-else-if="summaryError" class="rounded-lg border border-border bg-card p-8 text-center mb-4">
-        <AlertTriangle class="w-6 h-6 text-destructive mx-auto mb-2" />
-        <p class="text-sm text-foreground mb-3">Não foi possível carregar o resumo financeiro.</p>
-        <Button variant="outline" size="sm" @click="loadSummary">Tentar de novo</Button>
-      </div>
-      <FinanceSummary v-if="!summaryError || summaryIsCurrentPeriod" :summary="summary" :loading="loadingSummary" class="mb-4" />
+      <ErrorState
+        v-else-if="showSummaryError"
+        message="Não foi possível carregar o resumo financeiro."
+        :loading="loadingSummary"
+        class="rounded-lg border border-border bg-card mb-4"
+        @retry="loadSummary"
+      />
+      <FinanceSummary v-if="!showSummaryError || summaryIsCurrentPeriod" :summary="summary" :loading="loadingSummary" class="mb-4" />
 
       <!-- Comprovantes PIX detectados no WhatsApp -->
       <WhatsAppPendingSection
@@ -71,7 +73,6 @@
         @cancel="cancelLedger"
         @receipt="openReceiptDialog"
       />
-
 
       <!-- Fluxo diário -->
       <DailyFlowChart v-if="dailySeries.length" :series="dailySeries" />
@@ -85,11 +86,12 @@
 
         <!-- Falha de leitura: nunca mostra a lista antiga (de outro período ou
              carregamento anterior) como se fosse a atual. -->
-        <div v-else-if="ledgersError" class="p-8 text-center">
-          <AlertTriangle class="w-6 h-6 text-destructive mx-auto mb-2" />
-          <p class="text-sm text-foreground mb-3">Não foi possível carregar os lançamentos.</p>
-          <Button variant="outline" size="sm" @click="loadLedgers">Tentar de novo</Button>
-        </div>
+        <ErrorState
+          v-else-if="ledgersError"
+          message="Não foi possível carregar os lançamentos."
+          :loading="loading"
+          @retry="loadLedgers"
+        />
 
         <div v-else-if="ledgers.length === 0" class="p-12 text-center">
           <div class="bg-muted rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
@@ -140,6 +142,7 @@
 import { computed, onMounted, ref } from 'vue'
 import { AlertTriangle, DollarSign, Wallet } from 'lucide-vue-next'
 import Button from '../components/ui/Button.vue'
+import ErrorState from '../components/ui/ErrorState.vue'
 import Pagination from '../components/ui/Pagination.vue'
 import WhatsAppPendingSection from '../components/ledger/WhatsAppPendingSection.vue'
 import PeriodChips from '../components/ledger/PeriodChips.vue'
@@ -182,6 +185,10 @@ const summaryIsCurrentPeriod = computed(() =>
   summaryPeriod.value.startDate === filters.value.startDate &&
   summaryPeriod.value.endDate === filters.value.endDate
 )
+// Precedente do projeto (Kanban.vue:14-26): o ramo de loading vem ANTES do
+// ramo de erro, para o erro da leitura anterior não ficar na tela descrevendo
+// um período que está sendo carregado agora.
+const showSummaryError = computed(() => summaryError.value && !loadingSummary.value)
 const ledgersError = ref(false)
 const dailySeries = ref<DailyFlowDTO[]>([])
 const waPending = ref<LedgerResponseDTO[]>([])
@@ -245,9 +252,9 @@ async function loadLedgers() {
 
 async function loadSummary() {
   loadingSummary.value = true
+  summaryError.value = false
   try {
     summary.value = await ledgerService.getSummary(filters.value.startDate, filters.value.endDate)
-    summaryError.value = false
     summaryUpdatedAt.value = new Date()
     summaryPeriod.value = { startDate: filters.value.startDate, endDate: filters.value.endDate }
   } catch (error) {
