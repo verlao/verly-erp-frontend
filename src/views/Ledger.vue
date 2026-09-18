@@ -50,7 +50,7 @@
         class="flex items-center justify-between gap-3 rounded-lg border border-warning/40 bg-warning/10 px-4 py-3 mb-2"
       >
         <div class="flex items-center gap-2 text-sm text-foreground">
-          <AlertTriangle class="w-4 h-4 text-warning shrink-0" />
+          <TriangleAlert class="w-4 h-4 text-warning shrink-0" />
           <span>Não foi possível atualizar o resumo. Os valores abaixo são de {{ formatFreshness(summaryUpdatedAt) }}.</span>
         </div>
         <Button variant="outline" size="sm" :disabled="loadingSummary" @click="loadSummary">Tentar de novo</Button>
@@ -140,7 +140,7 @@
 
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
-import { AlertTriangle, DollarSign, Wallet } from 'lucide-vue-next'
+import { TriangleAlert, DollarSign, Wallet } from 'lucide-vue-next'
 import Button from '../components/ui/Button.vue'
 import ErrorState from '../components/ui/ErrorState.vue'
 import Pagination from '../components/ui/Pagination.vue'
