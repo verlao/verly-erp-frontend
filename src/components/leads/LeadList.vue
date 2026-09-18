@@ -17,31 +17,26 @@ const emit = defineEmits<{
   toggleAll: []
 }>()
 
-// Freshness bands. The list arrives ordered by the backend's priority (highest profit
-// first), and that order is PRESERVED inside each band — j/k navigation walks the raw
-// array, so the headers stay purely visual.
-//
-// This used to be a single "today" block on the calendar day. At 00:00 it emptied, every
-// lead answered hours earlier fell into an unlabelled remainder, and the page read as a
-// frozen profit ranking — which is exactly how the staleness was reported. The `week`
-// band gives recent work somewhere visible to land.
-import { freshnessBand } from '../../lib/leadFreshness'
+// Bloco "Novos hoje": leads com atividade hoje (criados OU re-sintetizados pelo bot —
+// lastActivityDate vem do backend, que já os entrega contíguos no topo). Membership é
+// por DATA de atividade, não por não-lido: ler um lead só tira o negrito, ele fica no
+// bloco até o dia virar. Headers são visuais — a ordem do array não muda, então a
+// navegação j/k (que anda o array cru) continua consistente com a tela.
+const isToday = (lead: LeadDTO): boolean => {
+  const stamp = lead.lastActivityDate ?? lead.createdDate
+  if (!stamp) return false
+  const d = new Date(stamp)
+  const now = new Date()
+  return d.getFullYear() === now.getFullYear()
+    && d.getMonth() === now.getMonth()
+    && d.getDate() === now.getDate()
+}
 
-const todayLeads = computed(() => props.leads.filter(lead => freshnessBand(lead) === 'today'))
-const weekLeads = computed(() => props.leads.filter(lead => freshnessBand(lead) === 'week'))
-const olderLeads = computed(() => props.leads.filter(lead => freshnessBand(lead) === 'older'))
-
-// Labels only once the list is actually partitioned — a single populated band means a
-// flat list, and a lone header above everything says nothing.
-const showHeaders = computed(() =>
-  [todayLeads.value, weekLeads.value, olderLeads.value].filter(band => band.length > 0).length > 1
-)
-
-const bands = computed(() => [
-  { key: 'today', label: 'Atividade hoje', leads: todayLeads.value },
-  { key: 'week', label: 'Últimos 7 dias', leads: weekLeads.value },
-  { key: 'older', label: 'Sem atividade recente', leads: olderLeads.value }
-])
+const todayLeads = computed(() => props.leads.filter(isToday))
+const earlierLeads = computed(() => props.leads.filter(lead => !isToday(lead)))
+// Headers só quando a lista está de fato particionada — com filtros esvaziando um dos
+// lados, a lista volta a ser plana e sem rótulos.
+const showHeaders = computed(() => todayLeads.value.length > 0 && earlierLeads.value.length > 0)
 </script>
 
 <template>
@@ -65,26 +60,40 @@ const bands = computed(() => [
       </p>
     </div>
 
-    <!-- Lead List: faixas por frescor; ordem de prioridade preservada dentro de cada faixa -->
+    <!-- Lead List: bloco "Novos hoje" (atividade hoje) + demais em ordem de prioridade -->
     <div v-else>
-      <template v-for="band in bands" :key="band.key">
-        <p
-          v-if="showHeaders && band.leads.length > 0"
-          class="px-4 pt-3 pb-1 text-xs font-medium text-muted-foreground uppercase tracking-wide"
-        >
-          {{ band.label }} ({{ band.leads.length }})
-        </p>
-        <LeadListItem
-          v-for="lead in band.leads"
-          :key="lead.id"
-          :lead="lead"
-          :selected="selectedId === lead.id"
-          :checked="checkedIds?.includes(lead.id)"
-          @select="emit('select', lead)"
-          @toggle="emit('toggle', lead.id)"
-          @quick-action="(action) => emit('quickAction', lead.id, action)"
-        />
-      </template>
+      <p
+        v-if="showHeaders"
+        class="px-4 pt-3 pb-1 text-xs font-medium text-muted-foreground uppercase tracking-wide"
+      >
+        Novos hoje ({{ todayLeads.length }})
+      </p>
+      <LeadListItem
+        v-for="lead in todayLeads"
+        :key="lead.id"
+        :lead="lead"
+        :selected="selectedId === lead.id"
+        :checked="checkedIds?.includes(lead.id)"
+        @select="emit('select', lead)"
+        @toggle="emit('toggle', lead.id)"
+        @quick-action="(action) => emit('quickAction', lead.id, action)"
+      />
+      <p
+        v-if="showHeaders"
+        class="px-4 pt-3 pb-1 text-xs font-medium text-muted-foreground uppercase tracking-wide"
+      >
+        Anteriores
+      </p>
+      <LeadListItem
+        v-for="lead in earlierLeads"
+        :key="lead.id"
+        :lead="lead"
+        :selected="selectedId === lead.id"
+        :checked="checkedIds?.includes(lead.id)"
+        @select="emit('select', lead)"
+        @toggle="emit('toggle', lead.id)"
+        @quick-action="(action) => emit('quickAction', lead.id, action)"
+      />
     </div>
   </div>
 </template>

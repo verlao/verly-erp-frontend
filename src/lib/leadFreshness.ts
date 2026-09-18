@@ -1,7 +1,5 @@
 import type { LeadDTO } from '../services/lead'
 
-export type FreshnessBand = 'today' | 'week' | 'older'
-
 /**
  * The list used to age leads by `createdDate`, which is the lead's BIRTH date and
  * never moves. A lead created in July and answered on WhatsApp yesterday rendered
@@ -21,29 +19,6 @@ function parseStamp(stamp: string | undefined): Date | undefined {
   if (!stamp) return undefined
   const date = new Date(stamp)
   return Number.isNaN(date.getTime()) ? undefined : date
-}
-
-function isSameCalendarDay(a: Date, b: Date): boolean {
-  return a.getFullYear() === b.getFullYear()
-    && a.getMonth() === b.getMonth()
-    && a.getDate() === b.getDate()
-}
-
-/**
- * Bands are what keep the list legible at 01:00. The old grouping had a single
- * "today" block computed on the calendar day, so at midnight every lead answered
- * hours earlier fell into an UNLABELLED remainder — the page then looked frozen on
- * the profit ordering. `week` gives that work somewhere visible to land.
- */
-export function freshnessBand(
-  lead: Pick<LeadDTO, 'createdDate' | 'lastActivityDate'>,
-  now: Date = new Date()
-): FreshnessBand {
-  const date = parseStamp(freshnessStamp(lead))
-  if (!date) return 'older'
-  if (isSameCalendarDay(date, now)) return 'today'
-  const days = (now.getTime() - date.getTime()) / 86_400_000
-  return days <= 7 ? 'week' : 'older'
 }
 
 /**
