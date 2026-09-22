@@ -180,11 +180,16 @@ const summary = ref<LedgerSummaryDTO>({
 const summaryError = ref(false)
 const summaryUpdatedAt = ref<Date | null>(null)
 const summaryPeriod = ref<{ startDate: string; endDate: string } | null>(null)
-const summaryIsCurrentPeriod = computed(() =>
-  summaryPeriod.value !== null &&
-  summaryPeriod.value.startDate === filters.value.startDate &&
-  summaryPeriod.value.endDate === filters.value.endDate
-)
+// Compartilhado entre o computed acima e o guard de loadSummary (evita duplicar
+// a mesma comparação de período nos dois lugares).
+function isSelectedPeriod(period: { startDate: string; endDate: string } | null): boolean {
+  return (
+    period !== null &&
+    period.startDate === filters.value.startDate &&
+    period.endDate === filters.value.endDate
+  )
+}
+const summaryIsCurrentPeriod = computed(() => isSelectedPeriod(summaryPeriod.value))
 // Precedente do projeto (Kanban.vue:14-26): o ramo de loading vem ANTES do
 // ramo de erro, para o erro da leitura anterior não ficar na tela descrevendo
 // um período que está sendo carregado agora.
@@ -228,40 +233,66 @@ const showReceiptDialog = ref(false)
 const ledgerForReceipt = ref<LedgerResponseDTO | null>(null)
 
 // Loads
+// Cada leitura fica atada aos parâmetros com que foi pedida (período, página,
+// tamanho de página). Se esses parâmetros já não forem os selecionados quando
+// a resposta chega — porque uma leitura mais nova venceu a corrida — a
+// resposta é descartada: nem os dados, nem o erro, nem o "loading=false" da
+// requisição antiga são aplicados por cima do que já está em tela.
 async function loadLedgers() {
+  const requested = {
+    startDate: filters.value.startDate,
+    endDate: filters.value.endDate,
+    page: currentPage.value,
+    pageSize: pageSize.value,
+  }
+  const isRequestCurrent = () =>
+    requested.startDate === filters.value.startDate &&
+    requested.endDate === filters.value.endDate &&
+    requested.page === currentPage.value &&
+    requested.pageSize === pageSize.value
+
   loading.value = true
   try {
     const response = await ledgerService.getByDateRangePaginated(
-      filters.value.startDate,
-      filters.value.endDate,
-      currentPage.value - 1,
-      pageSize.value
+      requested.startDate,
+      requested.endDate,
+      requested.page - 1,
+      requested.pageSize
     )
+    if (!isRequestCurrent()) return
     ledgers.value = response.content
     totalItems.value = response.totalElements
     ledgersError.value = false
   } catch (error) {
+    if (!isRequestCurrent()) return
     console.error('Erro ao carregar lançamentos:', error)
     // Não deixa a lista antiga (de outro período/carregamento) na tela como
     // se fosse atual: o template esconde a tabela e mostra erro + retry.
     ledgersError.value = true
   } finally {
-    loading.value = false
+    if (isRequestCurrent()) loading.value = false
   }
 }
 
 async function loadSummary() {
+  // Capturado ANTES do await: o período que rotula o resultado é o período
+  // pedido, nunca o que os filtros apontarem quando a resposta chegar.
+  const requestedPeriod = { startDate: filters.value.startDate, endDate: filters.value.endDate }
+
   loadingSummary.value = true
   summaryError.value = false
   try {
-    summary.value = await ledgerService.getSummary(filters.value.startDate, filters.value.endDate)
+    const result = await ledgerService.getSummary(requestedPeriod.startDate, requestedPeriod.endDate)
+    if (!isSelectedPeriod(requestedPeriod)) return
+    summary.value = result
     summaryUpdatedAt.value = new Date()
-    summaryPeriod.value = { startDate: filters.value.startDate, endDate: filters.value.endDate }
+    summaryPeriod.value = requestedPeriod
   } catch (error) {
+    if (!isSelectedPeriod(requestedPeriod)) return
     console.error('Erro ao carregar resumo:', error)
     summaryError.value = true
   } finally {
-    loadingSummary.value = false
+    if (isSelectedPeriod(requestedPeriod)) loadingSummary.value = false
   }
 }
 
