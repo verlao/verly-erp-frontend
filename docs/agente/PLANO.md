@@ -60,6 +60,8 @@ mvn -B spotless:apply # formatação (também roda sozinho no validate)
 
 ## 2. Padrões encontrados no ERP
 
+Registro histórico da descoberta de 06/10; para a execução atual, prevalecem §5 e `DECISOES.md` (D9–D11).
+
 - **Services** em `src/services/<domínio>.ts`: objeto `xxxService` com métodos `async` que chamam `api`
   e devolvem `response.data`; tipos DTO no mesmo arquivo. Teste do service ao lado (`lead.test.ts`).
 - **`api.ts`**: interceptor de request põe `Authorization: Bearer`; interceptor de response desloga
@@ -75,6 +77,9 @@ mvn -B spotless:apply # formatação (também roda sozinho no validate)
   `fix/…` / `feat/…`, merge commit.
 
 ## 3. Verificações no código (seção 2.2 do handoff)
+
+Registro histórico de 06/10, nos commits do início deste documento; não comprova o contrato implantado hoje.
+As atualizações e o gate de implantação estão em §5 e `ORQUESTRACAO.md`.
 
 Caminhos do backend relativos a `src/main/java/com/verly/verlyservice/application/`.
 
@@ -142,30 +147,37 @@ Caminhos do backend relativos a `src/main/java/com/verly/verlyservice/applicatio
 
 ## 5. Plano das fases, ajustado ao código
 
-Cada item é um PR contra `prod`. Nada é mergeado nem deployado pelo agente.
+Cada item é um PR contra `prod`. Nada é mergeado nem deployado pelo agente. Atualizado em 14/10 conforme
+D9–D11: sem Framework7 e sem flags de build. PR de UI dependente só abre após endpoint mergeado **e
+comprovadamente no ar**; PR consumidor de migração só abre após migração comprovadamente no ar. Verificar
+pipeline concluído com sucesso e discriminador do commit servido, se exposto; pipeline em andamento não basta.
+G1 (direção visual) e G2 (fluxo redesenhado) seguem pendentes antes de implementar UI.
 
 **Fase 0 — Fundamentos**
 - 0.1 Sessão: *(service)* `authenticationEntryPoint` = 401 para requisição sem token (o vencido já é 401).
   *(ERP)* interceptor desloga em 401 **e** em 403 quando o token local está vencido (`isTokenExpired`);
   `lead.ts` faz `PATCH /status` por `fetch` cru e passa a tratar o mesmo caso.
 - 0.2 Erros: *(ERP)* `lib/errors.ts` com `friendlyError(err, fallback)` que **nunca** lê `message`; trocar os 28
-  usos. *(service)* `RuntimeException`/`Exception` param de pôr stack trace no `message` (texto genérico +
-  `errorId`; o stack continua no log). Status e chaves do JSON não mudam.
+  usos (exceto login, mantido de propósito). Proteção só no front, inclusive em 400/409: fallback da tela.
+  Backend fica como está; service #98 fechado sem merge (D10), não repropor erro 500 genérico.
 - 0.3 Código morto: apagar `kit-cost.ts` (o substituto `accessory-cost.ts` já existe; ganha `list`) e
   `product-cost.ts`; remover `glass-cost.ts` `getById/update/delete/getPriceByColor` e `lead.ts` `update/delete`
   depois de conferir chamadores.
 - 0.4 Utilitários: `lib/money.ts` (centavos inteiros, HALF_UP, `Intl` pt-BR, teste 856,35 × 1,30 = 1.113,26),
   `lib/deferredAction.ts` (commit adiado com desfazer), `lib/sse.ts` (fetch + ReadableStream + JWT, reconexão,
-  heartbeat), `lib/flags.ts` (flags por `VITE_FLAG_*`, desligadas por padrão).
+  heartbeat). ERP #56 fechado sem merge: sem `lib/flags.ts` e sem flags de build (D11).
 
 **Fase 1 — Conciliação de Pix (ERP)**
 - `services/pix-reconciliation.ts`; fila única "Para confirmar" = `NEEDS_REVIEW` + `READY` + `BRIDGED` com
   `ledgerStatus = PENDING`.
 - "Confirmar recebimento" = `bridge` (se ainda não lançado) + `POST /ledgers/{id}/post`, com commit adiado.
-- "De qual pedido": **backend aditivo** (`orderId` opcional no bridge, `ledger.order_id` já existe) → UI atrás
-  de flag até mergear.
-- "Não é pagamento": lançado → `cancel` do lançamento PENDING; não lançado → **sem endpoint** → backend
-  aditivo (migração + endpoint) e UI atrás de flag.
+- B4b — "De quem/de qual pedido": **backend aditivo**, `orderId` e `customerId` opcionais no bridge
+  (`ledger.order_id` e `customer_id` já existem). Conferir `documentType=PAYMENT`; se diferente, escalar.
+  Teste com pedido prova que `post` abate paid/debt; PR da UI só após endpoint mergeado e comprovadamente no ar.
+- B4a — "Não é pagamento": lançado → `cancel` do lançamento PENDING; não lançado → endpoint aditivo
+  `POST /pix-reconciliation/{receiptId}/dismiss` (`dismissedBy`, `reason`) e `DELETE …/dismiss` para desfazer.
+  V2_51 (#101) mergeada; comprovar que está no ar antes do PR consumidor. Padrão da fila exclui dispensados;
+  `state=DISMISSED` lista. Já lançado → 409. UI só após endpoint mergeado e comprovadamente no ar.
 - Classificação de saída (`classification`) aparece como "Tipo de despesa", não como "de quem é".
 
 **Fase 2 a 6** seguem o handoff, com estas correções do que o código mostrou:
@@ -173,8 +185,12 @@ Cada item é um PR contra `prod`. Nada é mergeado nem deployado pelo agente.
 - Visita técnica: **reaproveitar** `measurement_status/measurement_date` antes de criar agenda nova; a migração
   da fase 4 cobre só instalação, `snooze_until` e `lost_reason`.
 - Medição por peça: usa `lead_item.width_cm/height_cm` que já existem.
-- "Como fica o preço": dá para mostrar vidro/mão de obra/acessório/margem hoje (§3.6); PR aditivo só para
-  `glassValue`/`colorPrice` explícitos.
+- "Como fica o preço": service #103 mergeado com `glassValue` e `glassPricePerM2` explícitos
+  (`/products/calculate`, aditivo); comprovar implantação antes de abrir PR da UI que dependa desses campos.
 - Fila: abas do design mapeadas para filas do backend (ver `DECISOES.md`).
-- SSE: ligado só por flag e só depois de confirmar `EVENTS_ENABLED=true` no ambiente.
-- App Framework7: `framework7-vue` (o ERP é Vue), no **mesmo repo** em `apps/mobile/` reaproveitando `src/services`.
+- SSE: consumidor só após confirmar `EVENTS_ENABLED=true` e disponibilidade no ambiente; sem flag de build.
+  Até lá, atualizar ao abrir a tela.
+- App no celular: o próprio ERP (Vue 3 + Tailwind v4 + shadcn-vue + lucide), PWA com casca mobile (D9).
+  Sem Framework7, sem `apps/mobile/` e sem origem nova no CORS.
+- V2_52 (#100) mergeada: B8 (adiar/perdido com motivo) e B9 (instalação) dependem da migração comprovadamente
+  no ar; merge isolado não libera consumidores.
