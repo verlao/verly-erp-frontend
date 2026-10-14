@@ -1,7 +1,7 @@
 import api from './api'
 
 // Espelha application/enums/PixReconciliationState.java
-export type PixReconciliationState = 'UNMEASURED' | 'NEEDS_REVIEW' | 'READY' | 'BRIDGED'
+export type PixReconciliationState = 'UNMEASURED' | 'NEEDS_REVIEW' | 'READY' | 'BRIDGED' | 'DISMISSED'
 
 // Espelha application/enums/PixReconciliationBlock.java
 export type PixReconciliationBlock =
@@ -41,13 +41,16 @@ export interface PixReconciliationRowDTO {
   directionAtBridge: string | null
   accountCodeAtBridge: string | null
   bridgedBy: string | null
+  dismissedAt?: string | null
+  dismissedBy?: string | null
+  dismissedReason?: string | null
 }
 
 // Espelha application/dto/PixReconciliationReportDTO.java
 export interface PixReconciliationReportDTO {
   startDate: string | null
   endDate: string | null
-  countsByState: Record<PixReconciliationState, number>
+  countsByState: Record<Exclude<PixReconciliationState, 'DISMISSED'>, number> & { DISMISSED?: number }
   readyToBridge: number
   unmeasured: number
   total: number
@@ -65,6 +68,14 @@ export interface BridgePixReceiptDTO {
   acknowledgeDuplicate?: boolean
   // Obrigatória na prática quando acknowledgeDuplicate = true.
   note?: string
+  orderId?: number
+  customerId?: number
+}
+
+// Espelha application/dto/DismissPixReceiptDTO.java.
+export interface DismissPixReceiptDTO {
+  dismissedBy: string
+  reason?: string | null
 }
 
 // Espelha application/dto/OverridePixClassificationDTO.java.
@@ -105,6 +116,19 @@ const pixReconciliationService = {
     dto: OverridePixClassificationDTO
   ): Promise<PixReconciliationRowDTO> => {
     const response = await api.post(`/pix-reconciliation/${receiptId}/classification`, dto)
+    return response.data
+  },
+
+  dismiss: async (
+    receiptId: number,
+    dto: DismissPixReceiptDTO
+  ): Promise<PixReconciliationRowDTO> => {
+    const response = await api.post(`/pix-reconciliation/${receiptId}/dismiss`, dto)
+    return response.data
+  },
+
+  undoDismiss: async (receiptId: number): Promise<PixReconciliationRowDTO> => {
+    const response = await api.delete(`/pix-reconciliation/${receiptId}/dismiss`)
     return response.data
   },
 }

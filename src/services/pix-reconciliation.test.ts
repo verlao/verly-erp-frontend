@@ -6,6 +6,7 @@ vi.mock('./api', () => ({
   default: {
     get: vi.fn(),
     post: vi.fn(),
+    delete: vi.fn(),
   },
 }))
 
@@ -82,6 +83,76 @@ describe('pixReconciliationService', () => {
       note: 'Dois pagamentos reais do mesmo fornecedor',
     })
     expect(result.ledgerId).toBe(77)
+  })
+
+  it('bridge preserva os vínculos opcionais de pedido e cliente no contrato novo', async () => {
+    vi.mocked(api.post).mockResolvedValue({ data: { ...row, state: 'BRIDGED', ledgerId: 77 } })
+
+    await pixReconciliationService.bridge(12, {
+      createdBy: 'Ana Teste',
+      orderId: 31,
+      customerId: 42,
+    })
+
+    expect(api.post).toHaveBeenCalledWith('/pix-reconciliation/12/bridge', {
+      createdBy: 'Ana Teste',
+      orderId: 31,
+      customerId: 42,
+    })
+  })
+
+  it('mantém estado DISMISSED e auditoria recebida, inclusive campos nulos', async () => {
+    const dismissedRow: PixReconciliationRowDTO = {
+      ...row,
+      state: 'DISMISSED',
+      dismissedAt: '2026-10-14T15:00:00',
+      dismissedBy: 'Ana Teste',
+      dismissedReason: null,
+    }
+    vi.mocked(api.get).mockResolvedValue({ data: dismissedRow })
+
+    const result = await pixReconciliationService.get(12)
+
+    expect(result).toEqual(dismissedRow)
+    expect(result.dismissedReason).toBeNull()
+  })
+
+  it('dismiss posta autor e motivo e retorna o DTO do comprovante', async () => {
+    const dismissedRow: PixReconciliationRowDTO = {
+      ...row,
+      state: 'DISMISSED',
+      dismissedAt: '2026-10-14T15:00:00',
+      dismissedBy: 'Ana Teste',
+      dismissedReason: 'Transferência entre contas próprias',
+    }
+    vi.mocked(api.post).mockResolvedValue({ data: dismissedRow })
+
+    const result = await pixReconciliationService.dismiss(12, {
+      dismissedBy: 'Ana Teste',
+      reason: 'Transferência entre contas próprias',
+    })
+
+    expect(api.post).toHaveBeenCalledWith('/pix-reconciliation/12/dismiss', {
+      dismissedBy: 'Ana Teste',
+      reason: 'Transferência entre contas próprias',
+    })
+    expect(result).toEqual(dismissedRow)
+  })
+
+  it('undoDismiss usa DELETE e retorna o DTO restaurado', async () => {
+    vi.mocked(api.delete).mockResolvedValue({ data: row })
+
+    const result = await pixReconciliationService.undoDismiss(12)
+
+    expect(api.delete).toHaveBeenCalledWith('/pix-reconciliation/12/dismiss')
+    expect(result).toEqual(row)
+  })
+
+  it.each([404, 409])('propaga resposta HTTP %s do dismiss sem mascarar o erro', async (status) => {
+    const error = { response: { status } }
+    vi.mocked(api.post).mockRejectedValue(error)
+
+    await expect(pixReconciliationService.dismiss(12, { dismissedBy: 'Ana Teste' })).rejects.toBe(error)
   })
 
   it('overrideClassification envia accountCode, reason e overriddenBy na rota /classification', async () => {
