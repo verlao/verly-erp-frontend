@@ -55,6 +55,7 @@ import type { KanbanBoard, KanbanCardDTO, KanbanColumnKey } from '../services/ka
 import leadService from '../services/lead'
 import quoteService from '../services/quote'
 import { useNotificationStore } from '../stores/notification'
+import { friendlyError } from '../lib/errors'
 
 const router = useRouter()
 const notification = useNotificationStore()
@@ -149,7 +150,7 @@ async function onCardAction(card: KanbanCardDTO, column: KanbanColumnKey) {
       router.push({ path: '/leads', query: { leadId: String(card.leadId) } })
     }
   } catch (e: any) {
-    notification.error(e?.response?.data?.message || 'Ação falhou')
+    notification.error(friendlyError(e, 'Ação falhou'))
   }
 }
 
