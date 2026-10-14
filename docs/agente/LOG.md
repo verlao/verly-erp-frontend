@@ -39,7 +39,7 @@
 | B4a — dispensar/desfazer Pix | [service #104](https://github.com/verlao/verly-service/pull/104) | `d2d06fa` | 614 testes |
 | B4b — vínculo do bridge com pedido/cliente | [service #105](https://github.com/verlao/verly-service/pull/105) | `6e990b5` | 622 testes; 33 focados após organização |
 | B8 — adiamento/perdido com motivo | [service #106](https://github.com/verlao/verly-service/pull/106) | `6fcdc1a` | 614 testes |
-| B9 — agenda de instalação | [service #107](https://github.com/verlao/verly-service/pull/107) | `a07c8e6` | 615 testes |
+| B9 — agenda de instalação | [service #107](https://github.com/verlao/verly-service/pull/107) | `e88fa7d` | 615 testes |
 | Documentação — decisões, sequência e contratos | [ERP #67](https://github.com/verlao/verly-erp-frontend/pull/67) | branch `docs/redesign-sequencing-decisions` | revisão e `git diff --check` |
 
 - Suítes acima sem falhas, erros ou testes ignorados; PostgreSQL 16 real com Flyway via Testcontainers.
@@ -47,10 +47,16 @@
   como aprovação do gate nem contornadas com configuração de teste.
 - Resultado combinado de B4a/B4b: 626 testes verdes. Resultado dos quatro cartões juntos: **635 testes,
   99 relatórios, zero falhas/erros/ignorados**, `mvn -B -q test` concluído com exit 0.
-  Snapshot local `7747802`, worktree `wt/orq/PIX-INTEGRATION`, sem publicação dessa branch de validação.
+  Snapshot local `5a43832`, worktree `wt/orq/PIX-INTEGRATION`, sem publicação dessa branch de validação.
   Os quatro PRs continuam separados contra `prod`; B4a/B4b foram organizados para integração sem conflito.
-- Guia e orquestrador revisaram os diffs. B9 tem exceção aprovada ao alvo de ~500 linhas: 526 linhas,
+- Guia e orquestrador revisaram os diffs. B9 tem exceção aprovada ao alvo de ~500 linhas: 528 linhas,
   oito arquivos novos, com controller/service/DTO separados e testes HTTP/FKs no mesmo PR do código.
+- O primeiro CI de #107 detectou diferença de precisão: Java/Linux forneceu nanossegundos, e Postgres
+  arredondou para microssegundos. Corrigido no mesmo PR (`e88fa7d`): flush/clear antes de capturar a data
+  inicial, comparando valores persistidos antes/depois sem mudar código de produção ou afrouxar a asserção.
+  Cinco testes focados e os 635 combinados passaram novamente; nova execução CI
+  [38590305826](https://github.com/verlao/verly-service/actions/runs/38590305826) concluiu com `success`
+  no head `e88fa7dd6c56513b66b324e56520b6dd2e483988`. CI de #104, #105 e #106 também verde.
 - D12–D14 registram os padrões de implementação. Transferência entre contas próprias exige definição
   em U0: o bridge atual de entrada credita receita de vendas (PERGUNTAS nº 14).
 - G1/G2 continuam pendentes. Nenhum PR de UI iniciado. Próximo: revisão/merge pelo Matheus, comprovar o
