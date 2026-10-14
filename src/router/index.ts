@@ -1,6 +1,7 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { postLoginRoute } from '../lib/routes'
 import { isTokenExpired } from '../lib/jwt'
+import { flushAllDeferred, installDeferredFlushListeners } from '../lib/deferredAction'
 import { validateNavigationRoutes } from './navigation'
 import { routes } from './routes'
 
@@ -10,6 +11,12 @@ const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes
 })
+
+// Pending deferred actions (undo toasts) commit before the user leaves the page.
+router.beforeEach(() => {
+  void flushAllDeferred()
+})
+installDeferredFlushListeners()
 
 // Navigation guard for authentication and authorization
 router.beforeEach((to, _from, next) => {
