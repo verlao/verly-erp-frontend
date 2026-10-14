@@ -16,9 +16,20 @@ Cada uma com o padrão seguro já aplicado. Nada aqui bloqueia o trabalho.
    Está certo assim? *Padrão:* replico essa regra, nada novo.
 6. **Sinal padrão (50%), motivos de perda e opções de adiar.** *Padrão:* valores do design, configuráveis.
 7. **Quem faz a visita técnica?** *Padrão:* campo "responsável" opcional, padrão o usuário logado.
-8. **"Não é pagamento" num Pix ainda não lançado:** hoje não existe como marcar. *Padrão:* PR aditivo no backend
-   (migração + endpoint) e botão atrás de flag até você aprovar.
-9. **Ligar o tempo real (`EVENTS_ENABLED`)?** O SSE está desligado por padrão. *Padrão:* o front só tenta com flag
-   ligada; sem ela, atualiza ao abrir a tela.
+8. **"Não é pagamento" num Pix ainda não lançado:** endpoint aditivo de dispensa pendente (B4a), após V2_51
+   comprovadamente no ar. *Padrão:* PR de UI só após endpoint mergeado e comprovadamente no ar (D11).
+9. **Ligar o tempo real (`EVENTS_ENABLED`)?** O SSE está desligado por padrão no backend. *Padrão:* atualiza ao
+   abrir a tela; consumidor SSE só após confirmação de disponibilidade no ambiente, sem flag de build (D11).
 10. **R$ 267,00 do kit da porta 2 folhas:** não deu para confirmar sem acesso de leitura ao backend. *Padrão:* a tela
     de custos mostra o que `/api/accessory-costs` devolver, sem valor fixo.
+11. **Dispensado é um estado novo ou filtro?** *Padrão aplicado:* filtro; a leitura padrão exclui dispensados,
+    e `state=DISMISSED` lista esses comprovantes. Já lançado exige `cancel` do lançamento; dispensa retorna 409.
+12. **Mostrar texto de regra de negócio do backend em 400/409?** *Padrão aplicado:* não; `friendlyError` usa o
+    fallback da tela e nunca lê `message` (D10).
+13. **Cancelar ou apagar instalação da agenda?** *Padrão aplicado:* cancelar e preservar histórico;
+    correção por PUT pode reagendar. Cancelados continuam consultáveis com filtro por status (D14).
+14. **Como registrar "É meu dinheiro (transferência entre minhas contas)"?** O bridge atual de uma entrada
+    cria PAYMENT com crédito em receita de vendas; `customerId`/`orderId` opcionais não mudam essa matriz.
+    *Padrão seguro:* não confirmar transferência própria por esse caminho como receita. Definir o tratamento
+    no redesenho U0 antes de implementar essa opção; dispensa de comprovante não equivale a registrar
+    transferência contábil. Isso não bloqueia B4a/B4b para recebimentos de clientes.
