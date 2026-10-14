@@ -1,4 +1,5 @@
 import axios from 'axios'
+import { forceLogout, shouldLogout } from '@/lib/session'
 
 // Configuração de URL usando variáveis de ambiente
 // Para produção: VITE_API_URL=https://api.verlyvidracaria.com/verly-service
@@ -32,10 +33,11 @@ api.interceptors.response.use(
     return response
   },
   error => {
-    if (error.response?.status === 401 && !error.config.url?.includes('/login')) {
-      localStorage.removeItem('token')
-      localStorage.removeItem('user')
-      window.location.href = '/'
+    if (
+      !error.config?.url?.includes('/login') &&
+      shouldLogout(error.response?.status, localStorage.getItem('token'))
+    ) {
+      forceLogout()
     }
     return Promise.reject(error)
   }
