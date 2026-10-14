@@ -15,6 +15,7 @@ export interface PaginatedResponse<T> {
 export type LeadStatus = 'NEW' | 'CONTACTED' | 'QUALIFIED' | 'CONVERTED' | 'LOST'
 export type LeadPriority = 'HIGH' | 'MEDIUM' | 'LOW'
 export type LeadTier = '$' | '$$' | '$$$'
+export type LeadLostReason = 'PRECO' | 'PRAZO' | 'SEM_RESPOSTA' | 'FECHOU_COM_OUTRO' | 'FORA_DA_AREA'
 
 export interface LeadItemDTO {
   id?: number
@@ -92,6 +93,10 @@ export interface LeadDTO {
 
   // V2_31: cliente afirmou pagamento por texto mas o comprovante ainda não chegou.
   paymentAwaitingReceipt?: boolean
+
+  // V2_52: disposition fields are server-owned and may be null when unset.
+  snoozeUntil?: string | null
+  lostReason?: LeadLostReason | null
 }
 
 export type MeasurementStatus = 'NONE' | 'NEEDED' | 'SCHEDULED' | 'DONE'
@@ -269,6 +274,21 @@ const leadService = {
     const body: Record<string, string> = { status }
     if (date) body.date = date
     const response = await api.patch(`/leads/${id}/measurement`, body)
+    return response.data
+  },
+
+  snooze: async (id: number, snoozeUntil: string): Promise<LeadDTO> => {
+    const response = await api.put(`/leads/${id}/snooze`, { snoozeUntil })
+    return response.data
+  },
+
+  undoSnooze: async (id: number): Promise<LeadDTO> => {
+    const response = await api.delete(`/leads/${id}/snooze`)
+    return response.data
+  },
+
+  markLost: async (id: number, reason: LeadLostReason): Promise<LeadDTO> => {
+    const response = await api.post(`/leads/${id}/lost`, { reason })
     return response.data
   },
 
