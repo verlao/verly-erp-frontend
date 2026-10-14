@@ -180,6 +180,7 @@
 </template>
 
 <script setup lang="ts">
+import { friendlyError } from '../lib/errors'
 import { ref, onMounted, computed, watch } from 'vue'
 import productService from '../services/product'
 import type { ProductDTO } from '../services/product'
@@ -520,7 +521,7 @@ async function handleKitSave(product: ProductDTO, value: number | string) {
     await loadProducts()
   } catch (error: any) {
     console.error('Erro ao salvar kit:', error)
-    const msg = error.response?.data?.message || 'Erro ao salvar o valor do kit. Tente novamente.'
+    const msg = friendlyError(error, 'Erro ao salvar o valor do kit. Tente novamente.')
     notification.error('Erro', msg)
     await loadProducts()
   }
@@ -547,7 +548,7 @@ async function handleLaborSave(product: ProductDTO, value: number | string) {
     await loadProducts()
   } catch (error: any) {
     console.error('Erro ao salvar mão de obra:', error)
-    const errorMessage = error.response?.data?.message || 'Erro ao atualizar mão de obra. Tente novamente.'
+    const errorMessage = friendlyError(error, 'Erro ao atualizar mão de obra. Tente novamente.')
     notification.error('Erro', errorMessage)
     await loadProducts()
   }
@@ -573,7 +574,7 @@ async function handleGainSave(product: ProductDTO, value: number | string) {
     await loadProducts()
   } catch (error: any) {
     console.error('Erro ao salvar ganho:', error)
-    const errorMessage = error.response?.data?.message || 'Erro ao atualizar ganho. Tente novamente.'
+    const errorMessage = friendlyError(error, 'Erro ao atualizar ganho. Tente novamente.')
     notification.error('Erro', errorMessage)
     await loadProducts()
   }

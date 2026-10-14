@@ -179,6 +179,7 @@
 </template>
 
 <script setup lang="ts">
+import { friendlyError } from '../lib/errors'
 import { computed, ref, watch } from 'vue'
 import Dialog from './ui/Dialog.vue'
 import DialogContent from './ui/DialogContent.vue'
@@ -313,7 +314,7 @@ async function save() {
   } catch (err: any) {
     notification.error(
       'Erro',
-      err?.response?.data?.message || 'Falha ao atualizar orçamento'
+      friendlyError(err, 'Falha ao atualizar orçamento')
     )
   } finally {
     saving.value = false

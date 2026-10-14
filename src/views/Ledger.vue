@@ -139,6 +139,7 @@
 </template>
 
 <script setup lang="ts">
+import { friendlyError } from '../lib/errors'
 import { computed, onMounted, ref } from 'vue'
 import { TriangleAlert, DollarSign, Wallet } from 'lucide-vue-next'
 import Button from '../components/ui/Button.vue'
@@ -351,7 +352,7 @@ async function postLedger(ledger: LedgerResponseDTO) {
     notification.success('Sucesso', 'Lançamento postado')
     reloadAll()
   } catch (error: any) {
-    const msg = error.response?.data?.message || 'Não foi possível postar o lançamento'
+    const msg = friendlyError(error, 'Não foi possível postar o lançamento')
     notification.error('Erro', msg)
   } finally {
     actionLoading.value = null
@@ -365,7 +366,7 @@ async function cancelLedger(ledger: LedgerResponseDTO) {
     notification.success('Sucesso', 'Lançamento cancelado')
     reloadAll()
   } catch (error: any) {
-    const msg = error.response?.data?.message || 'Não foi possível cancelar o lançamento'
+    const msg = friendlyError(error, 'Não foi possível cancelar o lançamento')
     notification.error('Erro', msg)
   } finally {
     actionLoading.value = null

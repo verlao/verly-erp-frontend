@@ -210,6 +210,7 @@
 </template>
 
 <script setup lang="ts">
+import { friendlyError } from '../lib/errors'
 import { computed, ref } from 'vue'
 import { ChevronDown, Ruler } from 'lucide-vue-next'
 import Button from './ui/Button.vue'
@@ -269,7 +270,7 @@ async function calculate() {
   } catch (err: any) {
     notification.error(
       'Erro',
-      err?.response?.data?.message || 'Falha ao calcular preço'
+      friendlyError(err, 'Falha ao calcular preço')
     )
   } finally {
     loading.value = false

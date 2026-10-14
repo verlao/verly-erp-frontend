@@ -200,6 +200,7 @@
 </template>
 
 <script setup lang="ts">
+import { friendlyError } from '../lib/errors'
 import { ref, computed, onMounted } from 'vue'
 import Button from '@/components/ui/Button.vue'
 import Card from '@/components/ui/Card.vue'
@@ -254,7 +255,7 @@ const loadUsers = async () => {
     totalElements.value = response.totalElements
   } catch (error: any) {
     console.error('Erro ao carregar usuários:', error)
-    const message = error.response?.data?.message || 'Falha ao carregar usuários'
+    const message = friendlyError(error, 'Falha ao carregar usuários')
     notificationStore.error('Erro', message)
   } finally {
     loading.value = false
@@ -275,7 +276,7 @@ const createUser = async () => {
     loadUsers()
   } catch (error: any) {
     console.error('Erro ao criar usuário:', error)
-    const message = error.response?.data?.message || 'Erro ao criar usuário'
+    const message = friendlyError(error, 'Erro ao criar usuário')
     notificationStore.error('Erro', message)
   } finally {
     saving.value = false
@@ -317,7 +318,7 @@ const deleteUser = async () => {
     userToDelete.value = null
     loadUsers()
   } catch (error: any) {
-    const message = error.response?.data?.message || 'Erro ao deletar usuário'
+    const message = friendlyError(error, 'Erro ao deletar usuário')
     notificationStore.error('Erro', message)
   } finally {
     deleting.value = false
