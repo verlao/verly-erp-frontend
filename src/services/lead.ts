@@ -156,6 +156,31 @@ export interface LeadContactDTO {
   leads: LeadDTO[]
 }
 
+// Filas operacionais (espelha application/enums/LeadQueue.java). Exclusivas; a primeira que casa vence.
+export type LeadQueue =
+  | 'CONFIRM_PURCHASE'
+  | 'QUOTE_REGISTERED'
+  | 'REPLY_NOW'
+  | 'QUOTE_NOW'
+  | 'COMPLETE_MEASURES'
+  | 'REVIEW_DATA'
+
+// Um bucket de fila: população e soma monetária confiável (null quando não há valor confiável).
+// totalValue é em reais (BigDecimal no backend): a UI converte para centavos inteiros na borda (src/lib/money.ts, PR #58).
+export interface LeadQueueBucket {
+  count: number
+  totalValue: number | null
+}
+
+// GET /leads/queues: uma chave por fila, no topo do objeto.
+export type LeadQueuesDTO = Record<LeadQueue, LeadQueueBucket>
+
+export interface LeadQueueParams {
+  page?: number
+  size?: number
+  includePartnerLeads?: boolean
+}
+
 const leadService = {
   getAll: async (params?: PaginationParams) => {
     const queryParams = new URLSearchParams()
@@ -292,7 +317,30 @@ const leadService = {
     if (filters?.search) qs.append('search', filters.search)
     const response = await api.get(`/leads/contacts?${qs.toString()}`)
     return response.data
-  }
+  },
+
+  // Contagem e soma por fila sobre a população ativa inteira (não só a página atual).
+  getQueues: async (includePartnerLeads?: boolean): Promise<LeadQueuesDTO> => {
+    const qs = includePartnerLeads === undefined ? '' : `?includePartnerLeads=${includePartnerLeads}`
+    const response = await api.get(`/leads/queues${qs}`)
+    return response.data
+  },
+
+  // Leads de uma fila, paginado. Ordem: maior espera primeiro, depois valor.
+  getQueue: async (
+    queue: LeadQueue,
+    params?: LeadQueueParams
+  ): Promise<PaginatedResponse<LeadDTO>> => {
+    const query = new URLSearchParams()
+    if (params?.page !== undefined) query.append('page', String(params.page))
+    if (params?.size !== undefined) query.append('size', String(params.size))
+    if (params?.includePartnerLeads !== undefined) {
+      query.append('includePartnerLeads', String(params.includePartnerLeads))
+    }
+    const qs = query.toString()
+    const response = await api.get(`/leads/queues/${queue}${qs ? `?${qs}` : ''}`)
+    return response.data
+  },
 }
 
 export default leadService
