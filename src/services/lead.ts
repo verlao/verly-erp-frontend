@@ -1,4 +1,5 @@
 import api, { apiUrl } from './api'
+import { forceLogout, shouldLogout } from '@/lib/session'
 import type { PaginationParams } from './order'
 
 export interface PaginatedResponse<T> {
@@ -227,6 +228,7 @@ const leadService = {
     })
 
     if (!response.ok) {
+      if (shouldLogout(response.status, token)) forceLogout()
       throw new Error(`Failed to update lead status (${response.status})`)
     }
 
