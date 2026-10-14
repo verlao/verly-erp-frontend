@@ -123,18 +123,18 @@ describe('pixReconciliationService', () => {
       state: 'DISMISSED',
       dismissedAt: '2026-10-14T15:00:00',
       dismissedBy: 'Ana Teste',
-      dismissedReason: 'Transferência entre contas próprias',
+      dismissedReason: 'Não é pagamento',
     }
     vi.mocked(api.post).mockResolvedValue({ data: dismissedRow })
 
     const result = await pixReconciliationService.dismiss(12, {
       dismissedBy: 'Ana Teste',
-      reason: 'Transferência entre contas próprias',
+      reason: 'Não é pagamento',
     })
 
     expect(api.post).toHaveBeenCalledWith('/pix-reconciliation/12/dismiss', {
       dismissedBy: 'Ana Teste',
-      reason: 'Transferência entre contas próprias',
+      reason: 'Não é pagamento',
     })
     expect(result).toEqual(dismissedRow)
   })
