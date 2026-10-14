@@ -423,6 +423,7 @@
 </template>
 
 <script setup lang="ts">
+import { friendlyError } from '../lib/errors'
 import { ref, onMounted, computed } from 'vue'
 import AccordionItem from './ui/AccordionItem.vue'
 import AccordionTrigger from './ui/AccordionTrigger.vue'
@@ -635,7 +636,7 @@ const handlePvcUpdate = async (value: string | number) => {
     await loadPvcCost()
   } catch (error: any) {
     console.error('Erro ao atualizar custo do PVC:', error)
-    showError('Erro', error.response?.data?.message || 'Não foi possível atualizar')
+    showError('Erro', friendlyError(error, 'Não foi possível atualizar'))
     await loadPvcCost()
   }
 }

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { friendlyError } from '../../lib/errors'
 import { ref, watch } from 'vue'
 import Dialog from '../ui/Dialog.vue'
 import DialogContent from '../ui/DialogContent.vue'
@@ -51,7 +52,7 @@ async function submit() {
     emit('update:open', false)
     emit('reversed')
   } catch (error: any) {
-    const msg = error.response?.data?.message || 'Não foi possível estornar o lançamento'
+    const msg = friendlyError(error, 'Não foi possível estornar o lançamento')
     notification.error('Erro', msg)
   } finally {
     reversing.value = false

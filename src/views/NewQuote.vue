@@ -422,6 +422,7 @@
 </template>
 
 <script setup lang="ts">
+import { friendlyError } from '../lib/errors'
 import { computed, nextTick, ref } from 'vue'
 import customerService, { type AddressDTO, type CustomerDTO } from '../services/customer'
 import productService, { type ProductDTO } from '../services/product'
@@ -483,7 +484,7 @@ async function searchByPhone() {
       showCreateForm.value = true
     }
   } catch (err: any) {
-    notification.error('Erro', err?.response?.data?.message || 'Falha ao buscar cliente')
+    notification.error('Erro', friendlyError(err, 'Falha ao buscar cliente'))
   } finally {
     phoneSearchLoading.value = false
   }
@@ -622,7 +623,7 @@ async function submitQuote() {
   } catch (err: any) {
     notification.error(
       'Erro',
-      err?.response?.data?.message || 'Falha ao gerar orçamento'
+      friendlyError(err, 'Falha ao gerar orçamento')
     )
   } finally {
     submitting.value = false
@@ -644,7 +645,7 @@ async function downloadPdf() {
     document.body.removeChild(link)
     URL.revokeObjectURL(url)
   } catch (err: any) {
-    notification.error('Erro', err?.response?.data?.message || 'Falha ao gerar PDF')
+    notification.error('Erro', friendlyError(err, 'Falha ao gerar PDF'))
   } finally {
     pdfLoading.value = false
   }

@@ -37,6 +37,7 @@
 </template>
 
 <script setup lang="ts">
+import { friendlyError } from '../lib/errors'
 import { computed, onMounted, ref } from 'vue'
 import glassCostService, { type GlassCostDTO } from '../services/glass-cost'
 import Card from './ui/Card.vue'
@@ -89,7 +90,7 @@ const handleUpdate = async (
     console.error('Erro ao atualizar custo de vidro:', error)
     showError(
       'Erro',
-      error.response?.data?.message || 'Não foi possível atualizar'
+      friendlyError(error, 'Não foi possível atualizar')
     )
     await loadGlassCosts()
   }
@@ -109,7 +110,7 @@ const handleUpdateNonStandard = async (color: string, value: string | number) =>
     await loadGlassCosts()
   } catch (error: any) {
     console.error('Erro ao atualizar custo não-padrão:', error)
-    showError('Erro', error.response?.data?.message || 'Não foi possível atualizar')
+    showError('Erro', friendlyError(error, 'Não foi possível atualizar'))
     await loadGlassCosts()
   }
 }

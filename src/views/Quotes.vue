@@ -383,6 +383,7 @@
 </template>
 
 <script setup lang="ts">
+import { friendlyError } from '../lib/errors'
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import quoteService, { type QuoteDTO } from '../services/quote'
@@ -580,7 +581,7 @@ async function resendWhatsApp(quote: any) {
     console.error('Erro ao reenviar WhatsApp:', err)
     notification.error(
       'Erro',
-      err?.response?.data?.message || 'Falha ao montar mensagem WhatsApp'
+      friendlyError(err, 'Falha ao montar mensagem WhatsApp')
     )
   }
 }
@@ -600,7 +601,7 @@ async function convertToOrder() {
     router.push('/orders')
   } catch (error: any) {
     console.error('Erro ao converter orçamento:', error)
-    const errorMessage = error.response?.data?.message || 'Não foi possível converter o orçamento'
+    const errorMessage = friendlyError(error, 'Não foi possível converter o orçamento')
     notification.error('Erro ao converter', errorMessage)
   } finally {
     converting.value = false

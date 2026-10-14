@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { friendlyError } from '../../lib/errors'
 import { ref, watch } from 'vue'
 import Dialog from '../ui/Dialog.vue'
 import DialogContent from '../ui/DialogContent.vue'
@@ -70,7 +71,7 @@ async function submit() {
     emit('update:open', false)
     emit('saved')
   } catch (error: any) {
-    const msg = error.response?.data?.message || 'Não foi possível registrar a despesa'
+    const msg = friendlyError(error, 'Não foi possível registrar a despesa')
     notification.error('Erro', msg)
   } finally {
     saving.value = false

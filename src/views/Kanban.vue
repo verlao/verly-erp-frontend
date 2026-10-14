@@ -129,7 +129,7 @@ async function onCardMoved(card: KanbanCardDTO, to: KanbanColumnKey) {
     }
     notification.success('Card movido')
   } catch (e: any) {
-    const msg = e?.response?.data?.message || 'Não foi possível mover — tente de novo'
+    const msg = friendlyError(e, 'Não foi possível mover — tente de novo')
     notification.error(msg)
     await refreshBoard()
   }
