@@ -205,16 +205,6 @@ const leadService = {
     const response = await api.post('/leads', lead)
     return response.data
   },
-  
-  update: async (id: number, lead: LeadDTO) => {
-    const response = await api.put(`/leads/${id}`, lead)
-    return response.data
-  },
-  
-  delete: async (id: number) => {
-    const response = await api.delete(`/leads/${id}`)
-    return response.data
-  },
 
   // Novos métodos para inbox-style
   updateStatus: async (id: number, status: LeadStatus) => {

@@ -55,28 +55,13 @@ const glassCostService = {
     return response.data
   },
   
-  getById: async (id: number): Promise<GlassCostDTO> => {
-    const response = await api.get(`/api/glass-cost/${id}`)
-    return response.data
-  },
-  
   getByColor: async (color: string): Promise<GlassCostDTO> => {
     const response = await api.get(`/api/glass-cost/color/${color}`)
     return response.data
   },
   
-  getPriceByColor: async (color: string): Promise<number> => {
-    const response = await api.get(`/api/glass-cost/price/${color}`)
-    return response.data
-  },
-  
   create: async (glassCost: Omit<GlassCostDTO, 'id'>): Promise<GlassCostDTO> => {
     const response = await api.post('/api/glass-cost', glassCost)
-    return response.data
-  },
-  
-  update: async (id: number, glassCost: Partial<GlassCostDTO>): Promise<GlassCostDTO> => {
-    const response = await api.put(`/api/glass-cost/${id}`, glassCost)
     return response.data
   },
 
@@ -128,10 +113,6 @@ const glassCostService = {
     await api.put('/api/glass-cost/pvc', {
       costPerSquareMeter: Number(costPerSquareMeter.toFixed(2)),
     })
-  },
-
-  delete: async (id: number): Promise<void> => {
-    await api.delete(`/api/glass-cost/${id}`)
   },
 }
 
