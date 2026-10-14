@@ -1,18 +1,25 @@
+import { formatBRL, toCents } from '../lib/money'
+
 /**
  * Composable for currency formatting and parsing (BRL)
  */
 export function useCurrency() {
   /**
    * Format a number value to BRL currency string
+   * Delegates to the integer-cents helpers (HALF_UP), so it does not inherit
+   * float noise from toFixed.
    * @param value - The numeric value to format
-   * @returns Formatted currency string (e.g., "R$ 1.234,56")
+   * @returns Formatted currency string (e.g., "R$ 1.234,56", "R$ -1.234,56")
    */
   const formatCurrency = (value: number | null | undefined): string => {
-    if (value === null || value === undefined || isNaN(value)) {
+    if (value === null || value === undefined || !Number.isFinite(value)) {
       return 'R$ 0,00'
     }
 
-    return `R$ ${value.toFixed(2).replace('.', ',').replace(/\B(?=(\d{3})+(?!\d))/g, '.')}`
+    const cents = toCents(value)
+    // Intl separates "R$" and the amount with U+00A0; keep the plain space the UI always used.
+    const body = formatBRL(Math.abs(cents)).replace(/ /g, ' ')
+    return cents < 0 ? `R$ -${body.replace('R$ ', '')}` : body
   }
 
   /**
