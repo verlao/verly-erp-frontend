@@ -2,6 +2,61 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import leadService from './lead'
 import api, { apiUrl } from './api'
 
+describe('leadService — disposition', () => {
+  beforeEach(() => {
+    vi.restoreAllMocks()
+  })
+
+  it('snoozes with the exact local datetime string and returns nullable disposition fields', async () => {
+    const lead = { id: 23, status: 'CONTACTED', snoozeUntil: '2026-10-20T09:30:00', lostReason: null }
+    const putSpy = vi.spyOn(api, 'put').mockResolvedValue({ data: lead })
+    const localDateTime = '2026-10-20T09:30:00'
+
+    const result = await leadService.snooze(23, localDateTime)
+
+    expect(putSpy).toHaveBeenCalledWith('/leads/23/snooze', { snoozeUntil: localDateTime })
+    expect(result).toEqual(lead)
+    expect(result.snoozeUntil).toBe(localDateTime)
+    expect(result.lostReason).toBeNull()
+  })
+
+  it('undoes snooze with DELETE and returns the server lead', async () => {
+    const lead = { id: 23, snoozeUntil: null, lostReason: null }
+    const deleteSpy = vi.spyOn(api, 'delete').mockResolvedValue({ data: lead })
+
+    const result = await leadService.undoSnooze(23)
+
+    expect(deleteSpy).toHaveBeenCalledWith('/leads/23/snooze')
+    expect(result).toEqual(lead)
+  })
+
+  it('forwards the selected lost reason and returns the server lost lead fields', async () => {
+    const lead = {
+      id: 23,
+      status: 'LOST',
+      lostReason: 'FECHOU_COM_OUTRO',
+      snoozeUntil: null,
+      deletedAt: '2026-10-14T15:00:00'
+    }
+    const postSpy = vi.spyOn(api, 'post').mockResolvedValue({ data: lead })
+
+    const result = await leadService.markLost(23, 'FECHOU_COM_OUTRO')
+
+    expect(postSpy).toHaveBeenCalledWith('/leads/23/lost', { reason: 'FECHOU_COM_OUTRO' })
+    expect(result).toEqual(lead)
+    expect(result.status).toBe('LOST')
+    expect(result.lostReason).toBe('FECHOU_COM_OUTRO')
+    expect(result.snoozeUntil).toBeNull()
+  })
+
+  it.each([400, 404, 409])('propagates HTTP %s errors to the caller', async (status) => {
+    const error = Object.assign(new Error(`HTTP ${status}`), { response: { status } })
+    vi.spyOn(api, 'put').mockRejectedValue(error)
+
+    await expect(leadService.snooze(23, '2026-10-20T09:30:00')).rejects.toBe(error)
+  })
+})
+
 describe('leadService.updateStatusKeepalive', () => {
   beforeEach(() => {
     vi.restoreAllMocks()
