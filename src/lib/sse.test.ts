@@ -125,12 +125,23 @@ describe('connectSSE', () => {
     c.close()
   })
 
-  it('treats a non-2xx response as a failure and retries', async () => {
-    fetchMock.mockResolvedValue({ ok: false, status: 401, body: null })
+  it('retries on a 500 response with backoff', async () => {
+    fetchMock.mockResolvedValue({ ok: false, status: 500, body: null })
     const c = connectSSE('/s', base())
     await flush()
     await vi.advanceTimersByTimeAsync(1000)
     expect(fetchMock).toHaveBeenCalledTimes(2)
+    c.close()
+  })
+
+  it.each([401, 403])('stops without retrying on %i and reports unauthorized', async (status) => {
+    fetchMock.mockResolvedValue({ ok: false, status, body: null })
+    const statuses: SSEStatus[] = []
+    const c = connectSSE('/s', base({ onStatus: (x) => statuses.push(x) }))
+    await flush()
+    await vi.advanceTimersByTimeAsync(60000)
+    expect(fetchMock).toHaveBeenCalledTimes(1)
+    expect(statuses).toEqual(['connecting', 'unauthorized'])
     c.close()
   })
 

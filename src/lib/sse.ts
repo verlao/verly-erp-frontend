@@ -3,7 +3,7 @@
 // Backend: GET /dashboard/stream (events lead.created, pix.recorded, pix.posted,
 // customer.created; a ':' heartbeat comment every 25 s).
 
-export type SSEStatus = 'connecting' | 'open' | 'reconnecting' | 'closed'
+export type SSEStatus = 'connecting' | 'open' | 'reconnecting' | 'closed' | 'unauthorized'
 
 export interface SSEOptions {
   getToken: () => string | null | undefined | Promise<string | null | undefined>
@@ -115,6 +115,13 @@ export function connectSSE(url: string, options: SSEOptions): SSEConnection {
       const headers: Record<string, string> = { Accept: 'text/event-stream' }
       if (token) headers.Authorization = `Bearer ${token}`
       const res = await fetch(url, { headers, signal: ctrl.signal, cache: 'no-store' })
+      if (res.status === 401 || res.status === 403) {
+        // Expired/invalid credentials: retrying only hammers the server. Stop and
+        // report; the logout/refresh decision belongs to the auth interceptor.
+        closed = true
+        setStatus('unauthorized')
+        return
+      }
       if (!res.ok || !res.body) throw new Error(`SSE HTTP ${res.status}`)
       setStatus('open')
       armWatchdog()
