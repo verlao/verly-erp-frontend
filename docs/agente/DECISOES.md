@@ -54,3 +54,23 @@ trabalho de erro genérico não deve ser reproposto. `friendlyError` (`src/lib/e
 novo só abre depois do endpoint **mergeado e comprovadamente no ar**. Migração também deve estar no ar
 antes do PR do consumidor; merge e pipeline em andamento não provam implantação · reabrir apenas por
 nova decisão do Matheus.
+
+**D12** · 14/10/2026 · Destino opcional do bridge Pix (B4b) · (a) sobrescrever vínculo de lançamento
+reutilizado, (b) preencher apenas destino ausente em PENDING · **(b)** · evita atribuir a um pedido um
+Pix já confirmado sem o correspondente abatimento. Pedido/cliente efetivos devem corresponder quando o
+pedido existe; conflito retorna 409. Não inferir cliente novo nem mudar o caminho do bot. IDs inexistentes
+continuam aceitos como em payment/expense (#102), sem abatimento quando o pedido não existe; a UI deve
+selecionar IDs válidos · alterar apenas o novo contrato em PR posterior, preservando os vínculos existentes.
+
+**D13** · 14/10/2026 · Adiamento e perda (B8) · (a) esconder de todas as listas, (b) suspender só as filas
+operacionais · **(b)** · preserva os contadores/listagens existentes e permite reaparecer quando o prazo
+vence, no fuso de São Paulo, sem job. Perda mantém LOST/deletedAt do contrato existente, limpa adiamento
+e aceita os motivos da V2_52. Campos no DTO são só de resposta para a ingestão não apagar decisão humana ·
+reverter o novo endpoint e o filtro das filas, sem apagar as colunas.
+
+**D14** · 14/10/2026 · Remover instalação da agenda (B9) · (a) apagar registro, (b) cancelar mantendo
+histórico · **(b), padrão reversível** · DELETE marca CANCELLED; PUT pode corrigir ou voltar a SCHEDULED.
+Status ausente no PUT preserva o atual; campos opcionais nulos são limpos. Datas são locais de São Paulo,
+inclusive passado para corrigir histórico. Pedido precisa existir e corresponder ao cliente convertido do
+lead quando esse vínculo é conhecido; visita técnica continua em measurement_status (D5) · mudar o novo
+contrato após decisão do dono, sem remoção de registros como efeito implícito.

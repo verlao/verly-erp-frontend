@@ -26,3 +26,10 @@ Cada uma com o padrão seguro já aplicado. Nada aqui bloqueia o trabalho.
     e `state=DISMISSED` lista esses comprovantes. Já lançado exige `cancel` do lançamento; dispensa retorna 409.
 12. **Mostrar texto de regra de negócio do backend em 400/409?** *Padrão aplicado:* não; `friendlyError` usa o
     fallback da tela e nunca lê `message` (D10).
+13. **Cancelar ou apagar instalação da agenda?** *Padrão aplicado:* cancelar e preservar histórico;
+    correção por PUT pode reagendar. Cancelados continuam consultáveis com filtro por status (D14).
+14. **Como registrar "É meu dinheiro (transferência entre minhas contas)"?** O bridge atual de uma entrada
+    cria PAYMENT com crédito em receita de vendas; `customerId`/`orderId` opcionais não mudam essa matriz.
+    *Padrão seguro:* não confirmar transferência própria por esse caminho como receita. Definir o tratamento
+    no redesenho U0 antes de implementar essa opção; dispensa de comprovante não equivale a registrar
+    transferência contábil. Isso não bloqueia B4a/B4b para recebimentos de clientes.

@@ -46,7 +46,7 @@ npm run dev           # http://localhost:5173, API em VITE_API_URL ou localhost:
 | camadas | `application/{controller,service,repository,entity,dto,enums,exception,security,events}` |
 | banco | Postgres + Flyway (`src/main/resources/db/migration`, último `V2_50__ledger_confirmed_at.sql`) |
 | auth | JWT HMAC512 próprio (`security/filter/JWTValidationFilter.java`), `POST /login-v2` |
-| format | Spotless + google-java-format 1.17 AOSP, **aplicado automaticamente** na fase `validate` |
+| format | Spotless + google-java-format 1.17 AOSP; check em `validate`, apply em `process-sources` (formatar explicitamente antes do gate) |
 | cobertura | JaCoCo |
 | testes | JUnit 5 / Spring Boot Test; `mvn test` roda com H2/Testcontainers conforme o teste |
 | deploy | `CI/CD Pipeline`, build da imagem no runner self-hosted `orangepi-backend` (não mexer) |
@@ -55,7 +55,7 @@ Comandos:
 
 ```bash
 mvn -B test           # 597 testes na linha de base
-mvn -B spotless:apply # formatação (também roda sozinho no validate)
+mvn -B spotless:apply # formatação explícita antes do gate quando houver mudanças
 ```
 
 ## 2. Padrões encontrados no ERP
@@ -145,6 +145,10 @@ Caminhos do backend relativos a `src/main/java/com/verly/verlyservice/applicatio
 | ERP | `vitest run` | **25 arquivos, 167 testes, todos passando** |
 | service | `mvn -B test` | **597 testes, 0 falhas, 0 erros** (os `ERROR` no log são de testes negativos) |
 
+Nota verificada na retomada de 14/10: `spotless:check` está em `validate`, mas `spotless:apply` em
+`process-sources`, que ocorre depois. Formatar explicitamente antes do gate evita falhar no check antes
+do apply automático. Nenhuma configuração de build foi alterada.
+
 ## 5. Plano das fases, ajustado ao código
 
 Cada item é um PR contra `prod`. Nada é mergeado nem deployado pelo agente. Atualizado em 14/10 conforme
@@ -194,3 +198,18 @@ G1 (direção visual) e G2 (fluxo redesenhado) seguem pendentes antes de impleme
   Sem Framework7, sem `apps/mobile/` e sem origem nova no CORS.
 - V2_52 (#100) mergeada: B8 (adiar/perdido com motivo) e B9 (instalação) dependem da migração comprovadamente
   no ar; merge isolado não libera consumidores.
+
+### Contratos novos em revisão, ainda não implantados
+
+- B8: `PUT /leads/{id}/snooze` com `{snoozeUntil}` futuro em horário local de São Paulo;
+  `DELETE /leads/{id}/snooze` desfaz. Só as seis filas operacionais excluem adiados até o vencimento.
+  `POST /leads/{id}/lost` com `{reason}` usa os motivos da V2_52, mantém LOST/deletedAt e limpa adiamento.
+  Respostas de lead ganham `snoozeUntil` e `lostReason` opcionais, sem aceitar esses campos pela ingestão.
+- B9: `GET/POST /leads/{leadId}/installations`, `GET/PUT/DELETE /leads/{leadId}/installations/{id}`;
+  `GET /lead-installations` lista a agenda geral. Listagens aceitam `start`, `end` inclusivos e `status`.
+  Corpo: `scheduledAt` obrigatório; `orderId`, `address`, `responsible` e `status` opcionais. Estados:
+  SCHEDULED, DONE, CANCELLED. DELETE cancela sem apagar; PUT pode reagendar. Visita técnica permanece em
+  `measurement_status` (D5).
+- Os contratos acima só destravam UI após merge **e** comprovação da implantação. G1/G2 também continuam
+  necessários. A opção "É meu dinheiro" exige esclarecer a matriz de transferência antes de usar bridge
+  de entrada, que atualmente credita receita de vendas (PERGUNTAS nº 14).

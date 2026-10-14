@@ -31,3 +31,28 @@
   modelos Claude do roteiro não estão expostos aqui. O orquestrador também revisa os diffs integralmente.
 - G1 (direção visual) e G2 (fluxo Financeiro redesenhado) ainda não aprovados; implementação de UI aguarda.
 - Esta alteração contém só documentação; nenhum código de produção, teste ou dado real incluído.
+
+### Entrega da retomada
+
+| Cartão | PR contra prod | Head revisado | Suíte individual |
+|---|---|---|---|
+| B4a — dispensar/desfazer Pix | [service #104](https://github.com/verlao/verly-service/pull/104) | `d2d06fa` | 614 testes |
+| B4b — vínculo do bridge com pedido/cliente | [service #105](https://github.com/verlao/verly-service/pull/105) | `6e990b5` | 622 testes; 33 focados após organização |
+| B8 — adiamento/perdido com motivo | [service #106](https://github.com/verlao/verly-service/pull/106) | `6fcdc1a` | 614 testes |
+| B9 — agenda de instalação | [service #107](https://github.com/verlao/verly-service/pull/107) | `a07c8e6` | 615 testes |
+| Documentação — decisões, sequência e contratos | [ERP #67](https://github.com/verlao/verly-erp-frontend/pull/67) | branch `docs/redesign-sequencing-decisions` | revisão e `git diff --check` |
+
+- Suítes acima sem falhas, erros ou testes ignorados; PostgreSQL 16 real com Flyway via Testcontainers.
+  O Docker exigiu execução fora do sandbox; as falhas iniciais de acesso ao socket não foram tratadas
+  como aprovação do gate nem contornadas com configuração de teste.
+- Resultado combinado de B4a/B4b: 626 testes verdes. Resultado dos quatro cartões juntos: **635 testes,
+  99 relatórios, zero falhas/erros/ignorados**, `mvn -B -q test` concluído com exit 0.
+  Snapshot local `7747802`, worktree `wt/orq/PIX-INTEGRATION`, sem publicação dessa branch de validação.
+  Os quatro PRs continuam separados contra `prod`; B4a/B4b foram organizados para integração sem conflito.
+- Guia e orquestrador revisaram os diffs. B9 tem exceção aprovada ao alvo de ~500 linhas: 526 linhas,
+  oito arquivos novos, com controller/service/DTO separados e testes HTTP/FKs no mesmo PR do código.
+- D12–D14 registram os padrões de implementação. Transferência entre contas próprias exige definição
+  em U0: o bridge atual de entrada credita receita de vendas (PERGUNTAS nº 14).
+- G1/G2 continuam pendentes. Nenhum PR de UI iniciado. Próximo: revisão/merge pelo Matheus, comprovar o
+  commit realmente servindo antes de consumidores; G1 → U0 → G2, F10 e depois U1/F12/U2 conforme o handoff.
+- Nenhum merge, deploy ou escrita em produção; checkouts principais e mudança staged do Matheus preservados.
