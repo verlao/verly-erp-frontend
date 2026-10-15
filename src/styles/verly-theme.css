@@ -38,7 +38,7 @@
   font-display: swap;
 }
 
-@theme {
+@theme static {
   --color-verly-ink: #141a1f;
   --color-verly-glass: #2e7d7a;
   --color-verly-yellow: #f2b705;
@@ -57,4 +57,13 @@
   background-color: var(--color-verly-background);
   font-family: var(--font-verly-body);
   font-size: 17px;
+}
+
+.verly-surface h1,
+.verly-surface h2,
+.verly-surface h3,
+.verly-surface h4,
+.verly-surface h5,
+.verly-surface h6 {
+  font-family: var(--font-verly-display);
 }

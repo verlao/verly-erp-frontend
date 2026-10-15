@@ -26,6 +26,6 @@ const emit = defineEmits<{ 'update:selected': [selected: boolean] }>()
 .verly-choice-chip--selected { border-color: var(--color-verly-glass); color: #174b49; background: #e4f1ef; }
 .verly-choice-chip__marker { display: grid; width: 18px; height: 18px; place-items: center; border: 1.5px solid currentColor; border-radius: 50%; }
 .verly-choice-chip__marker svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
-.verly-choice-chip:focus-visible { outline: 3px solid var(--color-verly-yellow); outline-offset: 2px; }
+.verly-choice-chip:focus-visible { outline: 3px solid var(--color-verly-glass); outline-offset: 2px; }
 .verly-choice-chip:disabled { color: var(--color-verly-muted); background: #e4e9e7; cursor: not-allowed; }
 </style>

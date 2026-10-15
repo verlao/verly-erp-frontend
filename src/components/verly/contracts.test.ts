@@ -20,6 +20,10 @@ describe('Verly design components', () => {
     expect(wrapper.get(`#${describedBy?.find((id) => id !== 'contexto-anterior')}`).text()).toBe('Aguarde a confirmação')
     await button.trigger('click')
     expect(onClick).not.toHaveBeenCalled()
+
+    await wrapper.setProps({ disabledReason: undefined })
+    expect(button.attributes('disabled')).toBeUndefined()
+    expect(button.attributes('aria-describedby')).toBe('contexto-anterior')
   })
 
   it('announces the selected state and emits the next value when a chip is activated', async () => {
@@ -37,8 +41,8 @@ describe('Verly design components', () => {
 
   it('provides complete dimension text and handles invalid measurements accessibly', () => {
     const measured = mount(PieceDrawing, { props: { widthCm: 120.5, heightCm: 80, label: 'Lateral' } })
-    expect(measured.get('svg').attributes('aria-label')).toBe('Lateral: 120.5 × 80 cm')
-    expect(measured.get('figcaption').text()).toBe('Lateral: 120.5 × 80 cm')
+    expect(measured.get('svg').attributes('aria-label')).toBe('Lateral: 120,5 × 80 cm')
+    expect(measured.get('figcaption').text()).toBe('Lateral: 120,5 × 80 cm')
 
     const invalid = mount(PieceDrawing, { props: { widthCm: Number.NaN, heightCm: 80 } })
     expect(invalid.get('figcaption').text()).toBe('Peça de vidro: Medidas indisponíveis')
