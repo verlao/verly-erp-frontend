@@ -1,10 +1,10 @@
 <template>
   <nav class="font-verly-body fixed bottom-0 left-0 right-0 z-40 grid grid-cols-5 border-t border-[#DDE4E1] bg-[#F8FAF9]/95 px-1 pt-1 pb-[env(safe-area-inset-bottom)] shadow-[0_-3px_16px_rgba(20,26,31,.05)] backdrop-blur" style="height: calc(76px + env(safe-area-inset-bottom))" aria-label="Navegação inferior">
     <router-link v-for="item in bottomItems" :key="String(item.name)" :to="{ name: item.name }" custom v-slot="{ navigate, isActive }">
-      <button :class="['relative mx-auto flex min-h-11 w-full max-w-[88px] flex-col items-center justify-center gap-0.5 rounded-xl px-1 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2E7D7A]', isActive ? 'bg-[#E4F1EF] text-[#1C625F]' : 'text-[#67736E] hover:bg-[#EDF3F1] hover:text-[#26312D]']" :aria-label="item.accessibleLabel ?? item.label" :aria-current="isActive ? 'page' : undefined" @click="navigate">
-        <span :class="isActive ? 'text-[#1C625F]' : ''"><NavigationIcon :icon="item.icon" :size="21" /></span>
-        <span :class="['max-w-full truncate text-[13px] leading-4', isActive ? 'font-semibold' : 'font-medium']">{{ item.label }}</span>
-        <span v-if="isActive" class="absolute bottom-0.5 h-1 w-1 rounded-full bg-[#2E7D7A]" aria-hidden="true" />
+      <button :class="['relative mx-auto flex min-h-11 w-full max-w-[88px] flex-col items-center justify-center gap-0.5 rounded-xl px-1 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2E7D7A]', current(item.name, isActive) ? 'bg-[#E4F1EF] text-[#1C625F]' : 'text-[#67736E] hover:bg-[#EDF3F1] hover:text-[#26312D]']" :aria-label="item.accessibleLabel ?? item.label" :aria-current="current(item.name, isActive) ? 'page' : undefined" @click="navigate">
+        <span :class="current(item.name, isActive) ? 'text-[#1C625F]' : ''"><NavigationIcon :icon="item.icon" :size="21" /></span>
+        <span :class="['max-w-full truncate text-[13px] leading-4', current(item.name, isActive) ? 'font-semibold' : 'font-medium']">{{ item.label }}</span>
+        <span v-if="current(item.name, isActive)" class="absolute bottom-0.5 h-1 w-1 rounded-full bg-[#2E7D7A]" aria-hidden="true" />
       </button>
     </router-link>
     <button class="mx-auto flex min-h-11 w-full max-w-[88px] flex-col items-center justify-center gap-0.5 rounded-xl text-[#67736E] transition hover:bg-[#EDF3F1] hover:text-[#26312D] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2E7D7A]" aria-label="Mais" @click="emit('openMore')">
@@ -18,6 +18,9 @@
 import { navigationItemsFor } from '../../router/navigation'
 import { routes } from '../../router/routes'
 import NavigationIcon from './NavigationIcon.vue'
+import { useRoute } from 'vue-router'
+const route = useRoute()
+const current = (name: unknown, active: boolean) => active || (route.name === 'LeadQuote' && name === 'Leads')
 const emit = defineEmits<{ openMore: [] }>()
 const bottomItems = navigationItemsFor(routes, 'bottom')
 </script>

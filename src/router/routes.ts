@@ -111,7 +111,7 @@ export const routes: RouteRecordRaw[] = [
         meta: {
           nav: {
             label: 'Leads',
-            icon: { sidebar: 'people', bottom: 'inbox' },
+            icon: 'inbox',
             placements: { sidebar: 1, bottom: 2 },
           },
         },

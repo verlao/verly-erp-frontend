@@ -1,0 +1,62 @@
+Verly · revisão heurística do redesenho integrado · 15/10/2026
+
+Escopo: prévia Vue com navbar real e todas as abas do ERP. Inspeção do código e navegação em Chromium nas larguras393/768/1440. Comparação com o Financeiro/navbar mostrados anteriormente e com os primeiros desenhos dos executores. Dados de exemplo. Não é teste com o dono nem certificação de acessibilidade; Safari/iPhone real ainda não avaliado.
+
+Escala: 1 detalhe, 2 dificuldade relevante, 3 risco de erro no trabalho, 4 impede a tarefa.
+
+PRIORIDADES ENCONTRADAS E TRATADAS NA PRÉVIA
+
+3 · Prevenção de erros / visibilidade do estado
+Um cartão em Pedido podia avançar manualmente para Pago. Isso confunde andamento comercial com dinheiro recebido. A ação agora abre Pedidos; recebimento continua no Financeiro, com pessoa conferindo o destino.
+Agendar instalação também podia marcar a produção como concluída. Agora guarda a data sem mudar a etapa e permite alterar o agendamento.
+
+3 · Consistência / reconhecimento
+A mesma Ana aparecia com medidas, telefone e valores diferentes entre telas. Os exemplos de cliente1/pedido1048 e cliente2/pedido1052 foram alinhados. Pagador, cliente comercial e remetente da conversa continuam separados.
+
+2 · Consistência e padrões / ícones
+Leads e Clientes compartilhavam o desenho de pessoas no desktop, embora Leads fosse uma caixa de entrada no celular. Orçamentos tinha ícone preenchido e os demais eram de contorno. Agora o repertório Lucide usa o mesmo traço e significado em todas as superfícies:
+- Leads: caixa de entrada (Inbox) · conversas que precisam de ação.
+- Financeiro: carteira (WalletCards) · movimentações.
+- Funil: colunas (Columns3) · etapas comerciais.
+- Clientes: pessoas (UsersRound) · cadastro de clientes.
+- Parceiros: aperto de mãos (Handshake) · fornecedores e prestadores.
+- Produtos: painel de vidro/janela (PanelsTopLeft) · catálogo de peças.
+- Orçamentos: documento (FileText) · propostas.
+- Pedidos: lista de execução (ClipboardList) · trabalho contratado.
+- Usuários: escudo (ShieldCheck) · controle dos acessos.
+Ícones acompanham texto; recolhimento mantém rótulo acessível e tooltip. Fechar, expandir, conta e Mais têm nomes acessíveis. Material de vidro usa retângulo/painel, evitando o copo de água. Pedido pendente não usa embalagem com check de concluído. Calendário indica data; chevron indica abrir evidências; referência e movimento desconhecido têm símbolos distintos.
+
+2 · Reconhecimento / leitura
+No Financeiro móvel, a disputa entre nome, data, valor e status cortava o nome do cliente e a explicação do Pix. Os cards agora quebram linhas e separam as informações financeiras. Cores reforçam o rótulo, sem substituí-lo: âmbar pendente, vidro seleção, verde recebido. Zero permanece neutro.
+
+2 · Recuperação de erro
+Erro de nome de acesso repetido ficava atrás do diálogo de usuário e usava aviso verde. Agora aparece dentro do formulário, com mensagem específica. Custos incompletos ou inválidos não quebram a tela de produto: bloqueiam o salvamento e explicam o que corrigir.
+
+2 · Controle e liberdade
+Adiar e encerrar conversa têm retorno e Desfazer; o tempo de leitura foi ampliado. Cancelar, voltar e fechar permanecem disponíveis. Transformar orçamento em pedido exige confirmação e não duplica o pedido. Orçamento salvo aparece na lista e sua conversão preserva quantidade e saldo integral ainda não recebido.
+
+1 · Visibilidade / filtros
+Todos e Para conferir faziam a mesma filtragem. O último virou Sem sugestão, com conjunto diferente. Seleção tem estado visual e aria-pressed. Busca vazia ou sem resultado informa o que aconteceu e permite limpar filtros.
+
+MELHORIAS PARA VALIDAR COM MATHEUS / DONO
+
+2 · Correspondência com a linguagem do trabalho (heurística2)
+“Leads” é termo técnico. Recomendo testar “Atendimentos” no desktop e “Conversas” na barra móvel, explicando que representa a fila de oportunidades. Mantive o nome atual nesta prévia para não decidir o vocabulário sem a avaliação do dono.
+“Novo” sozinho na barra inferior não diz o que será criado. Recomendo “Orçar” ou outro rótulo curto compreendido pelo dono; o nome acessível já é Novo orçamento.
+
+2 · Eficiência / reconhecimento (heurísticas6 e7)
+Validar na rotina quais quatro destinos merecem a barra inferior. Hoje conserva Financeiro, Leads, Novo orçamento e Orçamentos; Pedidos está em Mais. Se acompanhar instalação for mais frequente que criar propostas, essa prioridade merece mudar com evidência de uso.
+
+2 · Ajuda e autonomia (heurísticas3 e10)
+Conferir se a pessoa consegue distinguir “quem enviou a conversa”, “quem fez o Pix” e “de qual cliente é o pedido” sem explicação de Matheus. Fazer três tarefas: marido paga pedido da cliente; funcionário encaminha despesa; comprovante de terceiro serve só de referência.
+
+1 · Simplicidade / densidade (heurística8)
+Validar se os resumos das abas ajudam a escolher o próximo trabalho ou só ocupam tela. O funil pode precisar destacar apenas as etapas ativas no dia. A prévia mantém contexto, filtros e um CTA principal por etapa; o teste com o dono decide o que remover.
+
+VALIDAÇÃO FEITA
+- 11 destinos/fluxos inspecionados nas três larguras: sem tela vazia, overflow horizontal da página ou erro JavaScript; sem chamadas de negócio externas.
+- Textos visíveis de conteúdo >=15px e botões das páginas >=44px nas capturas. Barra inferior usa13px, exceção já aprovada no contrato de design; não foi tratada como erro de15px.
+- Criar proposta, localizar, converter, abrir pedido com saldo integral e agendar sem concluir etapa; cadastrar/buscar cliente, bloquear custo inválido, adiar/desfazer lead e cadastrar usuário percorridos no navegador em393/1440.
+- Evidências: inspection.json, flows-inspection.json, final-review.json e capturas nesta pasta.
+- Passagem de orçamento do lead com várias peças até o pedido preserva todas as linhas; pagamento não pode ser marcado pelo funil; erro de usuário duplicado fica dentro do diálogo.
+- Essas verificações não substituem teste de contraste de cada estado, leitor de tela ou uso em iPhone/iPad real.

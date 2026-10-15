@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, nextTick, onBeforeUnmount, ref, watch } from 'vue'
-import { ArrowDownLeft, ArrowUpRight, ArrowLeftRight, HelpCircle, X, Search, ChevronDown, Check, ReceiptText, ExternalLink } from 'lucide-vue-next'
+import { ArrowDownLeft, ArrowUpRight, ArrowLeftRight, HelpCircle, BookOpen, X, Search, CalendarDays, ChevronDown, Check, ReceiptText, ExternalLink } from 'lucide-vue-next'
 import { formatBRL } from '@/lib/money'
 import ActionButton from '@/components/verly/ActionButton.vue'
 import ChoiceChip from '@/components/verly/ChoiceChip.vue'
@@ -15,14 +15,14 @@ const { items, selected, selection, reviewing, query, editing, evidenceOpen, not
 const dialog = ref<HTMLDialogElement | null>(null)
 const previousFocus = ref<HTMLElement | null>(null)
 const filter = ref('Todos')
-const filters = ['Todos', 'Entradas', 'Saídas', 'Para conferir']
+const filters = ['Todos', 'Entradas', 'Saídas', 'Sem sugestão']
 const purposeOptions = computed(() => selection.value.movement === 'in' ? ['Sinal', 'Pedido inteiro', 'Avulso'] : ['Combustível', 'Serviço', 'Materiais'])
 const isOpen = computed(() => Boolean(selected.value))
 const visibleItems = computed(() => items.value.filter(item => {
   if (pendingIds.value.has(item.id)) return false
   if (filter.value === 'Entradas') return item.movement === 'in'
   if (filter.value === 'Saídas') return item.movement === 'out'
-  if (filter.value === 'Para conferir') return !completed.value.some(done => done.id === item.id)
+  if (filter.value === 'Sem sugestão') return item.movement === 'unknown'
   return true
 }))
 const monthCount = computed(() => visibleItems.value.filter(item => item.date.includes('2026-10')).length)
@@ -55,7 +55,7 @@ function handleNativeClose() { if (selected.value) finance.close(); nextTick(() 
 function accept() { finance.acceptSuggestion() }
 function selectMovement(value: 'in' | 'out' | 'own' | 'reference') { finance.setMovement(value) }
 function formatDate(value: string) { const [year, month, day] = value.split('-'); return `${Number(day)} ${['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'][Number(month) - 1]} ${year}` }
-function rowIcon(movement: string) { return movement === 'in' ? ArrowDownLeft : movement === 'out' ? ArrowUpRight : movement === 'own' ? ArrowLeftRight : HelpCircle }
+function rowIcon(movement: string) { return movement === 'in' ? ArrowDownLeft : movement === 'out' ? ArrowUpRight : movement === 'own' ? ArrowLeftRight : movement === 'reference' ? BookOpen : HelpCircle }
 function subtitleFor(item: (typeof items.value)[number]) {
   if (item.movement === 'own') return 'Entre contas da loja · ainda para conferir'
   return item.subtitle
@@ -74,7 +74,7 @@ onBeforeUnmount(() => { if (dialog.value?.open) dialog.value.close() })
   <main class="finance-preview verly-surface" @keydown="keyEscape">
     <div class="preview-note"><span class="preview-dot" /> Prévia · dados de exemplo</div>
     <header class="page-heading">
-      <div><p class="eyebrow">Controle da loja</p><h1>Financeiro</h1><p class="month-label">Outubro 2026 <ChevronDown :size="18" aria-hidden="true" /></p></div>
+      <div><p class="eyebrow">Controle da loja</p><h1>Financeiro</h1><p class="month-label">Outubro 2026 <CalendarDays :size="18" aria-hidden="true" /></p></div>
     </header>
 
     <section class="summary-grid" aria-label="Resumo do mês">
@@ -123,7 +123,7 @@ onBeforeUnmount(() => { if (dialog.value?.open) dialog.value.close() })
 
           <section v-if="selection.movement === 'unknown' || editing || correctionRequired" class="drawer-section"><label class="field-label" for="reason-input">{{ selection.movement === 'unknown' ? 'Motivo da conferência' : 'Por que mudou o destino?' }}</label><textarea id="reason-input" v-model="selection.reason" rows="2" placeholder="Conte em poucas palavras"></textarea><p v-if="missingReason" class="field-hint">{{ missingReason }}</p></section>
 
-          <details class="evidence-details" :open="evidenceOpen" @toggle="evidenceOpen = ($event.target as HTMLDetailsElement).open"><summary><span>Por que sugerimos isso?</span><ChevronDown :size="18" /></summary><div class="evidence-content"><p><strong>Pagador</strong><span>{{ selected.payer || 'Não identificado' }}</span></p><p><strong>Recebedor</strong><span>{{ selected.payee || 'Não identificado' }}</span></p><p><strong>Conversa</strong><span>“{{ selected.evidence.conversation }}”</span></p><p><strong>Comprovante</strong><span>{{ selected.evidence.receipt }}</span></p><p><strong>Dados de apoio</strong><span>{{ selected.evidence.support }}</span></p><p v-if="selected.evidence.warning" class="evidence-warning"><strong>Diferença para conferir</strong><span>{{ selected.evidence.warning }}</span></p></div></details>
+          <details class="evidence-details" :open="evidenceOpen" @toggle="evidenceOpen = ($event.target as HTMLDetailsElement).open"><summary><span>Por que sugerimos isso?</span><ChevronDown :size="18" aria-hidden="true" /></summary><div class="evidence-content"><p><strong>Pagador</strong><span>{{ selected.payer || 'Não identificado' }}</span></p><p><strong>Recebedor</strong><span>{{ selected.payee || 'Não identificado' }}</span></p><p><strong>Conversa</strong><span>“{{ selected.evidence.conversation }}”</span></p><p><strong>Comprovante</strong><span>{{ selected.evidence.receipt }}</span></p><p><strong>Dados de apoio</strong><span>{{ selected.evidence.support }}</span></p><p v-if="selected.evidence.warning" class="evidence-warning"><strong>Diferença para conferir</strong><span>{{ selected.evidence.warning }}</span></p></div></details>
         </div>
         <footer class="drawer-footer">
           <template v-if="selection.movement === 'own'"><p class="destination-summary">{{ finalDestination }}</p><ActionButton variant="secondary" @click="finance.defer()">Deixar para depois</ActionButton></template>
@@ -208,4 +208,14 @@ h1 { font-size: clamp(30px, 4vw, 38px); line-height: 1.08; }
 .chips :deep(.verly-choice-chip--selected) { background: #2e7d7a; color: #fff; border-color: #2e7d7a; }
 .difference-note { background: #fff5e8; color: #864408; border-left-color: #a84f06; }
 
+/* Leitura no celular: não ocultar cliente e contexto atrás de reticências. */
+@media (max-width: 680px) {
+ .movement-row { grid-template-columns:42px minmax(0,1fr); align-items:start; padding:14px; }
+ .row-title,.row-subtitle { white-space:normal; overflow:visible; text-overflow:clip; max-width:none; }
+ .row-title { font-size:17px; }
+ .row-meta { grid-column:1/-1; display:grid; grid-template-columns:1fr auto; max-width:none; width:100%; border-top:1px solid #EDF1EF; padding-top:9px; margin-top:2px; }
+ .row-meta time { width:auto; text-align:left; }
+ .row-meta .amount { text-align:right; font-size:17px; }
+ .row-meta :deep(.verly-status-pill) { grid-column:2; justify-self:end; }
+}
 </style>

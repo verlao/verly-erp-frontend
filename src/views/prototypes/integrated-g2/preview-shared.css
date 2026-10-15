@@ -1,0 +1,43 @@
+/* Prévia descartável. Vocabulário visual da direção aprovada, sem integração de produção. */
+.preview-page { max-width:1120px; margin:0 auto; padding:32px; color:#141A1F; font:17px/1.5 var(--font-verly-body); }
+.preview-page * { box-sizing:border-box; }
+.preview-page h1,.preview-page h2,.preview-page h3 { font-family:var(--font-verly-display); line-height:1.2; }
+.preview-page h1 { margin:0; }
+.preview-page h2 { font-size:24px; margin:0 0 12px; }
+.preview-page h3 { font-size:21px; margin:0 0 8px; }
+.preview-eyebrow { color:#53615F; font-size:15px; font-weight:600; letter-spacing:.06em; margin:0 0 4px; }
+.preview-heading { font-family:var(--font-verly-display); font-size:36px; font-weight:700; letter-spacing:-.035em; line-height:1.15; }
+.preview-subtitle { color:#53615F; margin:8px 0 24px; font-size:17px; }
+.preview-toolbar { display:flex; flex-wrap:wrap; align-items:center; gap:12px; margin:20px 0; }
+.preview-search { flex:1 1 240px; min-width:0; width:100%; min-height:48px; border:1px solid #C9D5D1; border-radius:12px; padding:10px 14px; background:white; color:#141A1F; font:inherit; }
+.preview-button,.preview-button-primary { min-height:44px; border:1px solid #C9D5D1; border-radius:12px; padding:10px 16px; display:inline-flex; justify-content:center; align-items:center; gap:8px; font:600 17px/1.3 var(--font-verly-body); cursor:pointer; background:white; color:#263C39; text-decoration:none; }
+.preview-button-primary { color:white; background:#141A1F; border-color:#141A1F; }
+.preview-button:hover { background:#E5F2EF; }
+.preview-button-primary:hover { background:#263C39; }
+.preview-button:disabled,.preview-button-primary:disabled { cursor:default; background:#E0E5E3; color:#53615F; border-color:#D2DAD7; }
+.preview-chip { min-height:44px; display:inline-flex; gap:6px; align-items:center; border:1px solid #C9D5D1; border-radius:999px; padding:8px 15px; font:15px/1.3 var(--font-verly-body); background:white; color:#354542; cursor:pointer; }
+.preview-chip.is-active,.preview-chip[aria-pressed='true'] { color:white; background:#2E7D7A; border-color:#2E7D7A; }
+.preview-surface,.preview-card { border:1px solid #D8E1DD; border-radius:18px; background:white; padding:22px; min-width:0; }
+.preview-card { text-align:left; }
+.preview-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(min(260px,100%),1fr)); gap:16px; }
+.preview-empty { padding:40px 20px; text-align:center; color:#53615F; border:1px dashed #C9D5D1; border-radius:18px; }
+.preview-notice { display:flex; gap:10px; align-items:center; border:1px solid #B4D5CD; background:#E5F2EF; color:#245F52; padding:14px 18px; border-radius:14px; margin:16px 0; overflow-wrap:anywhere; }
+.preview-dialog { width:min(720px,calc(100% - 32px)); max-height:90dvh; border:1px solid #D8E1DD; border-radius:24px; padding:24px; color:#141A1F; background:white; font:17px/1.5 var(--font-verly-body); margin:auto; overflow-y:auto; }
+.preview-dialog::backdrop { background:rgb(20 26 31/.42); backdrop-filter:blur(3px); }
+.preview-dialog h2,.preview-dialog h3 { font-family:var(--font-verly-display); font-size:26px; font-weight:600; line-height:1.2; margin:0 0 16px; }
+.preview-dialog h3 { font-size:21px; }
+.preview-dialog header,.preview-dialog footer { display:flex; gap:12px; justify-content:space-between; align-items:center; flex-wrap:wrap; }
+.preview-dialog footer { margin-top:24px; justify-content:flex-end; }
+.preview-form-field { display:flex; flex-direction:column; gap:6px; margin-bottom:16px; font-size:17px; }
+.preview-form-field input,.preview-form-field select,.preview-form-field textarea,.preview-dialog select { width:100%; min-height:48px; padding:10px 12px; border:1px solid #C9D5D1; border-radius:10px; background:white; color:#141A1F; font:inherit; }
+.preview-page input::placeholder,.preview-dialog input::placeholder { color:#667570; font-weight:400; }
+.preview-page :focus-visible,.preview-dialog :focus-visible { outline:3px solid #2E7D7A; outline-offset:3px; }
+.preview-page button,.preview-dialog button { touch-action:manipulation; }
+.preview-page button svg,.preview-dialog button svg { flex-shrink:0; }
+.preview-page small,.preview-dialog small { font-size:15px; }
+.preview-page .money,.preview-dialog .money { font-family:var(--font-verly-mono); font-variant-numeric:tabular-nums; }
+.preview-global-note { max-width:1056px; margin:20px auto -12px; padding:0 32px; font:15px/1.4 var(--font-verly-body); color:#53615F; display:flex; gap:8px; align-items:center; }
+.preview-global-note::before { content:''; width:7px; height:7px; border-radius:50%; background:#7B8984; }
+@media(max-width:767px) { .preview-page{padding:24px 8px;} .preview-heading{font-size:30px;} .preview-card,.preview-surface{padding:18px;} .preview-toolbar{gap:8px;} .preview-dialog{padding:20px;max-height:calc(100dvh - 32px);} .preview-global-note{padding:0 8px;margin:20px 0 -8px;} }
+/* A descrição conserva a leitura de texto mesmo em cabeçalhos compostos. */
+.preview-page .preview-subtitle { font-family:var(--font-verly-body); font-weight:400; letter-spacing:normal; }

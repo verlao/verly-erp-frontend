@@ -19,8 +19,8 @@
     <div class="relative mt-3 min-h-0 flex-1 px-2 pb-2">
       <nav ref="containerRef" :style="maskStyle" :class="['h-full overflow-y-auto space-y-1', collapsed ? 'px-0' : 'px-1']" aria-label="Menu principal">
         <router-link v-for="item in sidebarItems" :key="String(item.name)" :to="{ name: item.name }" custom v-slot="{ navigate, isActive }">
-          <button data-navigation-item :class="['group relative flex min-h-11 w-full items-center rounded-xl text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2E7D7A] focus-visible:ring-offset-2 focus-visible:ring-offset-[#F8FAF9]', collapsed ? 'justify-center px-2' : 'gap-3 px-3', isActive ? 'bg-[#E4F1EF] font-semibold text-[#1C625F]' : 'text-[#485650] hover:bg-[#EDF3F1] hover:text-[#141A1F]']" :title="collapsed ? (item.accessibleLabel ?? item.label) : undefined" :aria-label="collapsed ? (item.accessibleLabel ?? item.label) : undefined" :aria-current="isActive ? 'page' : undefined" @click="navigate">
-            <span v-if="isActive" class="absolute bottom-2 left-0 top-2 w-[3px] rounded-r bg-[#2E7D7A]" />
+          <button data-navigation-item :class="['group relative flex min-h-11 w-full items-center rounded-xl text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2E7D7A] focus-visible:ring-offset-2 focus-visible:ring-offset-[#F8FAF9]', collapsed ? 'justify-center px-2' : 'gap-3 px-3', current(item.name, isActive) ? 'bg-[#E4F1EF] font-semibold text-[#1C625F]' : 'text-[#485650] hover:bg-[#EDF3F1] hover:text-[#141A1F]']" :title="collapsed ? (item.accessibleLabel ?? item.label) : undefined" :aria-label="collapsed ? (item.accessibleLabel ?? item.label) : undefined" :aria-current="current(item.name, isActive) ? 'page' : undefined" @click="navigate">
+            <span v-if="current(item.name, isActive)" class="absolute bottom-2 left-0 top-2 w-[3px] rounded-r bg-[#2E7D7A]" />
             <NavigationIcon :icon="item.icon" :size="20" />
             <span v-if="!collapsed" class="truncate text-[15px]">{{ item.label }}</span>
           </button>
@@ -46,6 +46,9 @@ import { canAccessNavigationItem, navigationItemsFor } from '../../router/naviga
 import { routes } from '../../router/routes'
 import { useAuthStore } from '../../stores/auth'
 import NavigationIcon from './NavigationIcon.vue'
+import { useRoute } from 'vue-router'
+const route = useRoute()
+const current = (name: unknown, active: boolean) => active || (route.name === 'LeadQuote' && name === 'Leads')
 
 defineProps<{ collapsed: boolean }>()
 const emit = defineEmits<{ 'update:collapsed': [value: boolean]; logout: [] }>()

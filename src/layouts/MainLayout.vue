@@ -26,7 +26,7 @@
           ? 'px-4'
           : [
               'h-screen min-h-0 flex flex-col',
-              isLeadsRoute ? 'overflow-hidden' : 'overflow-y-auto',
+              'overflow-y-auto',
               isWide && !sidebarCollapsed ? 'ml-64 p-6' : 'ml-16 p-6',
             ],
       ]"
@@ -117,7 +117,6 @@ function readStoredCollapsed(): boolean {
 const sidebarCollapsed = ref(readStoredCollapsed())
 const compactSidebarOpen = ref(false)
 const moreOpen = ref(false)
-const isLeadsRoute = computed(() => route.name === 'Leads')
 
 const effectiveSidebarCollapsed = computed(() =>
   isWide.value ? sidebarCollapsed.value : !compactSidebarOpen.value,

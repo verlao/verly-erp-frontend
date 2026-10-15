@@ -1,0 +1,79 @@
+<script setup lang="ts">
+import { computed, nextTick, ref, watch } from 'vue'
+import { useRouter } from 'vue-router'
+import { ArrowRight, CalendarDays, Check, Plus, RectangleHorizontal, Search, X } from 'lucide-vue-next'
+import { formatBRL } from '@/lib/money'
+import StatusPill from '@/components/verly/StatusPill.vue'
+import { convertPreviewQuote, previewQuotes, type QuotePreview, type QuotePreviewStatus } from './vendasPreviewState'
+
+const router = useRouter()
+const quotes = previewQuotes
+const query = ref('')
+const filter = ref('Todos')
+const selected = ref<QuotePreview | null>(null)
+const converting = ref<QuotePreview | null>(null)
+const detailDialog = ref<HTMLDialogElement | null>(null)
+const confirmDialog = ref<HTMLDialogElement | null>(null)
+const notice = ref('')
+const filters = ['Todos', 'Válidos', 'Expirando', 'Convertidos', 'Expirados']
+const visibleQuotes = computed(() => quotes.value.filter(q => {
+  const textMatch = `${q.id} ${q.customer} ${q.item}`.toLocaleLowerCase('pt-BR').includes(query.value.toLocaleLowerCase('pt-BR'))
+  const statusMatch = filter.value === 'Todos' || ({ Válidos: 'Válido', Expirando: 'Expirando', Convertidos: 'Convertido', Expirados: 'Expirado' } as Record<string, string>)[filter.value] === q.status
+  return textMatch && statusMatch
+}))
+const tone = (status: QuotePreviewStatus) => status === 'Válido' ? 'entered' : status === 'Expirando' || status === 'Expirado' ? 'pending' : 'neutral'
+watch(selected, async value => { await nextTick(); if (value) detailDialog.value?.showModal(); else if (detailDialog.value?.open) detailDialog.value.close() })
+watch(converting, async value => { await nextTick(); if (value) confirmDialog.value?.showModal(); else if (confirmDialog.value?.open) confirmDialog.value.close() })
+function convertQuote() {
+  if (!converting.value) return
+  const quote = converting.value
+  const order = convertPreviewQuote(quote.id)
+  if (!order) return
+  notice.value = `Pedido #${order.id} criado para ${quote.customer}. Saldo a receber: ${formatBRL(order.total - order.paid)}.`
+  converting.value = null
+  selected.value = null
+}
+function closeDetails() { selected.value = null }
+function closeConvert() { converting.value = null }
+function onDetailClose() { selected.value = null }
+function onConfirmClose() { converting.value = null }
+</script>
+
+<template>
+  <main class="preview-page quotes-page">
+    <p class="preview-eyebrow">VENDAS · COTAÇÕES</p>
+    <div class="page-head"><div><h1 class="preview-heading">Orçamentos</h1><p class="preview-subtitle">Propostas, valores e validade em um só lugar.</p></div><button class="preview-button preview-button-primary" @click="router.push({ name: 'NewQuote' })"><Plus :size="18" /> Novo orçamento</button></div>
+    <p v-if="notice" class="preview-notice" role="status">{{ notice }}</p>
+    <section class="quote-summary preview-grid" aria-label="Resumo dos orçamentos">
+      <article class="preview-card summary-valid"><span>Válidos</span><strong>{{ quotes.filter(q => q.status === 'Válido').length }}</strong><small>podem virar pedido</small></article>
+      <article class="preview-card summary-expiring"><span>Expirando em breve</span><strong>{{ quotes.filter(q => q.status === 'Expirando').length }}</strong><small>vale retomar a conversa</small></article>
+      <article class="preview-card summary-total"><span>Valor em propostas</span><strong>{{ formatBRL(quotes.filter(q => q.status === 'Válido' || q.status === 'Expirando').reduce((sum, q) => sum + q.totalCents, 0)) }}</strong><small>orçamentos ativos</small></article>
+    </section>
+    <section class="list-section">
+      <div class="preview-toolbar"><label class="preview-search"><Search :size="18" /><input v-model="query" aria-label="Buscar orçamento" placeholder="Buscar por número, cliente ou item" /></label><div class="filters" aria-label="Filtrar por situação"><button v-for="item in filters" :key="item" class="preview-chip" :class="{ 'is-active': filter === item }" :aria-pressed="filter === item" @click="filter = item">{{ item }}</button></div></div>
+      <div v-if="visibleQuotes.length" class="quote-list">
+        <button v-for="quote in visibleQuotes" :key="quote.id" class="quote-row preview-surface" type="button" @click="selected = quote">
+          <span class="quote-icon"><RectangleHorizontal :size="21" aria-hidden="true" /></span>
+          <span class="row-copy"><span class="row-title">{{ quote.item }} <small>· #{{ quote.id }}</small></span><span class="row-sub">{{ quote.customer }} · {{ quote.width }} × {{ quote.height }} cm · {{ quote.glass }}</span></span>
+          <span class="row-meta"><StatusPill :tone="tone(quote.status)">{{ quote.status }}</StatusPill><strong>{{ formatBRL(quote.totalCents) }}</strong><small><CalendarDays :size="14" /> Até {{ quote.expires }}</small></span><ArrowRight class="row-arrow" :size="19" />
+        </button>
+      </div>
+      <div v-else class="preview-empty">Nenhum orçamento encontrado com esses filtros.</div>
+    </section>
+    <dialog ref="detailDialog" class="preview-dialog detail-dialog" aria-labelledby="quote-dialog-title" @click.self="closeDetails" @close="onDetailClose">
+      <div v-if="selected" class="dialog-shell"><header class="dialog-head"><div><p class="preview-eyebrow">ORÇAMENTO #{{ selected.id }}</p><h2 id="quote-dialog-title">{{ selected.item }}</h2></div><button class="close-button" aria-label="Fechar detalhes do orçamento" @click="closeDetails"><X /></button></header>
+        <div class="detail-content"><div class="detail-customer"><span class="avatar">{{ selected.customer.split(' ').map(w => w[0]).slice(0,2).join('') }}</span><div><strong>{{ selected.customer }}</strong><small>{{ selected.phone }}</small></div></div><div class="detail-grid"><div><span>Situação</span><StatusPill :tone="tone(selected.status)">{{ selected.status }}</StatusPill></div><div><span>Validade</span><strong>{{ selected.expires }}</strong></div><div><span>Medida</span><strong>{{ selected.width }} × {{ selected.height }} cm</strong></div><div><span>Vidro</span><strong>{{ selected.glass }}</strong></div><div><span>Quantidade</span><strong>{{ selected.quantity }} {{ selected.quantity === 1 ? 'unidade' : 'unidades' }}</strong></div><div><span>Condição</span><strong>{{ selected.terms }}</strong></div><div v-if="selected.orderId"><span>Pedido</span><strong>#{{ selected.orderId }}</strong></div></div><section v-if="selected.items?.length" class="quote-lines"><h3>Peças da proposta</h3><article v-for="(line, index) in selected.items" :key="index"><strong>{{ line.name }} · {{ line.glass }}</strong><span>{{ line.quantity }} {{ line.quantity === 1 ? 'unidade' : 'unidades' }} · {{ line.width }} × {{ line.height }} cm<span v-if="line.leaves"> · {{ line.leaves }} folhas por conjunto</span></span><b>{{ formatBRL(line.unitCents * line.quantity) }}</b></article></section><div class="price-block"><span>Total proposto</span><strong>{{ formatBRL(selected.totalCents) }}</strong><small v-if="selected.profitCents > 0">Acréscimo estimado {{ formatBRL(selected.profitCents) }}</small></div></div>
+        <footer class="dialog-footer"><button class="preview-button" @click="closeDetails">Fechar</button><button v-if="selected.status === 'Válido' || selected.status === 'Expirando'" class="preview-button preview-button-primary" @click="converting = selected">Transformar em pedido <ArrowRight :size="17" /></button></footer>
+      </div>
+    </dialog>
+    <dialog ref="confirmDialog" class="preview-dialog confirm-dialog" aria-labelledby="convert-dialog-title" @click.self="closeConvert" @close="onConfirmClose"><div v-if="converting" class="confirm-content"><button class="close-button close-float" aria-label="Fechar confirmação" @click="closeConvert"><X /></button><span class="confirm-mark"><Check :size="22" /></span><p class="preview-eyebrow">CONFIRMAR PEDIDO</p><h2 id="convert-dialog-title">Transformar este orçamento?</h2><p>O orçamento #{{ converting.id }} de {{ converting.customer }} será marcado como convertido. Um pedido será criado nesta prévia.</p><div class="confirm-total"><span>{{ converting.item }}</span><strong>{{ formatBRL(converting.totalCents) }}</strong></div><button class="preview-button preview-button-primary confirm-action" @click="convertQuote">Confirmar e criar pedido</button></div></dialog>
+  </main>
+</template>
+
+<style scoped>
+.page-head{display:flex;align-items:center;justify-content:space-between;gap:20px;margin:20px 0 26px}.preview-heading{margin:0;font:600 clamp(30px,4vw,38px)/1.1 var(--font-verly-display);color:#141a1f}.preview-subtitle{margin:8px 0 0;color:#56625f;font-size:17px}.preview-button{display:inline-flex;align-items:center;justify-content:center;gap:9px;min-height:46px;padding:9px 16px;border:1px solid #cbd5d1;border-radius:10px;background:#fff;color:#24302c;font:600 16px var(--font-verly-body);cursor:pointer}.preview-button-primary{border-color:#2e7d7a;background:#2e7d7a;color:#fff}.preview-button:hover{filter:brightness(.96)}.quote-summary{grid-template-columns:repeat(3,minmax(0,1fr));margin-bottom:30px}.quote-summary article{display:grid;gap:5px;min-height:112px;padding:16px 19px}.quote-summary span,.quote-summary small{color:#56625f;font-size:15px}.quote-summary strong{font:600 24px/1.2 var(--font-verly-mono);color:#141a1f}.summary-valid{box-shadow:inset 0 3px #1e7a3c}.summary-expiring{box-shadow:inset 0 3px #a84f06}.summary-total{box-shadow:inset 0 3px #2e7d7a}.list-section{margin-top:8px}.preview-toolbar{display:grid;gap:13px;margin-bottom:12px}.preview-search{display:flex;align-items:center;gap:10px;max-width:520px;min-height:48px;padding:0 13px;border:1px solid #c7d1cd;border-radius:10px;background:#fff;color:#596560}.preview-search:focus-within{outline:3px solid #2e7d7a44}.preview-search input{width:100%;border:0;outline:0;background:transparent;color:#141a1f;font:16px var(--font-verly-body)}.preview-search input::placeholder{color:#697571}.filters{display:flex;gap:8px;overflow:auto;padding:2px 1px 8px}.preview-chip{min-height:44px;padding:8px 15px;border:1px solid #cbd5d1;border-radius:999px;background:#fff;color:#35413d;font:15px var(--font-verly-body);white-space:nowrap;cursor:pointer}.preview-chip.is-active{border-color:#2e7d7a;background:#2e7d7a;color:#fff}.quote-list{display:grid;gap:9px}.quote-row{display:grid;grid-template-columns:46px minmax(0,1fr) auto 20px;align-items:center;gap:14px;width:100%;min-height:94px;padding:13px 16px;border:1px solid #dce3e0;border-radius:13px;text-align:left;cursor:pointer;color:#141a1f}.quote-row:hover{border-color:#9cbdb7;box-shadow:0 3px 12px #1825210d}.quote-icon{display:grid;place-items:center;width:44px;height:44px;border-radius:12px;background:#e4f1ef;color:#246765;font-size:27px}.row-copy{display:grid;gap:5px;min-width:0}.row-title{font-size:17px;font-weight:600}.row-title small{color:#64706d;font-weight:400}.row-sub{overflow:hidden;color:#56625f;font-size:15px;text-overflow:ellipsis;white-space:nowrap}.row-meta{display:grid;justify-items:end;gap:5px}.row-meta strong{font:600 16px var(--font-verly-mono)}.row-meta small{display:flex;align-items:center;gap:5px;color:#596560;font-size:15px}.row-arrow{color:#66716e}.preview-empty{padding:44px 20px;border:1px dashed #cbd5d1;border-radius:13px;color:#56625f;text-align:center;font-size:17px}.preview-notice{margin:0 0 14px;padding:12px 15px;border:1px solid #b7d6c1;border-radius:10px;background:#eff8f1;color:#245d35;font-size:16px}.preview-dialog{position:fixed;inset:0 auto 0 0;width:min(520px,100vw);max-width:none;height:100dvh;max-height:none;margin:0;padding:0;border:0;background:#fff;color:#141a1f;box-shadow:12px 0 50px #111a1826}.preview-dialog::backdrop{background:#121b19a6;backdrop-filter:blur(2px)}.dialog-shell{display:flex;height:100%;flex-direction:column}.dialog-head{display:flex;align-items:center;justify-content:space-between;padding:22px;border-bottom:1px solid #e0e5e2}.dialog-head .preview-eyebrow{margin:0 0 5px}.dialog-head h2,.confirm-content h2{margin:0;font:600 25px/1.2 var(--font-verly-display)}.close-button{display:grid;place-items:center;width:44px;height:44px;border:1px solid #ccd5d1;border-radius:50%;background:#fff;color:#28332f;cursor:pointer}.detail-content{flex:1;overflow:auto;padding:21px}.detail-customer{display:flex;align-items:center;gap:12px;padding-bottom:20px;border-bottom:1px solid #e2e7e4}.avatar{display:grid;place-items:center;width:46px;height:46px;border-radius:50%;background:#e4f1ef;color:#246765;font-weight:700}.detail-customer div{display:grid;gap:3px}.detail-customer strong{font-size:17px}.detail-customer small{color:#5c6864;font-size:15px}.detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:19px 14px;padding:21px 0}.detail-grid>div{display:grid;align-content:start;gap:6px}.detail-grid span,.price-block span{color:#596560;font-size:15px}.detail-grid strong{font-size:16px;line-height:1.35}.price-block{display:grid;gap:4px;padding:16px;border-radius:12px;background:#f3f6f5}.price-block strong{font:600 26px var(--font-verly-mono)}.price-block small{color:#55615d;font-size:15px}.dialog-footer{display:flex;justify-content:flex-end;gap:9px;padding:14px 21px max(16px,env(safe-area-inset-bottom));border-top:1px solid #e0e5e2}.confirm-dialog{inset:0;width:min(460px,calc(100vw - 30px));height:max-content;max-height:calc(100dvh - 30px);margin:auto;border:1px solid #dce3e0;border-radius:18px;box-shadow:0 22px 70px #111a1838}.confirm-content{position:relative;padding:30px}.close-float{position:absolute;top:14px;right:14px}.confirm-mark{display:grid;place-items:center;width:48px;height:48px;margin-bottom:17px;border-radius:50%;background:#e4f1ef;color:#246765;font-size:24px}.confirm-content .preview-eyebrow{margin:0 0 7px}.confirm-content>p:not(.preview-eyebrow){color:#56625f;font-size:16px;line-height:1.5}.confirm-total{display:flex;justify-content:space-between;gap:10px;margin:18px 0;padding:14px;border-radius:10px;background:#f3f6f5;font-size:15px}.confirm-total strong{font:600 16px var(--font-verly-mono)}.confirm-action{width:100%}@media(max-width:700px){.page-head{align-items:flex-start;flex-direction:column;margin:16px 0 20px}.page-head>.preview-button{width:100%}.quote-summary{gap:8px}.quote-summary article{min-height:94px;padding:12px 10px}.quote-summary strong{font-size:19px;letter-spacing:-.04em}.quote-summary small{line-height:1.2}.quote-row{grid-template-columns:38px minmax(0,1fr) auto;gap:9px;padding:11px 10px}.quote-icon{width:36px;height:36px}.row-meta{max-width:120px}.row-meta :deep(.verly-status-pill){font-size:15px;min-height:25px;padding:2px 7px}.row-meta strong{font-size:15px}.row-meta small{font-size:15px}.row-arrow{display:none}.row-sub{max-width:52vw}.detail-grid{gap:16px 9px}.dialog-head{padding:16px}.detail-content{padding:17px}.dialog-footer{padding:11px 15px max(13px,env(safe-area-inset-bottom))}.dialog-footer .preview-button{flex:1;padding:8px 10px;font-size:15px}}
+.preview-dialog{inset:0;width:min(720px,calc(100vw - 32px));height:auto;max-height:90dvh;margin:auto;border-radius:16px;box-shadow:0 22px 70px #111a1838;overflow:auto}.dialog-shell{max-height:90dvh}
+@media(max-width:700px){.preview-dialog{width:calc(100vw - 20px);max-height:90dvh;margin:auto}.dialog-shell{max-height:90dvh}}
+.preview-button-primary{border-color:#141a1f;background:#141a1f;color:#fff}.preview-button-primary:disabled{border-color:#d2dad7;background:#e0e5e3;color:#53615f;opacity:1;cursor:not-allowed}
+.quote-lines{margin:20px 0}.quote-lines h3{font:600 21px var(--font-verly-display)}.quote-lines article{display:grid;gap:5px;padding:14px 0;border-bottom:1px solid #D8E1DD}.quote-lines article span{color:#53615F;font-size:15px}.quote-lines article b{font:600 17px var(--font-verly-mono)}
+</style>
