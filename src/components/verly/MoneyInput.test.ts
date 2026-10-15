@@ -16,11 +16,11 @@ describe('MoneyInput', () => {
 
     expect((input.element as HTMLInputElement).value).toBe('')
     await input.setValue('')
-    expect(wrapper.emitted('update:modelValue')?.at(-1)).toEqual([null])
+    expect(wrapper.emitted('update:modelValue')?.slice(-1)[0]).toEqual([null])
 
     await input.setValue('0')
-    expect(wrapper.emitted('update:modelValue')?.at(-1)).toEqual([0])
-    expect(wrapper.emitted('invalid')?.at(-1)).toEqual([false])
+    expect(wrapper.emitted('update:modelValue')?.slice(-1)[0]).toEqual([0])
+    expect(wrapper.emitted('invalid')?.slice(-1)[0]).toEqual([false])
   })
 
   it('emits cents and rounds decimal input with HALF_UP', async () => {
@@ -28,10 +28,10 @@ describe('MoneyInput', () => {
     const input = wrapper.get('input')
 
     await input.setValue('1.113,26')
-    expect(wrapper.emitted('update:modelValue')?.at(-1)).toEqual([111326])
+    expect(wrapper.emitted('update:modelValue')?.slice(-1)[0]).toEqual([111326])
     await input.setValue('856,355')
-    expect(wrapper.emitted('update:modelValue')?.at(-1)).toEqual([85636])
-    expect(wrapper.emitted('invalid')?.at(-1)).toEqual([false])
+    expect(wrapper.emitted('update:modelValue')?.slice(-1)[0]).toEqual([85636])
+    expect(wrapper.emitted('invalid')?.slice(-1)[0]).toEqual([false])
   })
 
   it('keeps malformed text and never turns it into zero', async () => {
@@ -41,7 +41,7 @@ describe('MoneyInput', () => {
     await input.setValue('12,3x')
     expect((input.element as HTMLInputElement).value).toBe('12,3x')
     expect(wrapper.emitted('update:modelValue')).toBeUndefined()
-    expect(wrapper.emitted('invalid')?.at(-1)).toEqual([true])
+    expect(wrapper.emitted('invalid')?.slice(-1)[0]).toEqual([true])
     expect(input.attributes('aria-invalid')).toBe('true')
     expect(wrapper.text()).toContain('Digite um valor válido')
   })
@@ -51,7 +51,7 @@ describe('MoneyInput', () => {
     const input = wrapper.get('input')
 
     await input.setValue('12,34')
-    expect(wrapper.emitted('update:modelValue')?.at(-1)).toEqual([1234])
+    expect(wrapper.emitted('update:modelValue')?.slice(-1)[0]).toEqual([1234])
     await input.setValue('12,3x')
     await wrapper.setProps({ modelValue: 1234 })
 
@@ -86,7 +86,7 @@ describe('MoneyInput', () => {
     const input = wrapper.get('input')
 
     await input.setValue('12,345')
-    const emitted = wrapper.emitted('update:modelValue')?.at(-1)?.[0] as number
+    const emitted = wrapper.emitted('update:modelValue')?.slice(-1)[0]?.[0] as number
     await wrapper.setProps({ modelValue: emitted })
     expect((input.element as HTMLInputElement).value).toBe('12,345')
 
