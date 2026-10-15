@@ -1,4 +1,4 @@
-import { readonly, ref } from 'vue'
+import { reactive, readonly, ref } from 'vue'
 import { friendlyError } from '../lib/errors'
 import { scheduleDeferred, type DeferredHandle } from '../lib/deferredAction'
 
@@ -29,7 +29,7 @@ export function useUndoToast() {
 
   function schedule(options: UndoToastOptions): string {
     const id = `undo-${++nextId}`
-    const item: UndoToastItem = { id, message: options.message, state: 'pending' }
+    const item = reactive<UndoToastItem>({ id, message: options.message, state: 'pending' })
     items.value = [...items.value, item]
 
     const handle = scheduleDeferred(async () => {

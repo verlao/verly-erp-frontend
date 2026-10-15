@@ -8,7 +8,7 @@ describe('UndoToast', () => {
     expect(wrapper.attributes('role')).toBe('status')
     expect(wrapper.attributes('aria-live')).toBe('polite')
     expect(wrapper.attributes('aria-atomic')).toBe('true')
-    expect(wrapper.text()).toContain('Salvando…')
+    expect(wrapper.text()).not.toContain('Salvando…')
     expect(wrapper.find('button').text()).toBe('Desfazer')
     await wrapper.find('button').trigger('click')
     expect(wrapper.emitted('undo')).toHaveLength(1)
@@ -23,5 +23,11 @@ describe('UndoToast', () => {
     await wrapper.find('button').trigger('click')
     expect(wrapper.emitted('dismiss')).toHaveLength(1)
     expect(wrapper.text()).not.toContain('Desfazer')
+  })
+
+  it('shows saving feedback without an undo action while committing', () => {
+    const wrapper = mount(UndoToast, { props: { message: 'Lead movido', pending: false } })
+    expect(wrapper.text()).toContain('Salvando…')
+    expect(wrapper.findAll('button')).toHaveLength(0)
   })
 })

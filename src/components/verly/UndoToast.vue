@@ -1,13 +1,13 @@
 <template>
   <div
-    class="flex min-h-11 items-center gap-3 rounded-lg border border-verly-border bg-verly-ink px-4 py-2 text-white shadow-lg"
+    class="flex min-h-11 flex-wrap items-center gap-3 rounded-lg border border-glass bg-ink px-4 py-2 text-white shadow-lg"
     role="status"
     aria-live="polite"
     aria-atomic="true"
   >
-    <span class="min-w-0 flex-1 text-sm" :class="{ 'sr-only': error }">{{ message }}</span>
-    <span v-if="pending && !error" class="text-sm">Salvando…</span>
-    <span v-if="error" role="alert" class="min-w-0 flex-1 text-sm">{{ error }}</span>
+    <span v-if="!error" class="min-w-0 flex-1 text-[15px] leading-[17px]">{{ message }}</span>
+    <span v-if="!pending && !error" class="text-[15px] leading-[17px]">Salvando…</span>
+    <span v-if="error" role="alert" class="min-w-0 flex-1 text-[15px] leading-[17px]">{{ error }}</span>
     <button
       v-if="pending && !error"
       type="button"
