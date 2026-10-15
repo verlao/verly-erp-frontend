@@ -1,0 +1,33 @@
+Verly — prévia G2 integrada ao ERP — 15/10/2026
+
+Motivo: Matheus rejeitou a bancada HTML isolada; pediu continuidade com o ERP e a direção A aprovada.
+G1/A aprovada; G2 desta prévia ainda aguardando avaliação explícita.
+
+Executar neste worktree:
+npm run dev -- --host 127.0.0.1 --port 5198
+Abrir:
+http://127.0.0.1:5198/evidencias/g2-integrado/index.html#/ledger
+
+Usa MainLayout, sidebar, cabeçalho e navegação móvel reais, sem modificar esses componentes.
+Bootstrap separado em evidencias/g2-integrado; não altera src/main.ts ou as rotas do produto.
+Somente Financeiro redesenhado. Outras áreas do menu abrem aviso local, sem dados reais.
+Pinia recebe identidade de exemplo em memória; não cria token ou login real.
+Adapter de API bloqueado nesta entrada; nenhuma chamada de negócio feita pela prévia.
+Menu pode guardar preferência local de expansão. Dados financeiros e decisões são apenas em memória.
+
+Padrão visual A: resumo Entrou/Saiu/Saldo, fila única, seis movimentos sintéticos, cards inteiros tocáveis.
+Drawer lateral no desktop e folha no celular, com sugestão primeiro, busca manual em Escolher outro,
+evidências colapsadas em Por que sugerimos isso, fatos de pagador/recebedor separados de cliente/pedido.
+Reutiliza ActionButton, ChoiceChip, StatusPill, PieceDrawing e UndoToast já mergeados.
+Confirmação simulada adiada e reversível; referência e transferência própria não entram nos totais.
+Não transformar estes mocks em integração real sem fechar e publicar os contratos de evidências.
+
+Revisão: executores gpt-6-luna, root revisou UI e modelo; GPT Sol apontou/teve correções de propriedade
+de pedido, Avulso com cliente, transferência/ref imutáveis, pagador funcionário e arquivamento com undo.
+vue-tsc aprovado, build realizado pelo executor e inspeção Chromium em393/768/1440 sem overflow/errosJS
+ou requests externos. Conferência aceita sugestão, separa pagador, troca destino com motivo, desfaz,
+atualiza total após5s e preserva pedido de outro cliente. Dados reais/Safari não avaliados.
+Evidências locais em ~/Documents/repositories/verly/g2-integrated-review-2026-10-15/.
+
+Protótipo descartável apenas na branch prototype/financeiro-integrated-g2; não destinado a merge.
+Não abrir PR deste código como implementação de produção; depois de G2 reimplementar sobre contratos reais.
