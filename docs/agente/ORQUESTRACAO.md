@@ -59,9 +59,9 @@ passando de ~500 linhas · texto de tela que não está no canvas · qualquer co
 | Portão | O que destrava | Status |
 |---|---|---|
 | **G0** push + abrir PR em `verlao/*` | publicação de PR | autorizado pelo handoff de 14/10; sem merge/deploy pelo agente |
-| **G1** aprovar a direção visual (frame `Direcao.dc.html`) | S7 e toda UI | pendente |
+| **G1** aprovar a direção visual | S7 e fundamentos F10 | aprovado em 15/10: prévia local A, D15; G2 continua obrigatório para integrar telas |
 | **G2** aprovar o redesenho de cada fluxo no canvas | a UI daquele fluxo | Financeiro é o primeiro |
-| **G3** merge + implantação comprovada de migrações e endpoints | consumidores B4a, B8, B9; UI só após seus endpoints no ar | V2_51/V2_52 no ar em `779aa30` (run 38581918656; digest em `LOG.md`); endpoints novos ainda pendentes |
+| **G3** merge + implantação comprovada de migrações e endpoints | consumidores B4a, B8, B9; UI só após seus endpoints no ar | service #104–107 no ar em `8770c9c`, run 38592530320 success; ERP #68–70 publicado em `854be83` |
 | **G4** perguntas do dono (`PERGUNTAS.md` 1–14) | padrões seguros aplicados; transferência própria precisa de definição em U0 | aberto |
 
 ## 4. Cartões

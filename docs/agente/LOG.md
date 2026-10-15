@@ -1,5 +1,14 @@
 # Log do agente
 
+## 15/10/2026 — G1 aprovada e fundamentos F10
+
+- Matheus aprovou a prévia local A (“lindo, pode implementar”), D15. G2 do Pix ainda pendente.
+- Service #104–107 publicado em `8770c9c` (run 38592530320 success); ERP #68–70 em `854be83`
+  (Pages 38598044291 success). Consumidores tipados disponíveis antes desta onda.
+- F10 dividido em tokens/controles, MoneyInput em centavos e aviso com Desfazer; novos componentes
+  aditivos, sem importar nas telas existentes antes do G2. Fontes locais licenciadas, sem CDN.
+- O protótipo G1 é descartável. A UI será implementada em Vue; o HTML de avaliação não entra no produto.
+
 ## 06/10/2026 — sessão 1: descoberta
 
 - Li `AGENT_HANDOFF.md`, `HANDOFF-endpoints-2026-10-06.md`, `README.md` do design e o código de `prod` dos dois repos.
