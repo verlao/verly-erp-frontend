@@ -45,7 +45,7 @@ const hintId = computed(() => `${inputId.value}-hint`)
 const errorId = computed(() => `${inputId.value}-error`)
 const displayValue = ref(props.modelValue === null ? '' : safeDisplay(props.modelValue))
 const locallyInvalid = ref(props.modelValue !== null && !Number.isSafeInteger(props.modelValue))
-let emittedValue: number | null | undefined
+const pendingEmissions = new Set<number | null>()
 
 function safeDisplay(value: number): string {
   return Number.isSafeInteger(value) ? formatBRL(value) : ''
@@ -70,7 +70,7 @@ function handleInput(event: Event) {
   displayValue.value = text
   if (text.trim() === '') {
     setInvalid(false)
-    emittedValue = null
+    pendingEmissions.add(null)
     emit('update:modelValue', null)
     return
   }
@@ -78,12 +78,11 @@ function handleInput(event: Event) {
   const cents = parseBRL(text)
   if (cents === null || !Number.isSafeInteger(cents)) {
     setInvalid(true)
-    emittedValue = undefined
     return
   }
 
   setInvalid(false)
-  emittedValue = cents
+  pendingEmissions.add(cents)
   emit('update:modelValue', cents)
 }
 
@@ -95,10 +94,11 @@ function handleBlur() {
 }
 
 watch(() => props.modelValue, (value) => {
-  if (emittedValue !== undefined && value === emittedValue) {
-    emittedValue = undefined
+  if (pendingEmissions.has(value)) {
+    pendingEmissions.delete(value)
     return
   }
+  pendingEmissions.clear()
   displayValue.value = value === null ? '' : safeDisplay(value)
   locallyInvalid.value = value !== null && !Number.isSafeInteger(value)
 })

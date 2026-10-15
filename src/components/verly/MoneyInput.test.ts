@@ -46,6 +46,20 @@ describe('MoneyInput', () => {
     expect(wrapper.text()).toContain('Digite um valor válido')
   })
 
+  it('preserves invalid text when a delayed parent echo of an earlier valid value arrives', async () => {
+    const wrapper = mountInput(null)
+    const input = wrapper.get('input')
+
+    await input.setValue('12,34')
+    expect(wrapper.emitted('update:modelValue')?.at(-1)).toEqual([1234])
+    await input.setValue('12,3x')
+    await wrapper.setProps({ modelValue: 1234 })
+
+    expect((input.element as HTMLInputElement).value).toBe('12,3x')
+    expect(input.attributes('aria-invalid')).toBe('true')
+    expect(wrapper.text()).toContain('Digite um valor válido')
+  })
+
   it('formats valid input on blur using the money helper', async () => {
     const wrapper = mountInput()
     const input = wrapper.get('input')
