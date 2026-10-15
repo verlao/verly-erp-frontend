@@ -54,6 +54,19 @@ describe('MoneyInput', () => {
     expect((input.element as HTMLInputElement).value).toBe(formatBRL(111326))
   })
 
+  it('marks unsafe parent cents as invalid without formatting or rounding them', async () => {
+    const wrapper = mountInput(Number.MAX_SAFE_INTEGER + 1)
+    const input = wrapper.get('input')
+
+    expect((input.element as HTMLInputElement).value).toBe('')
+    expect(input.attributes('aria-invalid')).toBe('true')
+    expect(wrapper.text()).toContain('Digite um valor válido')
+
+    await wrapper.setProps({ modelValue: 500 })
+    expect((input.element as HTMLInputElement).value).toBe(formatBRL(500))
+    expect(input.attributes('aria-invalid')).toBeUndefined()
+  })
+
   it('reflects parent replacements and resets while preserving a v-model echo during editing', async () => {
     const wrapper = mountInput(1234)
     const input = wrapper.get('input')

@@ -1,6 +1,6 @@
 <template>
   <div class="grid gap-1.5">
-    <label :for="inputId" class="text-sm font-medium text-verly-foreground">{{ label }}</label>
+    <label :for="inputId" class="text-[15px] font-medium text-verly-ink">{{ label }}</label>
     <input
       :id="inputId"
       :value="displayValue"
@@ -10,12 +10,12 @@
       :disabled="disabled"
       :aria-invalid="hasError ? 'true' : undefined"
       :aria-describedby="describedBy"
-      class="min-h-11 w-full rounded-md border border-verly-border bg-verly-background px-3 py-2 font-mono text-[17px] text-verly-foreground placeholder:font-normal placeholder:text-verly-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-verly-ring disabled:cursor-not-allowed disabled:opacity-50"
+      class="min-h-11 w-full rounded-md border border-verly-muted/50 bg-verly-background px-3 py-2 font-verly-mono text-[17px] text-verly-ink placeholder:font-normal placeholder:text-verly-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-verly-glass disabled:cursor-not-allowed disabled:opacity-50"
       @input="handleInput"
       @blur="handleBlur"
     />
-    <p v-if="hint" :id="hintId" class="text-sm text-verly-muted">{{ hint }}</p>
-    <p v-if="visibleError" :id="errorId" class="text-sm text-verly-danger" role="alert">
+    <p v-if="hint" :id="hintId" class="text-[15px] text-verly-muted">{{ hint }}</p>
+    <p v-if="visibleError" :id="errorId" class="text-[15px] text-verly-overdue" role="alert">
       {{ visibleError }}
     </p>
   </div>
@@ -44,7 +44,7 @@ const inputId = computed(() => props.id ?? generatedId)
 const hintId = computed(() => `${inputId.value}-hint`)
 const errorId = computed(() => `${inputId.value}-error`)
 const displayValue = ref(props.modelValue === null ? '' : safeDisplay(props.modelValue))
-const locallyInvalid = ref(false)
+const locallyInvalid = ref(props.modelValue !== null && !Number.isSafeInteger(props.modelValue))
 let emittedValue: number | null | undefined
 
 function safeDisplay(value: number): string {
@@ -100,6 +100,6 @@ watch(() => props.modelValue, (value) => {
     return
   }
   displayValue.value = value === null ? '' : safeDisplay(value)
-  locallyInvalid.value = false
+  locallyInvalid.value = value !== null && !Number.isSafeInteger(value)
 })
 </script>
