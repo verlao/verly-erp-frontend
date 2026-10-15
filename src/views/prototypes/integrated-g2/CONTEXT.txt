@@ -8,7 +8,7 @@ npm run dev -- --host 127.0.0.1 --port 5198
 Abrir:
 http://127.0.0.1:5198/evidencias/g2-integrado/index.html#/ledger
 
-Usa MainLayout, sidebar, cabeçalho e navegação móvel reais, sem modificar esses componentes.
+Usa MainLayout, sidebar, cabeçalho e navegação móvel reais, redesenhados nesta branch local.
 Bootstrap separado em evidencias/g2-integrado; não altera src/main.ts ou as rotas do produto.
 Somente Financeiro redesenhado. Outras áreas do menu abrem aviso local, sem dados reais.
 Pinia recebe identidade de exemplo em memória; não cria token ou login real.
@@ -31,3 +31,9 @@ Evidências locais em ~/Documents/repositories/verly/g2-integrated-review-2026-1
 
 Protótipo descartável apenas na branch prototype/financeiro-integrated-g2; não destinado a merge.
 Não abrir PR deste código como implementação de produção; depois de G2 reimplementar sobre contratos reais.
+
+Revisão pedida por Matheus: mais cor nos chips e detalhes e redesenho da navbar.
+Ativo em vidro, pendências em âmbar; resumo com fundos suaves verde/âmbar/vidro.
+Sidebar com assinatura da peça, destaque ativo e modo compacto; barra móvel e Mais coerentes,
+conta funcional com ícone e Escape/clique fora. Destinos e permissões continuam no catálogo real.
+Controles de navegação >=44px e texto >=15px, salvo rótulos inferiores13px.

@@ -1,68 +1,15 @@
 <template>
-  <nav
-    class="fixed bottom-0 left-0 right-0 z-40 bg-white border-t border-border grid grid-cols-5 pb-[env(safe-area-inset-bottom)] shadow-[0_-2px_8px_rgba(0,0,0,0.04)]"
-    style="height: calc(4rem + env(safe-area-inset-bottom))"
-  >
-    <router-link
-      v-for="item in bottomItems"
-      :key="String(item.name)"
-      :to="{ name: item.name }"
-      custom
-      v-slot="{ navigate, isActive }"
-    >
-      <button
-        v-if="item.emphasis === 'primary'"
-        class="relative flex flex-col items-center justify-center"
-        :aria-label="item.accessibleLabel ?? item.label"
-        @click="navigate"
-      >
-        <div
-          class="absolute -top-6 w-14 h-14 rounded-full bg-blue-600 hover:bg-blue-700 flex items-center justify-center shadow-lg transition-colors"
-        >
-          <NavigationIcon :icon="item.icon" :size="28" class="text-white" />
-        </div>
-        <span class="text-[10px] font-medium text-blue-600 mt-7">
-          {{ item.label }}
-        </span>
-      </button>
-      <button
-        v-else
-        :class="[
-          'flex flex-col items-center justify-center gap-1 transition-colors',
-          isActive
-            ? 'text-blue-600'
-            : 'text-muted-foreground hover:text-foreground',
-        ]"
-        :aria-label="item.accessibleLabel ?? item.label"
-        @click="navigate"
-      >
-        <NavigationIcon :icon="item.icon" />
-        <span class="text-[10px] font-medium">{{ item.label }}</span>
+  <nav class="font-verly-body fixed bottom-0 left-0 right-0 z-40 grid grid-cols-5 border-t border-[#DDE4E1] bg-[#F8FAF9]/95 px-1 pt-1 pb-[env(safe-area-inset-bottom)] shadow-[0_-3px_16px_rgba(20,26,31,.05)] backdrop-blur" style="height: calc(76px + env(safe-area-inset-bottom))" aria-label="Navegação inferior">
+    <router-link v-for="item in bottomItems" :key="String(item.name)" :to="{ name: item.name }" custom v-slot="{ navigate, isActive }">
+      <button :class="['relative mx-auto flex min-h-11 w-full max-w-[88px] flex-col items-center justify-center gap-0.5 rounded-xl px-1 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2E7D7A]', isActive ? 'bg-[#E4F1EF] text-[#1C625F]' : 'text-[#67736E] hover:bg-[#EDF3F1] hover:text-[#26312D]']" :aria-label="item.accessibleLabel ?? item.label" :aria-current="isActive ? 'page' : undefined" @click="navigate">
+        <span :class="isActive ? 'text-[#1C625F]' : ''"><NavigationIcon :icon="item.icon" :size="21" /></span>
+        <span :class="['max-w-full truncate text-[13px] leading-4', isActive ? 'font-semibold' : 'font-medium']">{{ item.label }}</span>
+        <span v-if="isActive" class="absolute bottom-0.5 h-1 w-1 rounded-full bg-[#2E7D7A]" aria-hidden="true" />
       </button>
     </router-link>
-
-    <button
-      class="flex flex-col items-center justify-center gap-1 text-muted-foreground hover:text-foreground transition-colors"
-      aria-label="Mais"
-      @click="emit('openMore')"
-    >
-      <svg
-        xmlns="http://www.w3.org/2000/svg"
-        width="20"
-        height="20"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        stroke-width="2"
-        stroke-linecap="round"
-        stroke-linejoin="round"
-        aria-hidden="true"
-      >
-        <line x1="4" x2="20" y1="12" y2="12" />
-        <line x1="4" x2="20" y1="6" y2="6" />
-        <line x1="4" x2="20" y1="18" y2="18" />
-      </svg>
-      <span class="text-[10px] font-medium">Mais</span>
+    <button class="mx-auto flex min-h-11 w-full max-w-[88px] flex-col items-center justify-center gap-0.5 rounded-xl text-[#67736E] transition hover:bg-[#EDF3F1] hover:text-[#26312D] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2E7D7A]" aria-label="Mais" @click="emit('openMore')">
+      <svg xmlns="http://www.w3.org/2000/svg" width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="5" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/></svg>
+      <span class="text-[13px] font-medium leading-4">Mais</span>
     </button>
   </nav>
 </template>
@@ -71,7 +18,6 @@
 import { navigationItemsFor } from '../../router/navigation'
 import { routes } from '../../router/routes'
 import NavigationIcon from './NavigationIcon.vue'
-
 const emit = defineEmits<{ openMore: [] }>()
 const bottomItems = navigationItemsFor(routes, 'bottom')
 </script>

@@ -78,9 +78,9 @@ onBeforeUnmount(() => { if (dialog.value?.open) dialog.value.close() })
     </header>
 
     <section class="summary-grid" aria-label="Resumo do mês">
-      <article class="summary-card"><span>Entrou</span><strong>{{ formatBRL(summary.inCents) }}</strong><small>neste mês</small></article>
-      <article class="summary-card"><span>Saiu</span><strong>{{ formatBRL(summary.outCents) }}</strong><small>neste mês</small></article>
-      <article class="summary-card summary-balance"><span>Saldo</span><strong>{{ formatBRL(summary.balanceCents) }}</strong><small>neste mês</small></article>
+      <article class="summary-card summary-in"><span class="summary-label"><ArrowDownLeft :size="18" aria-hidden="true" /> Entrou</span><strong :class="{ zero: summary.inCents === 0 }">{{ formatBRL(summary.inCents) }}</strong><small>neste mês</small></article>
+      <article class="summary-card summary-out"><span class="summary-label"><ArrowUpRight :size="18" aria-hidden="true" /> Saiu</span><strong :class="{ zero: summary.outCents === 0 }">{{ formatBRL(summary.outCents) }}</strong><small>neste mês</small></article>
+      <article class="summary-card summary-balance"><span class="summary-label"><ArrowLeftRight :size="18" aria-hidden="true" /> Saldo</span><strong :class="{ zero: summary.balanceCents === 0 }">{{ formatBRL(summary.balanceCents) }}</strong><small>neste mês</small></article>
     </section>
 
     <section class="queue-section" aria-labelledby="queue-title">
@@ -89,11 +89,11 @@ onBeforeUnmount(() => { if (dialog.value?.open) dialog.value.close() })
         <button v-for="option in filters" :key="option" type="button" class="filter-chip" :class="{ active: filter === option }" :aria-pressed="filter === option" @click="filter = option">{{ option }}</button>
       </div>
       <div class="movement-list">
-        <button v-for="item in visibleItems" :key="item.id" type="button" class="movement-row" @click="openItem(item)" :aria-label="`${item.title}, ${formatBRL(item.amountCents)}. Abrir para conferir.`">
+        <button v-for="item in visibleItems" :key="item.id" type="button" class="movement-row" :class="`movement-row--${item.movement}`" @click="openItem(item)" :aria-label="`${item.title}, ${formatBRL(item.amountCents)}. Abrir para conferir.`">
           <span v-if="item.widthCm && item.heightCm" class="row-piece" aria-hidden="true"><PieceDrawing :width-cm="item.widthCm" :height-cm="item.heightCm" :label="item.title"/></span>
           <span v-else class="movement-icon" :class="`movement-${item.movement}`"><component :is="rowIcon(item.movement)" :size="20" :stroke-width="2" aria-hidden="true" /></span>
           <span class="row-main"><span class="row-title">{{ item.title }}</span><span class="row-subtitle">{{ subtitleFor(item) }}</span><span v-if="item.widthCm && item.heightCm" class="row-dimensions">{{ item.widthCm }} × {{ item.heightCm }} cm</span></span>
-          <span class="row-meta"><time>{{ formatDate(item.date) }}</time><strong class="amount" :class="{ muted: item.movement === 'unknown' || item.movement === 'own' }">{{ formatBRL(item.amountCents) }}</strong><StatusPill tone="neutral">{{ item.movement === 'unknown' ? 'Conferir' : 'Pendente' }}</StatusPill></span>
+          <span class="row-meta"><time>{{ formatDate(item.date) }}</time><strong class="amount" :class="{ muted: item.movement === 'unknown' || item.movement === 'own' }">{{ formatBRL(item.amountCents) }}</strong><StatusPill :tone="['in', 'out', 'unknown'].includes(item.movement) ? 'pending' : 'neutral'">{{ item.movement === 'unknown' ? 'Revisar' : item.movement === 'own' ? 'Entre contas' : item.movement === 'reference' ? 'Referência' : 'Para confirmar' }}</StatusPill></span>
           <span class="row-chevron" aria-hidden="true">›</span>
         </button>
         <p v-if="!visibleItems.length" class="empty-state">Nenhum movimento neste filtro.</p>
@@ -114,7 +114,7 @@ onBeforeUnmount(() => { if (dialog.value?.open) dialog.value.close() })
           <section v-if="selected.movement === 'reference'" class="drawer-section reference-callout"><ReceiptText :size="19"/><div><strong>Referência</strong><p>Este comprovante não altera o financeiro.</p></div></section>
 
             <template v-if="selection.movement === 'in' || selection.movement === 'out'">
-            <section v-if="selected.movement !== 'unknown' && !editing" class="suggestion-card"><div class="suggestion-top"><span class="suggestion-label">Nossa sugestão</span><StatusPill tone="neutral">Confira antes de salvar</StatusPill></div><p class="suggestion-sentence">{{ selection.movement === 'in' ? 'Cliente do pagamento:' : 'Recebedor da despesa:' }} <strong>{{ suggestionName }}</strong><template v-if="selection.purpose"> · {{ selection.purpose.toLowerCase() }}</template><template v-if="selection.orderId"> · pedido #{{ selection.orderId }}</template></p><p class="suggestion-why">{{ selected.subtitle }}</p><ActionButton variant="secondary" class="accept-button" @click="accept"><Check :size="17"/> Conferir sugestão</ActionButton></section>
+            <section v-if="selected.movement !== 'unknown' && !editing" class="suggestion-card"><div class="suggestion-top"><span class="suggestion-label">Nossa sugestão</span><StatusPill :tone="selection.accepted ? 'neutral' : 'pending'" :class="{ 'suggestion-checked': selection.accepted }">{{ selection.accepted ? 'Sugestão conferida' : 'Confira antes de salvar' }}</StatusPill></div><p class="suggestion-sentence">{{ selection.movement === 'in' ? 'Cliente do pagamento:' : 'Recebedor da despesa:' }} <strong>{{ suggestionName }}</strong><template v-if="selection.purpose"> · {{ selection.purpose.toLowerCase() }}</template><template v-if="selection.orderId"> · pedido #{{ selection.orderId }}</template></p><p class="suggestion-why">{{ selected.subtitle }}</p><ActionButton variant="secondary" class="accept-button" @click="accept"><Check :size="17"/> Conferir sugestão</ActionButton></section>
             <div v-else-if="editing || (selected.movement === 'unknown' && !selection.customerId && !selection.partnerId)" class="search-panel"><label for="destination-search">{{ selected.movement === 'unknown' ? 'Quem pagou ou recebeu?' : 'Escolher outro destino' }}</label><div class="search-box"><Search :size="18"/><input id="destination-search" v-model="query" type="search" autocomplete="off" placeholder="Nome ou telefone" /></div><p class="search-help">Buscamos clientes e fornecedores pelo nome ou telefone.</p><div v-if="filteredSearchResults.length" class="search-results"><button v-for="result in filteredSearchResults" :key="`${result.kind}-${result.id}`" type="button" @click="resultSelected(result)"><span>{{ result.label }}</span><small>{{ result.detail }} · {{ result.kind === 'customer' ? 'Cliente' : 'Fornecedor' }}</small></button></div><p v-else-if="query" class="search-empty">Nenhum resultado. Você ainda pode escolher uma categoria.</p><ActionButton v-if="editing" variant="secondary" @click="editing = false">Voltar à sugestão</ActionButton></div>
 
             <section v-if="selection.movement === 'in' || selection.movement === 'out'" class="drawer-section"><h3>{{ selection.movement === 'in' ? 'Categoria do recebimento' : 'Categoria da despesa' }}</h3><div class="chips"><ChoiceChip v-for="purpose in purposeOptions" :key="purpose" :selected="selection.purpose === purpose" @update:selected="finance.setPurpose(purpose)">{{ purpose }}</ChoiceChip></div></section>
@@ -183,4 +183,29 @@ h1 { font-size: clamp(30px, 4vw, 38px); line-height: 1.08; }
 .toast-stack { position: fixed; z-index: 90; right: 20px; bottom: 20px; display: grid; width: min(440px,calc(100vw - 32px)); gap: 9px; }
 @media (max-width: 680px) { .finance-preview { padding: 14px 15px calc(88px + env(safe-area-inset-bottom)); }.page-heading { margin: 18px 0 15px; }.summary-grid { gap: 8px; }.summary-card { min-height: 92px; padding: 11px 9px; border-radius: 11px; }.summary-card span { font-size:15px; }.summary-card strong { font-size: clamp(15px,4vw,19px); letter-spacing: -.07em; }.summary-card small { font-size:15px; }.queue-section { margin-top: 26px; }.queue-heading h2 { font-size: 22px; }.count-label { max-width: 135px; text-align: right; font-size:15px; }.movement-row { grid-template-columns: 42px minmax(0,1fr) auto; gap: 9px; min-height: 74px; padding: 10px; }.row-piece { width: 40px; height: 40px; }.row-piece :deep(figure) { width: 40px; }.row-piece :deep(svg) { height: 31px; }.movement-icon { width: 38px; height: 38px; }.row-title { font-size: 16px; }.row-subtitle { max-width: 43vw; font-size:15px; }.row-meta { max-width: 116px; gap: 3px 7px; }.row-meta time { font-size:15px; }.amount { font-size:15px; }.row-meta :deep(.verly-status-pill) { min-height: 23px; padding: 1px 6px; font-size:15px; }.row-chevron { display: none; }.review-dialog { inset: auto 0 0; width: 100vw; height: min(91dvh,860px); border-radius: 18px 18px 0 0; box-shadow: 0 -18px 50px #111a1826; }.review-dialog::backdrop { background: #121b19a6; }.drawer-header { padding: 13px 17px 12px; }.drawer-header h2 { font-size: 21px; }.drawer-scroll { padding: 15px 17px 20px; }.drawer-footer { padding: 10px 17px max(12px,env(safe-area-inset-bottom)); }.toast-stack { right: 12px; bottom: calc(76px + env(safe-area-inset-bottom)); width: calc(100vw - 24px); }.piece-preview { width: 155px; margin-bottom: 8px; } }
 @media (prefers-reduced-motion: reduce) { *,*::before,*::after { scroll-behavior: auto !important; transition-duration: .01ms !important; } }
+
+/* Cor acompanha estado e seleção; nenhuma cor pressupõe um Pix já confirmado. */
+.summary-label { display: flex; align-items: center; gap: 7px; }
+.summary-in { background: #f2f9f4; box-shadow: inset 0 3px #1e7a3c; }
+.summary-out { background: #fff8ef; box-shadow: inset 0 3px #a84f06; }
+.summary-balance { background: #edf6f4; box-shadow: inset 0 3px #2e7d7a; }
+.summary-in .summary-label { color: #1e7a3c; }
+.summary-out .summary-label { color: #a84f06; }
+.summary-balance .summary-label { color: #246765; }
+.summary-card strong.zero { color: #53615f; }
+.filter-chip.active { background: #2e7d7a; color: #fff; border-color: #2e7d7a; box-shadow: none; }
+.movement-row:hover { background: #f5faf8; border-color: #8dbab2; }
+.movement-in { background: #e4f1ef; color: #246765; }
+.movement-out { background: #fff0df; color: #8b4104; }
+.movement-own { background: #e4f1ef; color: #246765; }
+.movement-reference { background: #edf0ef; color: #53615f; }
+.movement-unknown { background: #fff0df; color: #8b4104; }
+.movement-row--own :deep(.verly-status-pill) { background: #e4f1ef; color: #246765; border-color: #a8cfc5; }
+.movement-row--reference :deep(.verly-status-pill) { background: #edf0ef; color: #53615f; border-color: #cbd5d0; }
+.row-meta :deep(.verly-status-pill--pending) { background: #fbe8cf; color: #a84f06; border-color: #e8ba82; }
+.suggestion-card { background: #eef7f4; border-color: #a8cfc5; box-shadow: inset 3px 0 #2e7d7a; }
+.suggestion-card :deep(.suggestion-checked) { background: #e0f0e8; color: #235d48; border-color: #b2d2bf; }
+.chips :deep(.verly-choice-chip--selected) { background: #2e7d7a; color: #fff; border-color: #2e7d7a; }
+.difference-note { background: #fff5e8; color: #864408; border-left-color: #a84f06; }
+
 </style>
