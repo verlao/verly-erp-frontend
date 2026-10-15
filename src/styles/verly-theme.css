@@ -1,0 +1,69 @@
+@font-face {
+  font-family: 'Atkinson Hyperlegible Next';
+  src: url('/fonts/verly/atkinson-400.ttf') format('truetype');
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Atkinson Hyperlegible Next';
+  src: url('/fonts/verly/atkinson-600.ttf') format('truetype');
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Atkinson Hyperlegible Next';
+  src: url('/fonts/verly/atkinson-700.ttf') format('truetype');
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Bricolage Grotesque';
+  src: url('/fonts/verly/bricolage-600.ttf') format('truetype');
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Bricolage Grotesque';
+  src: url('/fonts/verly/bricolage-700.ttf') format('truetype');
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+}
+
+@theme static {
+  --color-verly-ink: #141a1f;
+  --color-verly-glass: #2e7d7a;
+  --color-verly-yellow: #f2b705;
+  --color-verly-entered: #1e7a3c;
+  --color-verly-pending: #a84f06;
+  --color-verly-overdue: #b42318;
+  --color-verly-background: #f3f5f4;
+  --color-verly-muted: #53615f;
+  --font-verly-body: 'Atkinson Hyperlegible Next', sans-serif;
+  --font-verly-display: 'Bricolage Grotesque', sans-serif;
+  --font-verly-mono: ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+.verly-surface {
+  color: var(--color-verly-ink);
+  background-color: var(--color-verly-background);
+  font-family: var(--font-verly-body);
+  font-size: 17px;
+}
+
+.verly-surface h1,
+.verly-surface h2,
+.verly-surface h3,
+.verly-surface h4,
+.verly-surface h5,
+.verly-surface h6 {
+  font-family: var(--font-verly-display);
+}

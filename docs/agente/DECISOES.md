@@ -2,6 +2,14 @@
 
 Formato: `data · contexto · opções · escolha · por quê · como reverter`.
 
+**D15** · 15/10/2026 · Direção visual G1 · **opção A (fila em destaque) aprovada pelo Matheus**:
+após abrir a prévia em A, respondeu “lindo, pode implementar”. A referência é a reconstrução local
+`design-review-g1-2026-10-14/prototype-g1.html`, preservada no commit `66ef0ba` da branch descartável
+`prototype/g1-visual-review`, não o canvas Claude (inacessível nesta sessão). Mantém a paleta e as fontes
+descritas no handoff. Libera os fundamentos F10 e o redesenho U0; **G2 do fluxo Pix continua pendente**.
+Tokens e novos componentes são aditivos; telas existentes serão migradas por fluxo após G2, sem flags.
+Para reverter a direção, o Matheus escolhe outra proposta antes da integração das telas.
+
 ---
 
 **D1** · 06/10/2026 · Onde ficam `docs/agente/` · (a) nos dois repos, (b) só no ERP · **só no ERP** ·
