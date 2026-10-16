@@ -1,5 +1,12 @@
 # Orquestração — redesenho Verly (ERP + app no celular) · 14/10/2026
 
+> **Nova frente de16/10 — preenchimento assistido/HITL:** seguir o
+> [mapa de implementação orquestrada](MAPA_IMPLEMENTACAO_HITL_2026-10-16.md), baseado no
+> [sweep bot/service × inputs](AUDITORIA_PREFILL_HITL_2026-10-15.md). Ele define os cartões novos,
+> três executores baratos, revisão do orquestrador e Guia sob demanda. Os cartões e estados abaixo
+> registram a frente anterior; não duplicar trabalho já entregue nem assumir que o status histórico é atual.
+
+
 Plano de implementação com agentes em paralelo, nos dois repos (`verlao/verly-erp-frontend` e
 `verlao/verly-service`). Substitui a parte de execução do `AGENT_HANDOFF.md` e corrige o que mudou
 depois de 06/10:
