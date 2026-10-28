@@ -25,8 +25,9 @@ Checkpoint vivo: atualizado a cada cartão. Nenhum merge/deploy/escrita em produ
 | F01 | **concluído com lacuna** (draft) | HITL-F01 `feat/hitl-f01-context-navigation` | `bf819bd` | 310 testes / 41 arquivos + build + diff-check | ERP **#74** |
 | F02 | **concluído** (auditoria + 3 correções, draft) | HITL-F02 `feat/hitl-f02-lead-quote-review` | `14d787a` | 287 testes / 39 arquivos + build + diff-check | ERP **#75** |
 | S02 | **concluído** (draft) | HITL-S02 `feat/hitl-s02-pix-receipt-evidence` | `0affab8` | 681 testes / 105 classes | service **#121** |
+| M01 | **concluído** (migração isolada, draft) | HITL-M01 `feat/hitl-m01-lead-customer-link` | `8d672c6` | 669 testes / 105 classes (4 de migração real) | service **#122** |
 | S03–S07 | não iniciados (corte de escopo) | — | — | — | — |
-| M01/M02 | não iniciados (corte de escopo) | — | — | — | — |
+| M02 | não iniciado (corte de escopo) | — | — | — | — |
 | F03–F07 | não iniciados (corte de escopo) | — | — | — | — |
 | B01/B02 | não iniciados (corte de escopo) | — | — | — | — |
 
@@ -83,9 +84,17 @@ Checkpoint vivo: atualizado a cada cartão. Nenhum merge/deploy/escrita em produ
 - Payload real capturado no teste de integração está no corpo do PR (lado a lado com "rota inexistente" em `prod`).
 - **PR #121 draft** contra `prod`. `Run Tests` deve repetir a falha de ambiente do #120 (Docker/Testcontainers + dois `V2_54`).
 
+## M01 — vínculo humano lead↔cliente (checkpoint 02:3x, retomada 2)
+
+- `V2_56__lead_customer_link.sql` — **só migração** (sem entidade JPA; a entidade é S04, após esta no ar). Sem backfill; não toca `leads`, `customer` nem `quote`.
+- Índice **único parcial** `(lead_id) WHERE status='ACTIVE'` = um vínculo vigente por lead, histórico de revogados preservado; `CHECK` impede REVOKED anônimo e ACTIVE já revogado; `basis` só aceita `HUMAN_SELECTED`; FKs para lead/cliente existentes; `decided_by` obrigatório.
+- `review_token` fica como auditoria do contexto revisado (contrato §1.4), não como chave.
+- Gates: **669 testes, 0 falhas** com Flyway real; `LeadCustomerLinkMigrationTest` com 4 testes (aplica sem tocar em leads/clientes; unicidade parcial + histórico; FKs `23503`; CHECKs `23514`/`23502`).
+- **PR #122 draft**; mesma condição de merge do #120/#121 (`prod` verde). `V2_57` segue reservado para S05.
+
 ## Corte de escopo (declarado, não silencioso)
 
-A noite foi limitada a **C01-S → S01 → F01 → F02 → S02**. S03–S07, M01/M02, F03–F07 e B01/B02 **não foram iniciados**; continuam no contrato e no prompt, sem trabalho parcial em worktree.
+A noite foi limitada a **C01-S → S01 → F01 → F02 → S02 → M01**. S03–S07, M01/M02, F03–F07 e B01/B02 **não foram iniciados**; continuam no contrato e no prompt, sem trabalho parcial em worktree.
 
 
 
@@ -111,6 +120,7 @@ A noite foi limitada a **C01-S → S01 → F01 → F02 → S02**. S03–S07, M01
 | F01 | decisão sobre a lacuna parceiro→financeiro (não bloqueia o resto) | `gh pr ready 74 --repo verlao/verly-erp-frontend` |
 | F02 | nada além do merge (independente) | `gh pr ready 75 --repo verlao/verly-erp-frontend` |
 | S02 | `prod` do service com CI verde (mesmo bloqueio do S01) | `gh pr ready 121 --repo verlao/verly-service` |
+| M01 | `prod` verde; **entra antes de S04** (S04 depende da tabela) | `gh pr ready 122 --repo verlao/verly-service` |
 | S03–S07, M01/M02, F03–F07, B01/B02 | não iniciados por corte de escopo | — |
 
 ## Decisões tomadas sozinho (com reversão)
@@ -130,7 +140,7 @@ A noite foi limitada a **C01-S → S01 → F01 → F02 → S02**. S03–S07, M01
 | Runner `orangepi-backend` | online/idle | online/idle (nenhum job disparado por nós) |
 | `verly-service` `prod` | `1dbd003` (CI vermelho, serve `b65f56a`) | `1dbd003` — intocado |
 | `verly-erp-frontend` `prod` | `c7b4e96` | `c7b4e96` — intocado |
-| PRs novos | — | service #120 e #121 (drafts), ERP #74 e #75 (drafts) |
+| PRs novos | — | service #120, #121 e #122 (drafts), ERP #74 e #75 (drafts) |
 | Branch de assets | — | `pr-assets` no ERP (só PNGs, nunca merge) |
 
 ## O que falhou ou foi interrompido
