@@ -27,7 +27,9 @@ Checkpoint vivo: atualizado a cada cartão. Nenhum merge/deploy/escrita em produ
 | F04 | **concluído** (agenda nova, draft) | HITL-AGENDA `feat/hitl-f04-agenda` | `6dc9c1a` | 289 testes / 39 arquivos + build + diff-check | ERP **#76** |
 | S02 | **concluído** (draft) | HITL-S02 `feat/hitl-s02-pix-receipt-evidence` | `0affab8` | 681 testes / 105 classes | service **#121** |
 | M01 | **concluído** (migração isolada, draft) | HITL-M01 `feat/hitl-m01-lead-customer-link` | `8d672c6` | 669 testes / 105 classes (4 de migração real) | service **#122** |
-| S03–S07 | não iniciados (corte de escopo) | — | — | — | — |
+| V2_57 | **concluído** (bug medido, draft) | HITL-V57 `feat/hitl-v257-quote-products-text` | `3001f87` | 666 testes | service **#123** |
+| S05 | **concluído** (empilhado em #123, draft) | HITL-S05 `feat/hitl-s05-quote-continuity` | `5a793b0` | 680 testes / 107 classes | service **#124** |
+| S03/S04/S06/S07 | não iniciados (dependem de deploy) | — | — | — | — |
 | M02 | não iniciado (corte de escopo) | — | — | — | — |
 | F03, F05–F07 | não iniciados (corte de escopo) | — | — | — | — |
 | B01/B02 | não iniciados (corte de escopo) | — | — | — | — |
@@ -104,6 +106,22 @@ Checkpoint vivo: atualizado a cada cartão. Nenhum merge/deploy/escrita em produ
 - Gates: `vue-tsc -b`, **289 testes / 39 arquivos**, `vite build`, `git diff --check`. Evidência: `hitl-overnight-2026-10-28/F04/` (antes = tela em branco; depois semana 1/2, diálogos de visita e instalação em 393/1440) publicada em `pr-assets`.
 - **PR #76 draft** contra `prod`, independente do #74 e do #75 (nenhum arquivo em comum).
 
+## V2_57 — `quote.products` estourava `varchar(255)` (checkpoint 02:3x, retomada 2)
+
+- **Bug medido**, não suposto: `POST /quotes/from-lead` com **3 peças** em Postgres 16 real →
+  `ERROR: value too long for type character varying(255)` no insert de `public.quote`. Um item ocupa ~150–200 bytes de JSON, então **duas peças já encostam** no limite. Não é caso de borda: é o orçamento normal de uma vidraça. O cliente via 400 genérico.
+- `V2_57__quote_products_text.sql`: `quote.products` → `text` (+ `COMMENT`). Nenhuma linha tocada; `HashMapConverter` continua igual e **`ddl-auto=validate` passa sem mudar entidade** (verificado).
+- `observations` **não** foi alterada: 255 é suspeito, mas não foi medido — contrato só autoriza mudança com prova.
+- Gates: **666 testes, 0 falhas**; `QuoteProductsColumnMigrationTest` prova coluna `text`, persistência do JSON de 3 peças (>255 chars) e leitura de volta. **PR #123 draft.**
+
+## S05 — orçamentos do lead e PUT sem perda (checkpoint 02:3x, retomada 2)
+
+- `GET /leads/{id}/quotes` (controller próprio): `QuoteDTO[]` mais recente primeiro, com `leadId` e `discount`; `404 LEAD_NOT_FOUND`, `400 INVALID_LEAD_ID`, envelope D10.
+- `PUT /quotes/{id}` passou a **mesclar** com o registro: `leadId`, `discount`, `createdDate` sempre do banco (o corpo não os carrega); `status`, `expirationDate`, `customerId`, `observations` e totais ausentes preservam o atual; `lineItems` do lead são reinjetados se o corpo não os traz; formato de catálogo continua recalculando.
+- O formato de lead não passa mais por `calculateQuotePrices` (fazia `Long.parseLong("lineItems")` e devolvia 404 na edição).
+- Gates: **680 testes, 0 falhas**; `LeadQuotesIntegrationTest` (7, HTTP com segurança ligada) e `QuoteServiceEditPreservesTest` (7). Round-trip GET→PUT confere no **banco**, não só no eco: lead, desconto, 3 itens, `createdDate` e `totalPrice` intactos.
+- **PR #124 draft**, empilhado em #123 (a base vira `prod` quando #123 entrar).
+
 ## Corte de escopo (declarado, não silencioso)
 
 A noite foi limitada a **C01-S → S01 → F01 → F02 → S02 → M01 → F04**. S03–S07, M02, F03/F05–F07 e B01/B02 **não foram iniciados**; continuam no contrato e no prompt, sem trabalho parcial em worktree.
@@ -137,6 +155,8 @@ A noite foi limitada a **C01-S → S01 → F01 → F02 → S02 → M01 → F04**
 | F04 | nada além do merge; posição na navegação é opinião de produto | `gh pr ready 76 --repo verlao/verly-erp-frontend` |
 | S02 | `prod` do service com CI verde (mesmo bloqueio do S01) | `gh pr ready 121 --repo verlao/verly-service` |
 | M01 | `prod` verde; **entra antes de S04** (S04 depende da tabela) | `gh pr ready 122 --repo verlao/verly-service` |
+| V2_57 | `prod` verde; **entra antes de S05** (S05 empilhado nele) | `gh pr ready 123 --repo verlao/verly-service` |
+| S05 | depois de #123; `prod` verde | `gh pr ready 124 --repo verlao/verly-service` (antes: trocar base para `prod`) |
 | S03–S07, M02, F03/F05–F07, B01/B02 | não iniciados por corte de escopo | — |
 
 ## Decisões tomadas sozinho (com reversão)
@@ -168,4 +188,4 @@ A noite foi limitada a **C01-S → S01 → F01 → F02 → S02 → M01 → F04**
 - **Revisão adversarial do F01, rodada 2:** `opus` indisponível por cota até 02:20; `gpt-6.1-sol` devolveu 4 FALSO_POSITIVO e 3 INCONCLUSIVO por falta de contexto no prompt (não por defeito). Os três INCONCLUSIVO foram conferidos por inspeção própria no repo (`withoutContextKey` copia a query; template condiciona vazio a `!filterError`; `variantGroups` não tinha consumidor — daí a remoção do lib).
 - **Lacuna de aceite do F01:** parceiro → financeiro sem contrato; declarada, não simulada.
 - **Escopo:** a noite cobriu 5 dos 15+ cartões do mapa (C01-S, S01, F01, F02, S02); o restante não foi iniciado (registrado acima).
-- **Dois orquestradores em paralelo (bug do watchdog):** `alive()` usa `pgrep -f` com o título antigo, que não bate com a linha de comando do `--title` da retomada; o watchdog concluiu "morto" duas vezes e relançou **retomada 1** (02:10) e **retomada 2** (02:13) com 4 s de diferença. As duas ficaram vivas. Coordenação por `hitl-overnight-2026-10-28/LOCKS.md`: retomada 1 seguiu no ERP (F02, PR #75) e retomada 2 foi para o service (S02, PR #121) — worktrees distintos, nenhum arquivo compartilhado. Corrigir o padrão do watchdog (ou usar o pidfile) antes da próxima noite; custo: cota dobrada de dois agentes acordados.
+- **Dois orquestradores em paralelo (bug do watchdog):** `alive()` usa `pgrep -f` com o título antigo, que não bate com a linha de comando do `--title` da retomada; o watchdog concluiu "morto" duas vezes e relançou **retomada 1** (02:10) e **retomada 2** (02:13) com 4 s de diferença. As duas ficaram vivas. Coordenação por `hitl-overnight-2026-10-28/LOCKS.md`: retomada 1 seguiu no ERP (F02, PR #75) e retomada 2 foi para o service (S02, PR #121) — worktrees distintos, nenhum arquivo compartilhado. **Corrigido**: `alive()` agora usa o pidfile (`kill -0`) e, no fallback, casar `HITL overnight v3` (o padrão antigo exigia o título exato sem `-c` e nunca casava com a retomada). Custo do bug: cota dobrada de dois agentes acordados; nenhum trabalho perdido (worktrees separados).
