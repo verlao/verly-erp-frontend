@@ -20,9 +20,6 @@ export type LeadLostReason = 'PRECO' | 'PRAZO' | 'SEM_RESPOSTA' | 'FECHOU_COM_OU
 export interface LeadItemDTO {
   id?: number
   productType?: string
-  category?: string
-  pricingBasis?: string
-  areaM2?: number
   widthCm?: number
   heightCm?: number
   sheets?: number
@@ -41,14 +38,6 @@ export interface LeadItemDTO {
 
 export interface LeadDTO {
   id: number
-  // Vínculos devolvidos pelo backend; ausentes em respostas antigas.
-  number?: string | null
-  reference?: string | null
-  partnerLinked?: boolean
-  /** Nome real da coluna no JSON do service (snake_case, @JsonProperty). */
-  converted_customer_id?: number | null
-  /** Compatibilidade com fixtures/adaptadores antigos; a API não devolve camelCase. */
-  convertedCustomerId?: number | null
   name: string
   phone: string
   email: string

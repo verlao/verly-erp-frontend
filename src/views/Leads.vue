@@ -285,6 +285,7 @@ import Button from '../components/ui/Button.vue'
 import leadService from '../services/lead'
 import type { LeadCounts, LeadDTO, LeadStatus, PaginatedResponse } from '../services/lead'
 import { isSyntheticEmail } from '../lib/leadContact'
+import { leadQuoteRoute } from '../lib/contextRoutes'
 import { reconcileLeadList } from '../lib/leadConfirmation'
 import { buildWhatsAppUrl } from '../lib/whatsapp'
 import { shouldMarkContactedOnWhatsapp } from '../lib/leadStatus'
@@ -597,7 +598,7 @@ const handleQuickAction = async (leadId: number, action: string) => {
         }
         break
       case 'review-extraction':
-        await router.push(`/leads/${lead.id}/orcamento`)
+        await router.push(leadQuoteRoute(lead.id))
         break
     }
   } catch (error) {
