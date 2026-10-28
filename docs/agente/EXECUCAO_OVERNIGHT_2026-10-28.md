@@ -24,11 +24,12 @@ Checkpoint vivo: atualizado a cada cartão. Nenhum merge/deploy/escrita em produ
 | S01 | **concluído** (draft) | HITL-S01 `feat/hitl-s01-lead-review-context` | `ec7f7d9` | 691 testes / 106 classes | service **#120** |
 | F01 | **concluído com lacuna** (draft) | HITL-F01 `feat/hitl-f01-context-navigation` | `bf819bd` | 310 testes / 41 arquivos + build + diff-check | ERP **#74** |
 | F02 | **concluído** (auditoria + 3 correções, draft) | HITL-F02 `feat/hitl-f02-lead-quote-review` | `14d787a` | 287 testes / 39 arquivos + build + diff-check | ERP **#75** |
+| F04 | **concluído** (agenda nova, draft) | HITL-AGENDA `feat/hitl-f04-agenda` | `6dc9c1a` | 289 testes / 39 arquivos + build + diff-check | ERP **#76** |
 | S02 | **concluído** (draft) | HITL-S02 `feat/hitl-s02-pix-receipt-evidence` | `0affab8` | 681 testes / 105 classes | service **#121** |
 | M01 | **concluído** (migração isolada, draft) | HITL-M01 `feat/hitl-m01-lead-customer-link` | `8d672c6` | 669 testes / 105 classes (4 de migração real) | service **#122** |
 | S03–S07 | não iniciados (corte de escopo) | — | — | — | — |
 | M02 | não iniciado (corte de escopo) | — | — | — | — |
-| F03–F07 | não iniciados (corte de escopo) | — | — | — | — |
+| F03, F05–F07 | não iniciados (corte de escopo) | — | — | — | — |
 | B01/B02 | não iniciados (corte de escopo) | — | — | — | — |
 
 ## C01-S — contrato do backend HITL (checkpoint 01:4x)
@@ -92,9 +93,22 @@ Checkpoint vivo: atualizado a cada cartão. Nenhum merge/deploy/escrita em produ
 - Gates: **669 testes, 0 falhas** com Flyway real; `LeadCustomerLinkMigrationTest` com 4 testes (aplica sem tocar em leads/clientes; unicidade parcial + histórico; FKs `23503`; CHECKs `23514`/`23502`).
 - **PR #122 draft**; mesma condição de merge do #120/#121 (`prod` verde). `V2_57` segue reservado para S05.
 
+## F04 — agenda: visita ≠ instalação (checkpoint 02:3x)
+
+- Rota `/agenda` nova (não existia em `prod`), com duas seções: **visitas técnicas por dia** e **instalações com dia+hora**. Item novo na navegação (sidebar 10 / Mais 7); `navigation.test`, `DesktopSidebar.test` e `MobileNavigation.test` atualizados por lista exata.
+- **Sem invenção de hora:** visita gravada em meia-noite (dia combinado) aparece como "horário não confirmado", nunca `00:00`. O dia sugerido pelo bot (`signals.visit.date`) só pré-preenche o campo de dia e é rotulado como sugestão.
+- **Ausência explícita:** "Endereço não confirmado" e "Sem responsável definido" na linha; o diálogo avisa antes de salvar sem endereço. Responsável pré-preenchido com o usuário logado.
+- **Reagendar não mexe na etapa:** `PUT` só na instalação — e reenvia endereço/responsável atuais porque `LeadInstallationService.apply` substitui os opcionais direto do request (enviar só `scheduledAt` apagaria os dois). Teste garante que `updateMeasurement` não é chamado.
+- **Cancelar** pede segundo clique (o backend preserva histórico; reativar pela UI ficou fora do cartão).
+- Backend conferido: `GET /lead-installations` recebe `LocalDateTime` (limites `T00:00:00`/`T23:59:59`); a lista também é refiltrada no cliente por defesa.
+- Gates: `vue-tsc -b`, **289 testes / 39 arquivos**, `vite build`, `git diff --check`. Evidência: `hitl-overnight-2026-10-28/F04/` (antes = tela em branco; depois semana 1/2, diálogos de visita e instalação em 393/1440) publicada em `pr-assets`.
+- **PR #76 draft** contra `prod`, independente do #74 e do #75 (nenhum arquivo em comum).
+
 ## Corte de escopo (declarado, não silencioso)
 
-A noite foi limitada a **C01-S → S01 → F01 → F02 → S02 → M01**. S03–S07, M01/M02, F03–F07 e B01/B02 **não foram iniciados**; continuam no contrato e no prompt, sem trabalho parcial em worktree.
+A noite foi limitada a **C01-S → S01 → F01 → F02 → S02 → M01 → F04**. S03–S07, M02, F03/F05–F07 e B01/B02 **não foram iniciados**; continuam no contrato e no prompt, sem trabalho parcial em worktree.
+
+> Observação de concorrência: dois orquestradores foram relançados pelo bug do watchdog (ver "O que falhou"). A retomada 1 (esta) ficou com o ERP (F02, F04); a retomada 2 com o service (S02, M01). Locks em `hitl-overnight-2026-10-28/LOCKS.md`.
 
 
 
@@ -110,7 +124,8 @@ A noite foi limitada a **C01-S → S01 → F01 → F02 → S02 → M01**. S03–
 2. Quando `prod` do service estiver verde: **verly-service#120** — `GET /leads/{id}/review-context` (read-only, 691 testes locais, 1 endpoint + DTO/serviço/SQL; risco baixo, sem migração). Depois de ready e CI verde, o merge em `prod` dispara deploy — decisão do Matheus.
 3. **verly-erp-frontend#74** — navegação de contexto (432 linhas, 310 testes, sem dependência de backend novo). Pode ir a ready assim que o Matheus aceitar a lacuna "parceiro → financeiro" (não implementável sem contrato).
 4. **verly-erp-frontend#75** — conferência do orçamento sem preço velho/zero (287 testes, 1 arquivo de produção + 1 teste). Independente do #74; pode entrar antes ou depois.
-5. **verly-service#121** — evidência + mídia do comprovante PIX (sem migração, 681 testes locais). Mesma condição do #120: só depois de `prod` verde.
+5. **verly-erp-frontend#76** — agenda nova (visita por dia, instalação por dia+hora). Independente do #74/#75; sem backend novo. Posição na navegação é decisão de produto (hoje: fim da sidebar).
+6. **verly-service#121** — evidência + mídia do comprovante PIX (sem migração, 681 testes locais). Mesma condição do #120: só depois de `prod` verde.
 
 ## Preparados aguardando merge/deploy
 
@@ -119,9 +134,10 @@ A noite foi limitada a **C01-S → S01 → F01 → F02 → S02 → M01**. S03–
 | S01 | `prod` do service com CI verde (dois `V2_54` resolvidos pela frente de fotos) | `gh pr ready 120 --repo verlao/verly-service` |
 | F01 | decisão sobre a lacuna parceiro→financeiro (não bloqueia o resto) | `gh pr ready 74 --repo verlao/verly-erp-frontend` |
 | F02 | nada além do merge (independente) | `gh pr ready 75 --repo verlao/verly-erp-frontend` |
+| F04 | nada além do merge; posição na navegação é opinião de produto | `gh pr ready 76 --repo verlao/verly-erp-frontend` |
 | S02 | `prod` do service com CI verde (mesmo bloqueio do S01) | `gh pr ready 121 --repo verlao/verly-service` |
 | M01 | `prod` verde; **entra antes de S04** (S04 depende da tabela) | `gh pr ready 122 --repo verlao/verly-service` |
-| S03–S07, M01/M02, F03–F07, B01/B02 | não iniciados por corte de escopo | — |
+| S03–S07, M02, F03/F05–F07, B01/B02 | não iniciados por corte de escopo | — |
 
 ## Decisões tomadas sozinho (com reversão)
 
@@ -132,6 +148,9 @@ A noite foi limitada a **C01-S → S01 → F01 → F02 → S02 → M01**. S03–
 - **D-F01-3:** fechar modal aberto por `?customerId=` remove só esse parâmetro. Reverter = deixar a URL como está.
 - **D-F02-1:** preço em cálculo é identificado por token por linha; resposta velha é descartada em vez de sobrescrever. Reverter = remover `calcToken` e as comparações em `recalcRow`.
 - **D-F02-2:** total com item sem preço mostra "Aguardando preço" em vez de R$ 0,00 (e esconde estimativa de IA = 0). Reverter = voltar `v-if` do bloco de estimativa e o `totalLabel` para `currency.formatCurrency`.
+- **D-F04-1:** visita é dia (meia-noite = "horário não confirmado"); instalação é dia+hora. Não unificar em um só campo: são compromissos diferentes. Reverter = mostrar `00:00` para visita.
+- **D-F04-2:** reagendar faz `PUT` reenviando endereço/responsável atuais, porque o backend substitui opcionais com o request (omitir apaga). Reverter = enviar só `scheduledAt` (perde endereço e responsável).
+- **D-F04-3:** dia sugerido pelo bot só pré-preenche e é rotulado como sugestão; nunca vira compromisso confirmado nem ganha hora. Reverter = remover `parseLeadData` do diálogo.
 
 ## Estado no fim da noite
 
@@ -140,7 +159,7 @@ A noite foi limitada a **C01-S → S01 → F01 → F02 → S02 → M01**. S03–
 | Runner `orangepi-backend` | online/idle | online/idle (nenhum job disparado por nós) |
 | `verly-service` `prod` | `1dbd003` (CI vermelho, serve `b65f56a`) | `1dbd003` — intocado |
 | `verly-erp-frontend` `prod` | `c7b4e96` | `c7b4e96` — intocado |
-| PRs novos | — | service #120, #121 e #122 (drafts), ERP #74 e #75 (drafts) |
+| PRs novos | — | service #120, #121 e #122 (drafts), ERP #74, #75 e #76 (drafts) |
 | Branch de assets | — | `pr-assets` no ERP (só PNGs, nunca merge) |
 
 ## O que falhou ou foi interrompido
