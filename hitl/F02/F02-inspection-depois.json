@@ -1,0 +1,334 @@
+{
+  "id": "F02",
+  "suffix": "depois",
+  "base": "http://127.0.0.1:5303",
+  "scenario": null,
+  "pages": [
+    {
+      "route": "leads/2/orcamento",
+      "width": 393,
+      "errors": [],
+      "external": [],
+      "unknownApi": [],
+      "apiCalls": [
+        "GET /leads/2 -> 200"
+      ],
+      "failedApi": [],
+      "finalUrl": "http://127.0.0.1:5303/leads/2/orcamento",
+      "redirectedToLogin": false,
+      "screenshot": "F02-leads-2-orcamento-393-depois.png",
+      "overflowX": false,
+      "scrollWidth": 393,
+      "innerWidth": 393,
+      "smallTextNodes": 23,
+      "smallTextSamples": [
+        "Beatriz Teste · +55 11 90000-0002",
+        "Ver conversa (2)",
+        "Preciso de um box de 150 de largura, não",
+        "📐 medidas ·",
+        "Cliente · 26/10, 03:16"
+      ],
+      "smallTargetCount": 6,
+      "smallTargets": [
+        {
+          "tag": "BUTTON",
+          "text": "Voltar",
+          "h": 20,
+          "w": 20
+        },
+        {
+          "tag": "BUTTON",
+          "text": "Remover",
+          "h": 16,
+          "w": 48
+        },
+        {
+          "tag": "BUTTON",
+          "text": "+ Adicionar item",
+          "h": 20,
+          "w": 102
+        },
+        {
+          "tag": "BUTTON",
+          "text": "Salvar",
+          "h": 38,
+          "w": 329
+        },
+        {
+          "tag": "BUTTON",
+          "text": "Enviar PDF",
+          "h": 36,
+          "w": 329
+        },
+        {
+          "tag": "BUTTON",
+          "text": "Enviar mensagem",
+          "h": 36,
+          "w": 329
+        }
+      ],
+      "unnamedButtons": 0,
+      "unnamedButtonSamples": [],
+      "textLength": 450
+    },
+    {
+      "route": "leads/2/orcamento",
+      "width": 1440,
+      "errors": [],
+      "external": [],
+      "unknownApi": [],
+      "apiCalls": [
+        "GET /leads/2 -> 200"
+      ],
+      "failedApi": [],
+      "finalUrl": "http://127.0.0.1:5303/leads/2/orcamento",
+      "redirectedToLogin": false,
+      "screenshot": "F02-leads-2-orcamento-1440-depois.png",
+      "overflowX": false,
+      "scrollWidth": 1440,
+      "innerWidth": 1440,
+      "smallTextNodes": 34,
+      "smallTextSamples": [
+        "Leads",
+        "Financeiro",
+        "Funil",
+        "Clientes",
+        "Parceiros"
+      ],
+      "smallTargetCount": 15,
+      "smallTargets": [
+        {
+          "tag": "BUTTON",
+          "text": "Leads",
+          "h": 32,
+          "w": 47
+        },
+        {
+          "tag": "BUTTON",
+          "text": "Financeiro",
+          "h": 32,
+          "w": 47
+        },
+        {
+          "tag": "BUTTON",
+          "text": "Funil",
+          "h": 32,
+          "w": 47
+        },
+        {
+          "tag": "BUTTON",
+          "text": "Clientes",
+          "h": 32,
+          "w": 47
+        },
+        {
+          "tag": "BUTTON",
+          "text": "Parceiros",
+          "h": 32,
+          "w": 47
+        },
+        {
+          "tag": "BUTTON",
+          "text": "Produtos",
+          "h": 32,
+          "w": 47
+        },
+        {
+          "tag": "BUTTON",
+          "text": "Orçamentos",
+          "h": 32,
+          "w": 47
+        },
+        {
+          "tag": "BUTTON",
+          "text": "Pedidos",
+          "h": 32,
+          "w": 47
+        },
+        {
+          "tag": "BUTTON",
+          "text": "Usuários",
+          "h": 32,
+          "w": 47
+        },
+        {
+          "tag": "BUTTON",
+          "text": "Voltar",
+          "h": 20,
+          "w": 20
+        }
+      ],
+      "unnamedButtons": 0,
+      "unnamedButtonSamples": [],
+      "textLength": 684
+    },
+    {
+      "route": "leads/232/orcamento",
+      "width": 393,
+      "errors": [],
+      "external": [],
+      "unknownApi": [],
+      "apiCalls": [
+        "GET /leads/232 -> 200",
+        "POST /products/calculate -> 200",
+        "POST /products/calculate -> 200"
+      ],
+      "failedApi": [],
+      "finalUrl": "http://127.0.0.1:5303/leads/232/orcamento",
+      "redirectedToLogin": false,
+      "screenshot": "F02-leads-232-orcamento-393-depois.png",
+      "overflowX": false,
+      "scrollWidth": 393,
+      "innerWidth": 393,
+      "smallTextNodes": 41,
+      "smallTextSamples": [
+        "Carlos Pagador · +55 11 90000-0003",
+        "Ver conversa (2)",
+        "Quero comparar vidro incolor e verde na ",
+        "📐 medidas ·",
+        "Cliente · 26/10, 23:16"
+      ],
+      "smallTargetCount": 7,
+      "smallTargets": [
+        {
+          "tag": "BUTTON",
+          "text": "Voltar",
+          "h": 20,
+          "w": 20
+        },
+        {
+          "tag": "BUTTON",
+          "text": "Remover",
+          "h": 16,
+          "w": 48
+        },
+        {
+          "tag": "BUTTON",
+          "text": "Remover",
+          "h": 16,
+          "w": 48
+        },
+        {
+          "tag": "BUTTON",
+          "text": "+ Adicionar item",
+          "h": 20,
+          "w": 102
+        },
+        {
+          "tag": "BUTTON",
+          "text": "Salvar",
+          "h": 38,
+          "w": 329
+        },
+        {
+          "tag": "BUTTON",
+          "text": "Enviar PDF",
+          "h": 36,
+          "w": 329
+        },
+        {
+          "tag": "BUTTON",
+          "text": "Enviar mensagem",
+          "h": 36,
+          "w": 329
+        }
+      ],
+      "unnamedButtons": 0,
+      "unnamedButtonSamples": [],
+      "textLength": 774
+    },
+    {
+      "route": "leads/232/orcamento",
+      "width": 1440,
+      "errors": [],
+      "external": [],
+      "unknownApi": [],
+      "apiCalls": [
+        "GET /leads/232 -> 200",
+        "POST /products/calculate -> 200",
+        "POST /products/calculate -> 200"
+      ],
+      "failedApi": [],
+      "finalUrl": "http://127.0.0.1:5303/leads/232/orcamento",
+      "redirectedToLogin": false,
+      "screenshot": "F02-leads-232-orcamento-1440-depois.png",
+      "overflowX": false,
+      "scrollWidth": 1440,
+      "innerWidth": 1440,
+      "smallTextNodes": 52,
+      "smallTextSamples": [
+        "Leads",
+        "Financeiro",
+        "Funil",
+        "Clientes",
+        "Parceiros"
+      ],
+      "smallTargetCount": 16,
+      "smallTargets": [
+        {
+          "tag": "BUTTON",
+          "text": "Leads",
+          "h": 32,
+          "w": 47
+        },
+        {
+          "tag": "BUTTON",
+          "text": "Financeiro",
+          "h": 32,
+          "w": 47
+        },
+        {
+          "tag": "BUTTON",
+          "text": "Funil",
+          "h": 32,
+          "w": 47
+        },
+        {
+          "tag": "BUTTON",
+          "text": "Clientes",
+          "h": 32,
+          "w": 47
+        },
+        {
+          "tag": "BUTTON",
+          "text": "Parceiros",
+          "h": 32,
+          "w": 47
+        },
+        {
+          "tag": "BUTTON",
+          "text": "Produtos",
+          "h": 32,
+          "w": 47
+        },
+        {
+          "tag": "BUTTON",
+          "text": "Orçamentos",
+          "h": 32,
+          "w": 47
+        },
+        {
+          "tag": "BUTTON",
+          "text": "Pedidos",
+          "h": 32,
+          "w": 47
+        },
+        {
+          "tag": "BUTTON",
+          "text": "Usuários",
+          "h": 32,
+          "w": 47
+        },
+        {
+          "tag": "BUTTON",
+          "text": "Voltar",
+          "h": 20,
+          "w": 20
+        }
+      ],
+      "unnamedButtons": 0,
+      "unnamedButtonSamples": [],
+      "textLength": 1015
+    }
+  ]
+}
