@@ -33,3 +33,15 @@ Cada uma com o padrão seguro já aplicado. Nada aqui bloqueia o trabalho.
     *Padrão seguro:* não confirmar transferência própria por esse caminho como receita. Definir o tratamento
     no redesenho U0 antes de implementar essa opção; dispensa de comprovante não equivale a registrar
     transferência contábil. Isso não bloqueia B4a/B4b para recebimentos de clientes.
+
+15. **Mascarar `payerDoc` na resposta de evidência do Pix (S02)?** O contrato C01-S manda devolver CPF com só os 6
+    dígitos centrais e CNPJ só a raiz de 8. *Padrão aplicado:* mascarar no servidor; a tela nunca precisa do documento
+    completo para conferir. *Risco:* se o Matheus quiser o número completo para bater com o comprovante, é uma linha
+    a reverter. S02 não foi iniciado nesta noite (corte de escopo).
+16. **Quem valida `reviewToken` na confirmação de extração?** Não existe endpoint humano que grave
+    `extraction_confirmed_at`; quem grava hoje é a síntese do bot. S01 (read-only) expõe o token; S04 valida nas
+    escritas de vínculo. *Padrão aplicado:* a validação na confirmação de extração fica para o cartão que criar essa
+    escrita (B02/S06). *Risco:* até lá, uma extração pode mudar entre a revisão e a confirmação vinda do bot sem 409 —
+    o token não protege esse caminho ainda. Registrado, não escondido.
+17. **`POST /products` público, segredos JWT/Telegram, menu Leads×Clientes** (nº1–3) continuam abertos e intocados;
+    a frente HITL não os toca nesta noite.
