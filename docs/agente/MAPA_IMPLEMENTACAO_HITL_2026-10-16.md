@@ -1,6 +1,6 @@
 # Mapa de implementação orquestrada — Verly HITL
 
-16/10/2026 · status: planejamento concluído; cartões de implementação ainda não disparados.
+16/10/2026 · status: C00/C01 da apresentação e P01–P03 executados localmente; nova prévia aguarda G2. Produção e contratos de backend ainda pendentes. [Registro da execução](EXECUCAO_HITL_2026-10-16.md).
 
 Base: [sweep de dados e inputs](AUDITORIA_PREFILL_HITL_2026-10-15.md), [decisões](DECISOES.md) e prévia local `26c74fc`. Este mapa rege a nova frente de preenchimento assistido; não reabre D9/D10/D11 nem repete cartões já mergeados do plano anterior. Achados de identidade, proveniência e Pix revisados com GPT Sol.
 

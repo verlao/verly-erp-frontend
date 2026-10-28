@@ -5,17 +5,19 @@ import { CalendarDays, ChevronRight, Clock3, Ruler, Search, UserRound, X } from 
 import ActionButton from '@/components/verly/ActionButton.vue'
 import StatusPill from '@/components/verly/StatusPill.vue'
 import PieceDrawing from '@/components/verly/PieceDrawing.vue'
+import ReviewValue from './ReviewValue.vue'
+import { findReviewLead } from './reviewContext'
 
 type Queue = 'A responder' | 'Pronto para orçar' | 'Falta medida' | 'Orçamento enviado' | 'Confirmar compra' | 'Revisar dados' | 'Adiados' | 'Perdidos'
 type Lead = { id:number; name:string; phone:string; queue:Queue; source:string; updated:string; amount:number; address:string; note:string; width?:number; height?:number; measurement:'Pendente'|'Agendada'|'Feita'; snoozed?:string; lostReason?:string }
 const router = useRouter()
 const leads = ref<Lead[]>([
-  { id:1, name:'Ana Exemplo', phone:'(11) 99999-4421', queue:'A responder', source:'WhatsApp · ontem, 16:42', updated:'Há 18 min', amount:134000, address:'Vila Mariana, São Paulo', note:'Janela temperada, vidro incolor. Pediu para confirmar as medidas no local.', width:120, height:80, measurement:'Pendente' },
-  { id:2, name:'Beatriz Teste', phone:'(11) 99999-4422', queue:'Falta medida', source:'Indicação · hoje, 09:12', updated:'Há 43 min', amount:112000, address:'Moema, São Paulo', note:'Box de correr com vidro verde. Falta conferir as medidas no local.', measurement:'Pendente' },
-  { id:232, name:'Paula Exemplo', phone:'(11) 98122-5400', queue:'Pronto para orçar', source:'WhatsApp · 14 out', updated:'Ontem', amount:247500, address:'Moema, São Paulo', note:'Duas folhas de correr, trilho preto e vidro fumê.', width:180, height:210, measurement:'Feita' },
+  { id:1, name:'Ana Box', phone:'(11) 99999-4421', queue:'A responder', source:'WhatsApp · 15 out', updated:'Há 18 min', amount:134000, address:'Rua Exemplo, 1048 · Bairro Modelo, São Paulo', note:'Quero uma janela incolor, 120 por 80 cm. Podem vir no sábado para conferir a medida?', width:120, height:80, measurement:'Pendente' },
+  { id:2, name:'Bia Janela', phone:'(11) 99999-4422', queue:'Falta medida', source:'WhatsApp · 15 out', updated:'Há 43 min', amount:0, address:'Moema, São Paulo', note:'Preciso de um box de correr. O vão tem 150 cm de largura; ainda vou medir a altura.', width:150, measurement:'Pendente' },
+  { id:232, name:'Paula Exemplo', phone:'(11) 98122-5400', queue:'Pronto para orçar', source:'WhatsApp · 15 out', updated:'Ontem', amount:0, address:'Endereço da obra não informado', note:'Para a janela de 180 por 210, quanto fica incolor ou verde? Quero comparar antes de escolher.', width:180, height:210, measurement:'Pendente' },
   { id:229, name:'Rafael Teste', phone:'(11) 99215-3170', queue:'Orçamento enviado', source:'Loja · 13 out', updated:'Há 2 dias', amount:134000, address:'Ipiranga, São Paulo', note:'Orçamento enviado; cliente disse que confirma depois de falar com a família.', width:120, height:195, measurement:'Feita' },
   { id:224, name:'Sílvia Exemplo', phone:'(11) 98652-9031', queue:'Confirmar compra', source:'WhatsApp · 12 out', updated:'Há 3 dias', amount:318000, address:'Aclimação, São Paulo', note:'Aprovou o orçamento e pediu para combinar a instalação.', width:240, height:205, measurement:'Feita' },
-  { id:219, name:'Caio Teste', phone:'(11) 98391-6108', queue:'Revisar dados', source:'WhatsApp · 11 out', updated:'Há 4 dias', amount:0, address:'Endereço a confirmar', note:'Conversa menciona duas peças, mas ainda não sabemos se são para o mesmo ambiente.', measurement:'Pendente' },
+  { id:219, name:'Caio Teste', phone:'(11) 98391-6108', queue:'Revisar dados', source:'WhatsApp · 15 out', updated:'Há 4 dias', amount:96000, address:'Bairro Modelo, São Paulo', note:'São 12 m² de forro PVC branco. Quero saber o preço instalado.', measurement:'Pendente' },
   { id:212, name:'Bianca Exemplo', phone:'(11) 99571-1202', queue:'Adiados', source:'WhatsApp · 10 out', updated:'Retomar 20 out', amount:76000, address:'Pinheiros, São Paulo', note:'Pediu para retomarmos depois da mudança.', measurement:'Pendente', snoozed:'20 out 2026' },
   { id:205, name:'Neto & Filhos Exemplo', phone:'(11) 98504-2109', queue:'Perdidos', source:'WhatsApp · 8 out', updated:'Encerrado 14 out', amount:145000, address:'Lapa, São Paulo', note:'Fechou com outro fornecedor.', measurement:'Pendente', lostReason:'Escolheu outro fornecedor' },
 ])
@@ -29,17 +31,20 @@ const notice = ref('')
 const reason = ref('')
 const otherReason = ref('')
 const undoLead = ref<{lead:Lead; queue:Queue; updated:string; lostReason?:string; snoozed?:string}|null>(null)
-const snoozeDate = ref('2026-10-20')
-const visitDate = ref('2026-10-17T10:00')
+const snoozeDate = ref('')
+const visitDay = ref('')
+const visitTime = ref('')
+const visitDate = computed(() => visitDay.value && visitTime.value ? `${visitDay.value}T${visitTime.value}` : '')
 const previousFocus = ref<HTMLElement|null>(null)
 const activeLeads = computed(() => leads.value.filter(l => !['Perdidos','Adiados'].includes(l.queue)))
+const selectedReview = computed(() => selected.value ? findReviewLead(selected.value.id) : undefined)
 const visible = computed(() => leads.value.filter(l => l.queue === queue.value && `${l.name} ${l.phone} ${l.address}`.toLowerCase().includes(search.value.toLowerCase())))
 const counts = computed(() => Object.fromEntries(queueOptions.map(q => [q, leads.value.filter(l => l.queue === q).length])) as Record<Queue,number>)
 const currency = (n:number) => new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(n/100)
 const localDate = (date:Date) => `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}-${String(date.getDate()).padStart(2,'0')}`
 const localDateTime = (date:Date) => `${localDate(date)}T${String(date.getHours()).padStart(2,'0')}:${String(date.getMinutes()).padStart(2,'0')}`
 function openLead(lead:Lead) { previousFocus.value=document.activeElement as HTMLElement; selected.value=lead; intent.value='detail'; nextTick(()=>dialog.value?.showModal()) }
-function setIntent(next:'snooze'|'lost'|'visit') { intent.value=next; reason.value=''; otherReason.value=''; nextTick(()=>dialog.value?.querySelector<HTMLElement>('[autofocus]')?.focus()) }
+function setIntent(next:'snooze'|'lost'|'visit') { intent.value=next; if(next==='visit'){visitDay.value=selectedReview.value?.visitDay.value ?? '';visitTime.value=selectedReview.value?.visitTime.value ?? ''} reason.value=''; otherReason.value=''; nextTick(()=>dialog.value?.querySelector<HTMLElement>('[autofocus]')?.focus()) }
 function close() { dialog.value?.close(); selected.value=null; intent.value='detail'; nextTick(()=>previousFocus.value?.focus()) }
 function noticeFor(text:string) { notice.value=text; window.setTimeout(()=>{if(notice.value===text){notice.value='';undoLead.value=null}},8000) }
 function rememberLead(lead:Lead) { undoLead.value={lead,queue:lead.queue,updated:lead.updated,lostReason:lead.lostReason,snoozed:lead.snoozed} }
@@ -47,7 +52,7 @@ function undoLastLeadAction() { if(!undoLead.value)return; const old=undoLead.va
 function doSnooze() { if(!selected.value||!snoozeDate.value)return; const date=new Date(`${snoozeDate.value}T12:00:00`);if(Number.isNaN(date.getTime())||localDate(date)<localDate(new Date()))return;const name=selected.value.name;rememberLead(selected.value);selected.value.queue='Adiados'; selected.value.snoozed=new Intl.DateTimeFormat('pt-BR',{day:'numeric',month:'short'}).format(date); selected.value.updated=`Retomar ${selected.value.snoozed}`; close(); noticeFor(`${name} foi adiado`) }
 function doLost() { if(!selected.value||!reason.value||(reason.value==='Outro'&&!otherReason.value.trim()))return; const name=selected.value.name;rememberLead(selected.value);selected.value.queue='Perdidos'; selected.value.lostReason=reason.value==='Outro'?`Outro: ${otherReason.value.trim()}`:reason.value; selected.value.updated='Encerrado hoje'; close(); noticeFor(`${name} foi marcado como perdido`) }
 function doVisit() { if(!selected.value||!visitDate.value)return;const date=new Date(visitDate.value);if(Number.isNaN(date.getTime())||date<new Date())return;const when=new Intl.DateTimeFormat('pt-BR',{weekday:'short',day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}).format(date); selected.value.measurement='Agendada'; selected.value.note=`Visita técnica combinada para ${when}. ${selected.value.note}`; close(); noticeFor(`Visita técnica marcada para ${when}`) }
-function goQuote() { if(selected.value)router.push({name:'LeadQuote',params:{id:String(selected.value.id)}}) }
+function goQuote() { if(selected.value)router.push({name:'LeadQuote',params:{id:String(selected.value.id)},query:{leadId:String(selected.value.id)}}) }
 watch(queue,()=>{selected.value=null})
 </script>
 
@@ -68,12 +73,32 @@ watch(queue,()=>{selected.value=null})
         <div class="lp-dialog-body" v-if="intent==='detail'">
           <div class="lp-info-grid"><div><small>Fila atual</small><strong>{{ selected.queue }}</strong></div><div><small>Última atividade</small><strong>{{ selected.source }}</strong></div><div><small>Estimativa</small><strong>{{ selected.amount?currency(selected.amount):'A definir' }}</strong></div><div><small>Visita técnica</small><strong>{{ selected.measurement==='Pendente'?'Ainda não marcada':selected.measurement==='Agendada'?'Combinada':'Medida conferida' }}</strong></div></div>
           <section class="lp-note"><p class="preview-eyebrow">O que sabemos</p><p>{{ selected.note }}</p></section>
+          <section v-if="selectedReview" class="lp-review-sheet" aria-label="Dados extraídos para conferir">
+            <p class="preview-eyebrow">Ficha preparada · origem e pendências</p>
+            <div class="review-fields">
+              <ReviewValue label="Nome de contato" :field="selectedReview.name" />
+              <ReviewValue label="Telefone" :field="selectedReview.phone" />
+              <ReviewValue label="Endereço da obra" :field="selectedReview.address" />
+            </div>
+            <article v-for="piece in selectedReview.items" :key="piece.id" class="lp-piece-review">
+              <strong>{{ piece.name }} · {{ piece.category }}</strong>
+              <div class="review-fields">
+                <ReviewValue v-if="piece.widthCm.value !== null" label="Largura" :field="piece.widthCm" suffix="cm" />
+                <ReviewValue v-if="piece.heightCm.value !== null" label="Altura" :field="piece.heightCm" suffix="cm" />
+                <ReviewValue v-if="piece.areaM2.value !== null" label="Área" :field="piece.areaM2" suffix="m²" />
+                <ReviewValue label="Cor" :field="piece.color" />
+                <ReviewValue label="Folhas" :field="piece.sheets" />
+                <ReviewValue label="Quantidade" :field="piece.quantity" />
+              </div>
+              <p v-if="piece.variantGroup">Alternativa {{ piece.variantSelected ? 'selecionada' : 'a escolher' }}. As opções do mesmo grupo não devem ser somadas.</p>
+            </article>
+          </section>
           <PieceDrawing v-if="selected.width&&selected.height" class="lp-drawing" :width-cm="selected.width" :height-cm="selected.height" label="Peça conversada"/>
           <div v-else class="lp-measure-pending"><Ruler aria-hidden="true"/><div><strong>Falta medir no local</strong><span>Combine uma visita técnica e registre as medidas da peça depois.</span></div></div>
           <p v-if="selected.lostReason" class="lp-note">Motivo do encerramento: <strong>{{ selected.lostReason }}</strong></p>
         </div>
         <form v-else class="lp-dialog-body" @submit.prevent="intent==='visit'?doVisit():intent==='snooze'?doSnooze():doLost()">
-          <template v-if="intent==='visit'"><p class="lp-form-copy">A visita técnica atualiza o acompanhamento da medição deste lead.</p><label class="preview-form-field">Data e horário<input v-model="visitDate" type="datetime-local" :min="localDateTime(new Date())" required/></label><label class="preview-form-field">Endereço da visita<input :value="selected.address" readonly/></label></template>
+          <template v-if="intent==='visit'"><p class="lp-form-copy">A conversa pode sugerir um dia, mas ainda é preciso combinar o horário. A visita técnica não confirma medidas.</p><p v-if="selectedReview?.visitDay.value" class="lp-form-copy">Dia sugerido na conversa: {{ selectedReview.visitDay.value }} · {{ selectedReview.visitDay.sourceLabel }}</p><label class="preview-form-field">Dia combinado<input v-model="visitDay" type="date" :min="localDate(new Date())" required/></label><label class="preview-form-field">Horário que falta combinar<input v-model="visitTime" type="time" required/></label><label class="preview-form-field">Endereço da visita<input :value="selected.address" readonly/></label></template>
           <template v-else-if="intent==='snooze'"><p class="lp-form-copy">A conversa sai das filas de trabalho até a data escolhida e volta para acompanhamento depois.</p><label class="preview-form-field">Retomar em<input v-model="snoozeDate" type="date" :min="localDate(new Date())" required/></label></template>
           <template v-else><p class="lp-form-copy">Registre por que essa oportunidade foi encerrada.</p><label class="preview-form-field">Motivo<select v-model="reason" required><option value="" disabled>Escolha um motivo</option><option>Escolheu outro fornecedor</option><option>Preço acima do esperado</option><option>Desistiu do projeto</option><option>Não respondeu</option><option>Fora da área atendida</option><option>Outro</option></select></label><label v-if="reason==='Outro'" class="preview-form-field">Detalhe<textarea v-model="otherReason" required placeholder="Conte em poucas palavras"/></label></template>
           <div class="lp-form-actions"><button class="preview-button" type="button" @click="intent='detail'">Voltar à ficha</button><ActionButton type="submit">{{ intent==='visit'?'Marcar visita técnica':intent==='snooze'?'Adiar conversa':'Encerrar como perdido' }}</ActionButton></div>

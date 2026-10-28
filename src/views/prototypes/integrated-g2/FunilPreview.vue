@@ -5,14 +5,23 @@ import ActionButton from '@/components/verly/ActionButton.vue'
 import StatusPill from '@/components/verly/StatusPill.vue'
 import PieceDrawing from '@/components/verly/PieceDrawing.vue'
 import { useRouter } from 'vue-router'
+import ReviewValue from './ReviewValue.vue'
+import { findReviewLead, reviewLeads } from './reviewContext'
 
-type Stage='Novo'|'Falta medida'|'Pronto para orçar'|'Fechamento'|'Pedido'|'Pago'
-type Card={id:number;name:string;place:string;stage:Stage;value:number;updated:string;next:string;measurement?:[number,number]; detail:string}
+type Stage='Novo'|'Falta medida'|'Revisar dados'|'Pronto para orçar'|'Fechamento'|'Pedido'|'Pago'
+type Card={id:number;name:string;place:string;stage:Stage;value:number;updated:string;next:string;measurement?:[number,number]; areaM2?:number; detail:string}
 const router=useRouter()
-const stages:Stage[]=['Novo','Falta medida','Pronto para orçar','Fechamento','Pedido','Pago']
+const stages:Stage[]=['Novo','Falta medida','Revisar dados','Pronto para orçar','Fechamento','Pedido','Pago']
+const sharedCards=reviewLeads.value.map(lead=>({
+ id:lead.id,name:lead.name.value||`Lead #${lead.id}`,place:lead.address.value||'Endereço da obra não informado',
+ stage:(lead.id===1?'Novo':lead.id===2?'Falta medida':lead.id===232?'Pronto para orçar':'Revisar dados') as Stage,
+ value:lead.id===1?134000:lead.id===219?96000:0,updated:'Conversa de 15 out',
+ next:lead.id===1?'Combinar dia e horário da visita':lead.id===2?'Perguntar a altura que falta':lead.id===232?'Escolher uma das cores antes de estimar':'Conferir estimativa de exemplo',
+ measurement:lead.items[0]?.widthCm.value!=null&&lead.items[0]?.heightCm.value!=null?[lead.items[0].widthCm.value,lead.items[0].heightCm.value] as [number,number]:undefined,
+ areaM2:lead.items[0]?.areaM2.value??undefined,detail:lead.transcript,
+}))
 const cards=ref<Card[]>([
- {id:1,name:'Ana Exemplo',place:'Vila Mariana',stage:'Novo',value:134000,updated:'Há 18 min',next:'Responder sobre a visita técnica',detail:'Box até o teto, vidro incolor. A cliente pediu para confirmar as medidas no local.',measurement:[120,80]},
- {id:2,name:'Beatriz Teste',place:'Moema',stage:'Falta medida',value:112000,updated:'Há 43 min',next:'Combinar visita para conferir o vão',detail:'Box de correr com vidro verde.'},
+ ...sharedCards,
  {id:3,name:'Rafael Teste',place:'Ipiranga',stage:'Pronto para orçar',value:134000,updated:'Hoje, 10:20',next:'Preparar e enviar orçamento',detail:'Box de abrir, ferragens cromadas e vidro incolor.',measurement:[120,195]},
  {id:4,name:'Sílvia Exemplo',place:'Aclimação',stage:'Fechamento',value:318000,updated:'Ontem',next:'Acompanhar decisão da cliente',detail:'Aprovou a proposta e pediu para combinar a instalação.',measurement:[240,205]},
  {id:5,name:'João Exemplo',place:'Vila Mariana',stage:'Pedido',value:428000,updated:'14 out',next:'Acompanhar preparação do pedido',detail:'Pedido confirmado. Instalação será combinada após a produção.',measurement:[260,210]},
@@ -22,6 +31,7 @@ const cards=ref<Card[]>([
 ])
 const selectedStage=ref<Stage>('Novo')
 const selected=ref<Card|null>(null)
+const selectedReview=computed(()=>selected.value?findReviewLead(selected.value.id):undefined)
 const dialog=ref<HTMLDialogElement|null>(null)
 const notice=ref('')
 const lastMove=ref<{card:Card;stage:Stage;next:string}|null>(null)
@@ -34,7 +44,7 @@ function close(){dialog.value?.close();selected.value=null}
 function feedback(text:string){notice.value=text;window.setTimeout(()=>{if(notice.value===text){notice.value='';lastMove.value=null}},8000)}
 function advance(card:Card){const target=nextStage(card.stage);if(!target)return;lastMove.value={card,stage:card.stage,next:card.next};card.stage=target;card.next=target==='Pedido'?'Acompanhar preparação do pedido':`Próximo passo: ${target.toLowerCase()}`;close();feedback(`${card.name} avançou para ${target} · nesta prévia`)}
 function undoMove(){if(!lastMove.value)return;const move=lastMove.value;move.card.stage=move.stage;move.card.next=move.next;lastMove.value=null;feedback('Etapa restaurada · nesta prévia')}
-function openLead(){if(selected.value)router.push({name:'LeadQuote',params:{id:String(selected.value.id)}})}
+function openLead(){if(selected.value)router.push({name:'LeadQuote',params:{id:String(selected.value.id)},query:findReviewLead(selected.value.id)?{}:{newCustomerName:selected.value.name,itemDescription:selected.value.detail,...(selected.value.value>0?{amountCents:String(selected.value.value)}:{})}})}
 function openOrders(){router.push({name:'Orders'})}
 function setMobile(stage:Stage){selectedStage.value=stage;nextTick(()=>{if(window.innerWidth>720){const column=document.querySelector<HTMLElement>(`[data-funnel-stage="${stage}"]`);column?.scrollIntoView({behavior:window.matchMedia('(prefers-reduced-motion: reduce)').matches?'instant':'smooth',block:'nearest',inline:'center'})}})}
 </script>
@@ -46,13 +56,13 @@ function setMobile(stage:Stage){selectedStage.value=stage;nextTick(()=>{if(windo
   <section class="fp-board" aria-label="Etapas do funil">
    <article v-for="stage in stages" :key="stage" :data-funnel-stage="stage" class="fp-column" :class="{'fp-column-mobile-active':stage===selectedStage}">
     <header class="fp-col-head"><div><h2>{{ stage }}</h2><p>{{ grouped[stage].length }} oportunidades <span>·</span> {{ currency(total(stage)) }}</p></div></header>
-    <div class="fp-cards"><button v-for="card in grouped[stage]" :key="card.id" class="fp-card" @click="open(card)"><span class="fp-card-top"><strong>{{ card.name }}</strong></span><span class="fp-place">{{ card.place }} · {{ card.updated }}</span><span v-if="card.measurement" class="fp-dim"><Ruler :size="15"/> {{ card.measurement[0] }} × {{ card.measurement[1] }} cm</span><span v-else class="fp-dim fp-dim-needed"><Ruler :size="15"/> Falta conferir as medidas</span><span class="fp-value">{{ currency(card.value) }}</span><span class="fp-next"><span>Próximo passo</span><b>{{ card.next }}</b></span><span class="fp-open">Abrir oportunidade <ArrowRight :size="16"/></span></button><p v-if="!grouped[stage].length" class="fp-empty">Nenhuma oportunidade nesta etapa.</p></div>
+    <div class="fp-cards"><button v-for="card in grouped[stage]" :key="card.id" class="fp-card" @click="open(card)"><span class="fp-card-top"><strong>{{ card.name }}</strong></span><span class="fp-place">{{ card.place }} · {{ card.updated }}</span><span v-if="card.measurement" class="fp-dim"><Ruler :size="15"/> {{ card.measurement[0] }} × {{ card.measurement[1] }} cm</span><span v-else-if="card.areaM2" class="fp-dim"><Ruler :size="15"/> {{ card.areaM2 }} m² informados</span><span v-else class="fp-dim fp-dim-needed"><Ruler :size="15"/> Falta conferir as medidas</span><span class="fp-value">{{ card.value ? currency(card.value) : 'A estimar' }}</span><span class="fp-next"><span>Próximo passo</span><b>{{ card.next }}</b></span><span class="fp-open">Abrir oportunidade <ArrowRight :size="16"/></span></button><p v-if="!grouped[stage].length" class="fp-empty">Nenhuma oportunidade nesta etapa.</p></div>
    </article>
   </section>
   <p class="fp-explain"><CircleCheck :size="18"/> Pagamentos aparecem como recebidos pelo Financeiro. O cartão de pagamento não avança manualmente.</p>
   <p v-if="notice" class="preview-notice" role="status">{{ notice }} <button v-if="lastMove" class="fp-undo" @click="undoMove">Desfazer</button> <span>· nesta prévia</span></p>
   <dialog ref="dialog" class="preview-dialog fp-dialog" :aria-labelledby="selected ? `funnel-title-${selected.id}` : undefined" @close="selected=null">
-   <template v-if="selected"><header class="fp-dialog-head"><div><p class="preview-eyebrow">{{ selected.stage }} · oportunidade</p><h2 :id="`funnel-title-${selected.id}`">{{ selected.name }}</h2><p>{{ selected.place }} · atualização {{ selected.updated }}</p></div><button class="fp-close" aria-label="Fechar oportunidade" @click="close"><X aria-hidden="true"/></button></header><div class="fp-dialog-body"><div class="fp-highlight"><span>Valor estimado</span><strong>{{ currency(selected.value) }}</strong><span>Próximo passo</span><b>{{ selected.next }}</b></div><p class="fp-detail">{{ selected.detail }}</p><PieceDrawing v-if="selected.measurement" class="fp-drawing" :width-cm="selected.measurement[0]" :height-cm="selected.measurement[1]" label="Peça do orçamento"/><div v-else class="fp-measure-callout"><Ruler aria-hidden="true"/><span>As medidas ainda precisam ser conferidas em uma visita técnica.</span></div><div class="fp-step"><CalendarDays :size="19" aria-hidden="true"/><div><small>{{ selected.stage==='Pedido'?'Acompanhamento':'Etapa seguinte' }}</small><strong>{{ selected.stage==='Pedido'?'Aguardar recebimento pelo Financeiro':nextStage(selected.stage) }}</strong></div></div></div><footer class="fp-actions"><ActionButton v-if="selected.stage==='Pronto para orçar'||selected.stage==='Fechamento'" @click="openLead">Abrir orçamento</ActionButton><ActionButton v-else-if="selected.stage==='Pedido'" @click="openOrders">Ver pedidos</ActionButton><ActionButton v-else-if="selected.stage!=='Pago'" @click="advance(selected)">Avançar para {{ nextStage(selected.stage) }}</ActionButton><StatusPill v-else tone="entered">Recebido no Financeiro</StatusPill><button class="preview-button" @click="close">Fechar</button></footer></template>
+   <template v-if="selected"><header class="fp-dialog-head"><div><p class="preview-eyebrow">{{ selected.stage }} · oportunidade</p><h2 :id="`funnel-title-${selected.id}`">{{ selected.name }}</h2><p>{{ selected.place }} · atualização {{ selected.updated }}</p></div><button class="fp-close" aria-label="Fechar oportunidade" @click="close"><X aria-hidden="true"/></button></header><div class="fp-dialog-body"><div class="fp-highlight"><span>{{ selected.value ? 'Estimativa de exemplo' : 'Preço' }}</span><strong>{{ selected.value ? currency(selected.value) : 'A estimar' }}</strong><span>Próximo passo</span><b>{{ selected.next }}</b></div><p class="fp-detail">{{ selected.detail }}</p><PieceDrawing v-if="selected.measurement" class="fp-drawing" :width-cm="selected.measurement[0]" :height-cm="selected.measurement[1]" label="Medida informada · conferir no local"/><div v-else-if="selected.areaM2" class="fp-measure-callout"><Ruler aria-hidden="true"/><span>{{ selected.areaM2 }} m² informados na conversa. Não há largura e altura separadas.</span></div><div v-else class="fp-measure-callout"><Ruler aria-hidden="true"/><span>Falta dimensão para preparar esta peça; medida informada ainda precisa de conferência técnica.</span></div><section v-if="selectedReview" class="review-fields"><ReviewValue label="Contato" :field="selectedReview.name"/><ReviewValue label="Telefone" :field="selectedReview.phone"/><ReviewValue label="Endereço" :field="selectedReview.address"/><template v-for="piece in selectedReview.items" :key="piece.id"><ReviewValue v-if="piece.color.value !== null" label="Cor" :field="piece.color"/><ReviewValue v-if="piece.sheets.value !== null" label="Folhas" :field="piece.sheets"/></template></section><div class="fp-step"><CalendarDays :size="19" aria-hidden="true"/><div><small>{{ selected.stage==='Pedido'?'Acompanhamento':'Etapa seguinte' }}</small><strong>{{ selected.stage==='Pedido'?'Aguardar recebimento pelo Financeiro':nextStage(selected.stage) }}</strong></div></div></div><footer class="fp-actions"><ActionButton v-if="selected.stage==='Pronto para orçar'||selected.stage==='Fechamento'||selectedReview" @click="openLead">Preparar orçamento</ActionButton><ActionButton v-else-if="selected.stage==='Pedido'" @click="openOrders">Ver pedidos</ActionButton><ActionButton v-else-if="selected.stage!=='Pago'" @click="advance(selected)">Avançar para {{ nextStage(selected.stage) }}</ActionButton><StatusPill v-else tone="entered">Recebido no Financeiro</StatusPill><button class="preview-button" @click="close">Fechar</button></footer></template>
   </dialog>
  </main>
 </template>

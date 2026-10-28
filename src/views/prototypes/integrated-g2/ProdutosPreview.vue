@@ -1,86 +1,67 @@
 <script setup lang="ts">
-import { computed, nextTick, ref } from 'vue'
-import { formatBRL, multiplyCents, sumCents, toCents } from '../../../lib/money'
+import { computed, nextTick, onMounted, ref } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+import { formatBRL } from '../../../lib/money'
 import { ChevronRight, Info, Plus, Search, X } from 'lucide-vue-next'
 
-type Product = { id: number; category: string; type: string; color: string; sheets: number; width: number; height: number; finish: string; costCents: number; accessoryCents: number; priceCents: number; areaM2: number }
-const markup = '1.30'
-const areaOf = (width: number, height: number) => width * height / 10000
-const makeProduct = (item: Omit<Product, 'areaM2' | 'priceCents'>): Product => ({ ...item, areaM2: areaOf(item.width, item.height) * item.sheets, priceCents: multiplyCents(sumCents(item.costCents, item.accessoryCents), markup) })
-const products = ref<Product[]>([
-  makeProduct({ id: 2101, category: 'Box', type: 'Temperado', color: 'Incolor', sheets: 1, width: 150, height: 210, finish: 'Lapidado · bordas polidas', costCents: 85635, accessoryCents: 0 }),
-  makeProduct({ id: 2102, category: 'Janela', type: 'Temperado', color: 'Verde', sheets: 1, width: 120, height: 100, finish: 'Lapidado · furos para fixação', costCents: 31680, accessoryCents: 24500 }),
-  makeProduct({ id: 2103, category: 'Divisória', type: 'Temperado', color: 'Fumê', sheets: 2, width: 180, height: 220, finish: 'Lapidado · conjunto de 2 folhas', costCents: 142560, accessoryCents: 38900 }),
-  makeProduct({ id: 2104, category: 'Espelho', type: 'Espelho', color: 'Prata', sheets: 1, width: 80, height: 120, finish: 'Lapidado · bordas polidas', costCents: 19800, accessoryCents: 0 }),
-])
+import { previewProducts as products, typeLabels, categoryLabels, type Product, type ProductType, type ProductCategory, type PricingBasis } from './previewCatalog'
+const router = useRouter()
+const route = useRoute()
 const query = ref('')
 const colorFilter = ref('Todas as cores')
 const colors = ['Todas as cores', 'Incolor', 'Verde', 'Fumê', 'Prata']
-const shown = computed(() => products.value.filter(p => colorFilter.value === 'Todas as cores' || p.color === colorFilter.value).filter(p => `${p.category} ${p.type} ${p.color} ${p.width}x${p.height} ${p.finish}`.toLocaleLowerCase('pt-BR').includes(query.value.toLocaleLowerCase('pt-BR'))))
+const shown = computed(() => products.value.filter(p => colorFilter.value === 'Todas as cores' || p.color === colorFilter.value).filter(p => `${categoryLabels[p.category]} ${typeLabels[p.productType]} ${p.color} ${p.width ?? ''}x${p.height ?? ''}`.toLocaleLowerCase('pt-BR').includes(query.value.toLocaleLowerCase('pt-BR'))))
 const active = ref<Product | null>(null)
 const details = ref<HTMLDialogElement | null>(null)
 const editor = ref<HTMLDialogElement | null>(null)
 const editingId = ref<number | null>(null)
 const notice = ref('')
-const draft = ref({ category: 'Box', type: 'Temperado', color: 'Incolor', sheets: 1, width: 150, height: 210, finish: 'Lapidado · bordas polidas', costPerM2: '271,85714286', accessory: '0,00' })
-function parseMoneyInput(value: string) {
-  const normalized = value.trim().replace(',', '.')
-  return /^\d+(\.\d{1,2})?$/.test(normalized) ? toCents(normalized) : null
-}
-const draftCalc = computed(() => {
-  const width = Number(draft.value.width); const height = Number(draft.value.height)
-  const sheets = Number(draft.value.sheets)
-  const area = areaOf(width, height) * sheets
-  const rateText = draft.value.costPerM2.trim()
-  const costPerM2 = /^[0-9]+([,.][0-9]{1,8})?$/.test(rateText) ? Number(rateText.replace(',', '.')) : null
-  const accessoryCents = parseMoneyInput(draft.value.accessory)
-  const valid = width > 0 && height > 0 && sheets > 0 && costPerM2 !== null && accessoryCents !== null
-  const costCents = valid ? toCents(String(area * (costPerM2 as number))) : 0
-  const accessory = accessoryCents ?? 0
-  return { valid, area, costCents, accessoryCents: accessory, priceCents: multiplyCents(sumCents(costCents, accessory), markup) }
-})
+const draft = ref({ category: 'VIDRO_TEMPERADO' as ProductCategory, productType: 'BOX' as ProductType, pricingBasis: 'PER_UNIT' as PricingBasis, color: 'Incolor', width: null as number | null, height: null as number | null })
 function close(dialog: HTMLDialogElement | null) { dialog?.close() }
 function openDetails(product: Product) { active.value = product; details.value?.showModal() }
 async function openEditor(product?: Product) {
   editingId.value = product?.id ?? null
-  if (product) {
-    const costPerM2 = (product.costCents / 100 / product.areaM2).toFixed(8).replace('.', ',')
-    draft.value = { category: product.category, type: product.type, color: product.color, sheets: product.sheets, width: product.width, height: product.height, finish: product.finish, costPerM2, accessory: (product.accessoryCents / 100).toFixed(2).replace('.', ',') }
-  } else draft.value = { category: 'Box', type: 'Temperado', color: 'Incolor', sheets: 1, width: 150, height: 210, finish: 'Lapidado · bordas polidas', costPerM2: '271,85714286', accessory: '0,00' }
+  draft.value = product ? { category: product.category, productType: product.productType, pricingBasis: product.pricingBasis, color: product.color, width: product.width, height: product.height }
+    : { category: 'VIDRO_TEMPERADO', productType: 'BOX', pricingBasis: 'PER_UNIT', color: 'Incolor', width: null, height: null }
   await nextTick(); editor.value?.showModal()
 }
 function save() {
-  const { width, height, sheets } = draft.value
-  if (!draftCalc.value.valid || width <= 0 || height <= 0 || sheets < 1 || !draft.value.finish.trim()) return
-  const next = makeProduct({ id: editingId.value ?? Math.max(...products.value.map(p => p.id)) + 1, category: draft.value.category.trim(), type: draft.value.type, color: draft.value.color, sheets, width, height, finish: draft.value.finish.trim(), costCents: draftCalc.value.costCents, accessoryCents: draftCalc.value.accessoryCents })
+  const width = Number(draft.value.width) > 0 ? Number(draft.value.width) : null
+  const height = Number(draft.value.height) > 0 ? Number(draft.value.height) : null
+  if ((width !== null && width <= 0) || (height !== null && height <= 0)) return
+  const next: Product = { ...draft.value, width, height, id: editingId.value ?? Math.max(...products.value.map(p => p.id)) + 1, examplePriceCents: editingId.value ? products.value.find(item => item.id === editingId.value)?.examplePriceCents ?? null : null }
   if (editingId.value) {
     const index = products.value.findIndex(p => p.id === editingId.value)
     if (index >= 0) products.value[index] = next
-    notice.value = `${next.category} ${next.color.toLocaleLowerCase('pt-BR')} atualizado. Preço estimado ${formatBRL(next.priceCents)}.`
+    notice.value = `${typeLabels[next.productType]} atualizado nesta prévia.`
   } else {
     products.value.unshift(next)
-    notice.value = `${next.category} ${next.color.toLocaleLowerCase('pt-BR')} adicionado com estimativa de ${formatBRL(next.priceCents)}.`
+    notice.value = `${typeLabels[next.productType]} adicionado ao catálogo de exemplo.`
   }
   editor.value?.close()
 }
-function money(value: string) { const cents = parseMoneyInput(value); return cents === null ? 'Informe um valor válido' : formatBRL(cents) }
+function useInQuote(product: Product) { router.push({ name: 'NewQuote', query: { ...route.query, productId: String(product.id) } }) }
+onMounted(() => {
+  const product = products.value.find(item => item.id === Number(route.query.productId))
+  if (product) openDetails(product)
+})
 </script>
 
 <template>
   <main class="preview-page products-preview">
-    <p class="preview-eyebrow">Catálogo · vidro e acabamento</p>
-    <div class="preview-heading"><div><h1>Produtos</h1><p class="preview-subtitle">Consulte tipo de vidro, cor, folhas, medidas e uma estimativa de preço para cada peça.</p></div><button class="preview-button-primary" @click="openEditor()"><Plus :size="18" aria-hidden="true" /> Novo produto</button></div>
+    <p class="preview-eyebrow">Catálogo · configuração operacional</p>
+    <div class="preview-heading"><div><h1>Produtos</h1><p class="preview-subtitle">Consulte tipos e categorias do catálogo e use um item conhecido ao preparar um orçamento.</p></div><button class="preview-button-primary" @click="openEditor()"><Plus :size="18" aria-hidden="true" /> Novo produto</button></div>
     <div v-if="notice" class="preview-notice" role="status">{{ notice }} <button @click="notice = ''">Fechar</button></div>
-    <section class="catalog-note"><Info :size="19" aria-hidden="true" /><p><strong>Estimativas de exemplo</strong><span>Custos e preços desta tela são apenas exemplos. O preço multiplica custo de vidro e acessórios por 1,30 e arredonda para centavos.</span></p></section>
-    <section class="preview-surface product-toolbar"><label class="preview-search"><Search :size="18" aria-hidden="true" /><input v-model="query" aria-label="Buscar produtos" placeholder="Buscar categoria, cor, acabamento ou medida" /></label><div class="product-colors" aria-label="Filtrar por cor"><button v-for="color in colors" :key="color" type="button" class="preview-chip" :class="{ 'is-active': colorFilter === color }" :aria-pressed="colorFilter === color" @click="colorFilter = color">{{ color }}</button></div></section>
-    <div class="product-list-heading"><h2>Catálogo da loja</h2><span>{{ shown.length }} {{ shown.length === 1 ? 'produto' : 'produtos' }} <small>· agrupados por tipo, folhas e medida</small></span></div>
-    <section v-if="shown.length" class="product-list"><button v-for="product in shown" :key="product.id" class="product-row" @click="openDetails(product)"><span class="glass-swatch" :class="product.color.toLowerCase().replace('ô','o')" aria-hidden="true"><span /></span><span class="product-main"><strong>{{ product.category }} · {{ product.color }}</strong><span>{{ product.type }} · {{ product.sheets }} {{ product.sheets === 1 ? 'folha' : 'folhas' }} · {{ product.width }} × {{ product.height }} cm</span><small>{{ product.finish }}</small></span><span class="product-price"><small>Preço à vista · exemplo</small><strong>{{ formatBRL(product.priceCents) }}</strong></span><ChevronRight :size="20" class="product-chevron" aria-hidden="true" /></button></section>
+    <section class="catalog-note"><Info :size="19" aria-hidden="true" /><p><strong>Prévia sem preço operacional</strong><span>Valores exibidos nos itens existentes são exemplos sintéticos. Esta tela não calcula custo, margem ou preço de venda.</span></p></section>
+    <section class="preview-surface product-toolbar"><label class="preview-search"><Search :size="18" aria-hidden="true" /><input v-model="query" aria-label="Buscar produtos" placeholder="Buscar categoria, cor ou medida" /></label><div class="product-colors" aria-label="Filtrar por cor"><button v-for="color in colors" :key="color" type="button" class="preview-chip" :class="{ 'is-active': colorFilter === color }" :aria-pressed="colorFilter === color" @click="colorFilter = color">{{ color }}</button></div></section>
+    <div class="product-list-heading"><h2>Catálogo da loja</h2><span>{{ shown.length }} {{ shown.length === 1 ? 'produto' : 'produtos' }} <small>· tipos, cores e medidas</small></span></div>
+    <section v-if="shown.length" class="product-list"><button v-for="product in shown" :key="product.id" class="product-row" @click="openDetails(product)"><span class="glass-swatch" :class="product.color.toLowerCase().replace('ô','o')" aria-hidden="true"><span /></span><span class="product-main"><strong>{{ typeLabels[product.productType] }} · {{ product.color }}</strong><span>{{ categoryLabels[product.category] }} · {{ product.pricingBasis === 'PER_M2' ? 'por m²' : 'por unidade' }}<template v-if="product.width !== null && product.height !== null"> · {{ product.width }} × {{ product.height }} cm</template></span><small>Item de catálogo · #{{ product.id }}</small></span><span class="product-price"><small>Preço de exemplo</small><strong>{{ product.examplePriceCents === null ? 'Não definido' : formatBRL(product.examplePriceCents) }}</strong></span><ChevronRight :size="20" class="product-chevron" aria-hidden="true" /></button></section>
     <div v-else class="preview-empty"><h2>Nenhum produto encontrado</h2><p>Procure por outra medida, categoria ou cor.</p><button class="preview-button" @click="query = ''; colorFilter = 'Todas as cores'">Limpar busca e filtro</button></div>
-    <section class="price-example"><div class="example-icon"><Info :size="20" aria-hidden="true" /></div><div><h2>Como ler o preço de exemplo</h2><p>Box incolor de 150 × 210 cm tem 3,15 m². Com custo de vidro de {{ formatBRL(85635) }} e nenhum acessório, o exemplo aplica 30%: {{ formatBRL(85635) }} × 1,30 = <strong>{{ formatBRL(multiplyCents(85635, markup)) }}</strong>.</p></div><button class="preview-button" @click="openDetails(products[0]!)">Ver cálculo do box</button></section>
+    <section class="price-example"><div class="example-icon"><Info :size="20" aria-hidden="true" /></div><div><h2>O que o catálogo configura</h2><p>Tipo de produto, categoria suportada, base de preço e dimensões opcionais. Cálculo e preço real ficam fora desta prévia.</p></div><button class="preview-button" @click="openDetails(products[0]!)">Ver item do catálogo</button></section>
 
-    <dialog ref="details" class="preview-dialog product-dialog" aria-labelledby="product-details-title" @click="($event.target as HTMLElement).tagName === 'DIALOG' && close(details)"><template v-if="active"><header class="dialog-heading"><div><p class="preview-eyebrow">{{ active.category }} · produto #{{ active.id }}</p><h2 id="product-details-title">{{ active.color }} {{ active.type.toLocaleLowerCase('pt-BR') }}</h2><p class="preview-subtitle">{{ active.finish }}</p></div><button class="dialog-close" aria-label="Fechar detalhes" @click="close(details)"><X :size="20" /></button></header><div class="product-detail-content"><div class="detail-measures"><span class="glass-swatch large" :class="active.color.toLowerCase().replace('ô','o')" aria-hidden="true"><span /></span><div><strong>{{ active.width }} × {{ active.height }} cm por folha</strong><span>{{ active.areaM2.toFixed(2).replace('.', ',') }} m² no total · {{ active.sheets }} {{ active.sheets === 1 ? 'folha' : 'folhas' }}</span><small>Medida de catálogo · {{ active.category.toLocaleLowerCase('pt-BR') }}</small></div></div><section class="calculation-card"><h3>Composição estimada</h3><p><span>Vidro · custo de exemplo</span><strong>{{ formatBRL(active.costCents) }}</strong></p><p><span>Ferragens e acessórios</span><strong>{{ formatBRL(active.accessoryCents) }}</strong></p><p class="calculation-subtotal"><span>Base de cálculo</span><strong>{{ formatBRL(sumCents(active.costCents, active.accessoryCents)) }}</strong></p><p class="calculation-margin"><span>Acréscimo de exemplo · 30%</span><strong>{{ formatBRL(active.priceCents - sumCents(active.costCents, active.accessoryCents)) }}</strong></p><p class="calculation-total"><span>Preço à vista</span><strong>{{ formatBRL(active.priceCents) }}</strong></p><small>Valores simulados apenas para revisar a interface. Medida × custo e arredondamento são calculados localmente.</small></section></div><footer class="dialog-actions"><button class="preview-button" @click="openEditor(active)">Editar produto</button><button class="preview-button-primary" @click="close(details)">Fechar detalhes</button></footer></template></dialog>
+    <dialog ref="details" class="preview-dialog product-dialog" aria-labelledby="product-details-title" @click="($event.target as HTMLElement).tagName === 'DIALOG' && close(details)"><template v-if="active"><header class="dialog-heading"><div><p class="preview-eyebrow">{{ categoryLabels[active.category] }} · produto #{{ active.id }}</p><h2 id="product-details-title">{{ typeLabels[active.productType] }} · {{ active.color }}</h2><p class="preview-subtitle">{{ active.pricingBasis === 'PER_M2' ? 'Preço por m²' : 'Preço por unidade' }}</p></div><button class="dialog-close" aria-label="Fechar detalhes" @click="close(details)"><X :size="20" /></button></header><div class="product-detail-content"><div class="detail-measures"><span class="glass-swatch large" :class="active.color.toLowerCase().replace('ô','o')" aria-hidden="true"><span /></span><div><strong>{{ active.width !== null && active.height !== null ? `${active.width} × ${active.height} cm` : 'Dimensões ainda não definidas' }}</strong><span>{{ categoryLabels[active.category] }} · {{ active.pricingBasis === 'PER_M2' ? 'por m²' : 'por unidade' }}</span><small>Cor de referência: {{ active.color }} · acabamento não configurado</small></div></div><section class="calculation-card"><h3>Preço no item de exemplo</h3><p class="calculation-total"><span>Valor sintético</span><strong>{{ active.examplePriceCents === null ? 'Não definido' : formatBRL(active.examplePriceCents) }}</strong></p><small>Este valor não é calculado nem representa uma tabela de preço da loja.</small></section></div><footer class="dialog-actions"><button class="preview-button" @click="openEditor(active)">Editar configuração</button><button class="preview-button" @click="useInQuote(active)">Usar no orçamento</button><button class="preview-button-primary" @click="close(details)">Fechar detalhes</button></footer></template></dialog>
 
-    <dialog ref="editor" class="preview-dialog product-editor" aria-labelledby="product-editor-title"><form class="editor-form" @submit.prevent="save"><header class="dialog-heading"><div><p class="preview-eyebrow">{{ editingId ? 'Atualizar catálogo' : 'Novo item' }}</p><h2 id="product-editor-title">{{ editingId ? 'Editar produto' : 'Cadastrar produto' }}</h2><p class="preview-subtitle">A estimativa se atualiza conforme você informa as medidas.</p></div><button type="button" class="dialog-close" aria-label="Fechar cadastro" @click="close(editor)"><X :size="20" /></button></header><div class="product-fields"><div class="editor-two"><label class="preview-form-field">Categoria<input v-model="draft.category" required maxlength="40" placeholder="Box, janela, espelho…" /></label><label class="preview-form-field">Tipo de vidro<select v-model="draft.type"><option>Temperado</option><option>Laminado</option><option>Espelho</option></select></label></div><div class="editor-two"><label class="preview-form-field">Cor<input v-model="draft.color" required maxlength="30" placeholder="Incolor, verde, fumê…" /></label><label class="preview-form-field">Quantidade de folhas<input v-model.number="draft.sheets" required type="number" min="1" max="20" /></label></div><fieldset class="dimension-fields"><legend>Medida de cada peça</legend><label class="preview-form-field">Largura<input v-model.number="draft.width" required type="number" min="1" max="500" /><small>cm</small></label><span class="dimension-times" aria-hidden="true">×</span><label class="preview-form-field">Altura<input v-model.number="draft.height" required type="number" min="1" max="500" /><small>cm</small></label></fieldset><label class="preview-form-field">Acabamento<input v-model="draft.finish" required maxlength="100" placeholder="Lapidado · bordas polidas" /></label><details class="cost-inputs"><summary>Detalhar custos usados na estimativa</summary><div class="editor-two"><label class="preview-form-field">Custo de vidro por m²<input v-model="draft.costPerM2" required inputmode="decimal" pattern="[0-9]+([,.][0-9]{1,8})?" placeholder="271,86" /></label><label class="preview-form-field">Ferragens e acessórios<input v-model="draft.accessory" required inputmode="decimal" pattern="[0-9]+([,.][0-9]{1,2})?" placeholder="0,00" /></label></div></details><div class="live-estimate"><span>{{ draftCalc.area.toFixed(2).replace('.', ',') }} m² total · {{ formatBRL(draftCalc.costCents) }} vidro + {{ money(draft.accessory) }} acessórios</span><strong>Preço estimado {{ formatBRL(draftCalc.priceCents) }}</strong><small>Cálculo local: área total × custo por m² + acessórios; total × 1,30, arredondado para centavos.</small><p v-if="!draftCalc.valid" class="calculation-error" role="alert">Informe medidas positivas e valores de custo válidos para calcular e salvar.</p></div></div><footer class="dialog-actions"><button type="button" class="preview-button" @click="close(editor)">Cancelar</button><button type="submit" class="preview-button-primary" :disabled="!draftCalc.valid">{{ editingId ? 'Salvar alterações' : 'Adicionar produto' }}</button></footer></form></dialog>
+    <dialog ref="editor" class="preview-dialog product-editor" aria-labelledby="product-editor-title"><form class="editor-form" @submit.prevent="save"><header class="dialog-heading"><div><p class="preview-eyebrow">{{ editingId ? 'Atualizar catálogo' : 'Novo item' }}</p><h2 id="product-editor-title">{{ editingId ? 'Editar configuração' : 'Adicionar ao catálogo' }}</h2><p class="preview-subtitle">O produto é uma configuração operacional; o preço é informado no orçamento.</p></div><button type="button" class="dialog-close" aria-label="Fechar cadastro" @click="close(editor)"><X :size="20" /></button></header><div class="product-fields"><label class="preview-form-field">Tipo de produto<select v-model="draft.productType"><option v-for="(label,type) in typeLabels" :key="type" :value="type">{{ label }}</option></select></label><label class="preview-form-field">Categoria<select v-model="draft.category"><option value="VIDRO_TEMPERADO">Vidro temperado</option><option value="PVC">PVC</option><option value="ALUMINIO">Alumínio</option></select></label><label class="preview-form-field">Base de preço<select v-model="draft.pricingBasis"><option value="PER_UNIT">Por unidade</option><option value="PER_M2">Por m²</option></select></label><label class="preview-form-field">Cor de referência (opcional)<select v-model="draft.color"><option>Incolor</option><option>Verde</option><option>Fumê</option><option>Bronze</option><option>Prata</option></select><small>Acabamentos livres e laminado não fazem parte das opções deste catálogo.</small></label><fieldset class="dimension-fields"><legend>Dimensões de referência · opcionais</legend><label class="preview-form-field">Largura<input v-model.number="draft.width" type="number" min="1" max="500" placeholder="A confirmar" /><small>cm</small></label><span class="dimension-times" aria-hidden="true">×</span><label class="preview-form-field">Altura<input v-model.number="draft.height" type="number" min="1" max="500" placeholder="A confirmar" /><small>cm</small></label></fieldset><p class="partner-form-note">Sem preço, custo, margem, ferragens ou acabamento como campos obrigatórios. O item continua disponível para ser referenciado por ID.</p></div><footer class="dialog-actions"><button type="button" class="preview-button" @click="close(editor)">Cancelar</button><button type="submit" class="preview-button-primary">{{ editingId ? 'Salvar configuração' : 'Adicionar item' }}</button></footer></form></dialog>
   </main>
 </template>
 

@@ -52,7 +52,7 @@ export function usePreviewFinance() {
       || selection.value.customerId !== original.customerId
       || selection.value.orderId !== original.orderId
       || selection.value.partnerId !== original.partnerId
-      || selection.value.purpose !== original.purpose
+      || (Boolean(original.purpose) && selection.value.purpose !== original.purpose)
   })
 
   const missingReason = computed(() => {
@@ -74,13 +74,15 @@ export function usePreviewFinance() {
         if (!selection.value.customerId) return 'Selecione o cliente do pedido.'
         const customer = customers.find(item => item.id === selection.value.customerId)
         if (!selection.value.orderId || selection.value.orderId !== customer?.orderId) return 'Selecione um pedido que pertença ao cliente.'
-        if (!selected.value || selected.value.amountCents > (customer?.orderBalanceCents ?? 0)) return 'O valor excede o saldo do pedido.'
+        if (selected.value?.amountCents == null) return 'O valor ainda não foi medido.'
+        if (!customer || selected.value.amountCents > customer.orderBalanceCents) return 'O valor excede o saldo do pedido.'
       }
       if (selection.value.purpose === 'Pedido inteiro') {
         if (!selection.value.customerId) return 'Selecione o cliente do pedido.'
         const customer = customers.find(item => item.id === selection.value.customerId)
         if (!selection.value.orderId || selection.value.orderId !== customer?.orderId) return 'Selecione um pedido que pertença ao cliente.'
-        if (selected.value?.amountCents !== customer?.orderBalanceCents) return 'O valor precisa ser igual ao saldo exato do pedido.'
+        if (selected.value?.amountCents == null) return 'O valor ainda não foi medido.'
+        if (selected.value.amountCents !== customer?.orderBalanceCents) return 'O valor precisa ser igual ao saldo exato do pedido.'
       }
       return ''
     }
@@ -89,7 +91,7 @@ export function usePreviewFinance() {
     return ''
   })
 
-  const canConfirm = computed(() => Boolean(selected.value)
+  const canConfirm = computed(() => Boolean(selected.value && selected.value.amountCents != null)
     && selected.value?.movement !== 'own'
     && selected.value?.movement !== 'reference'
     && selection.value.movement !== 'unknown'
@@ -154,12 +156,12 @@ export function usePreviewFinance() {
 
   function acceptSuggestion() {
     if (!selected.value || !initialSuggestion.value) return
-    selection.value = { ...initialSuggestion.value, accepted: true, reason: selection.value.reason }
+    selection.value = { ...selection.value, accepted: true }
   }
 
   function selectCustomer(id: number) {
     if (!customers.some(customer => customer.id === id)) return
-    selection.value = { ...selection.value, customerId: id, orderId: null, partnerId: null, purpose: '', accepted: false }
+    selection.value = { ...selection.value, movement: 'in', customerId: id, orderId: null, partnerId: null, purpose: '', accepted: false }
     query.value = ''
   }
 
@@ -193,8 +195,8 @@ export function usePreviewFinance() {
 
   function confirm() {
     const receipt = selected.value
-    if (!receipt || !canConfirm.value || pendingIds.value.has(receipt.id) || !items.value.some(item => item.id === receipt.id)) return false
-    const snapshot = { ...receipt, evidence: { ...receipt.evidence } }
+    if (!receipt || receipt.amountCents == null || !canConfirm.value || pendingIds.value.has(receipt.id) || !items.value.some(item => item.id === receipt.id)) return false
+    const snapshot = { ...receipt, amountCents: receipt.amountCents, evidence: { ...receipt.evidence } }
     const chosen = { ...selection.value }
     const target = destinationName(snapshot, chosen)
     const direction = chosen.movement === 'in' ? 'recebido' : 'pago'
@@ -237,9 +239,9 @@ export function usePreviewFinance() {
 
   function markReference() {
     const receipt = selected.value
-    if (!receipt || receipt.movement !== 'reference' || pendingIds.value.has(receipt.id)) return false
+    if (!receipt || receipt.amountCents == null || receipt.movement !== 'reference' || pendingIds.value.has(receipt.id)) return false
     if (!items.value.some(item => item.id === receipt.id)) return false
-    const snapshot = { ...receipt, evidence: { ...receipt.evidence } }
+    const snapshot = { ...receipt, amountCents: receipt.amountCents, evidence: { ...receipt.evidence } }
     pendingIds.value = new Set(pendingIds.value).add(snapshot.id)
     close()
     schedule({

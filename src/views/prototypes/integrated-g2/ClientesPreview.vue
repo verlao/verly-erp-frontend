@@ -1,16 +1,21 @@
 <script setup lang="ts">
-import { computed, nextTick, ref } from 'vue'
-import { useRouter } from 'vue-router'
+import { computed, nextTick, onMounted, ref } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import { ChevronRight, MapPin, Phone, Plus, Search, X } from 'lucide-vue-next'
+import { reviewCustomers, findReviewLead } from './reviewContext'
+import { previewOrders } from './vendasPreviewState'
 
-type Customer = { id: number; name: string; alias: string; phone: string; secondPhone: string; cpf: string; address: string; note: string; orders: { code: string; item: string; status: string; date: string; amount: string }[] }
+type Customer = { id: number; name: string; alias: string; phone: string; secondPhone: string; cpf: string; address: string; orders: { code: string; item: string; status: string; date: string; amount: string }[] }
 const router = useRouter()
-const customers = ref<Customer[]>([
-  { id: 1, name: 'Ana Exemplo', alias: 'Ana Box', phone: '(11) 99999-4421', secondPhone: '', cpf: 'Não informado', address: 'Rua Exemplo, 1048 · Bairro Modelo, São Paulo (fictício)', note: 'Conversa associada ao pedido 1048; confirme o contato antes de registrar pagamento.', orders: [{ code: 'PED-1048', item: 'Janela temperada · incolor · 120 × 80 cm', status: 'Em andamento', date: '15 out 2026', amount: 'R$ 1.340,00' }] },
-  { id: 2, name: 'Beatriz Teste', alias: 'Bia Janela', phone: '(11) 99999-4422', secondPhone: '', cpf: '', address: 'Av. Exemplo, 2052 · Vila Teste, São Paulo (fictício)', note: '', orders: [{ code: 'PED-1052', item: 'Box de correr · verde · 150 × 190 cm', status: 'Aguardando confirmação', date: '13 out 2026', amount: 'R$ 1.120,00' }] },
-  { id: 1046, name: 'Rogério Exemplo', alias: 'Roger obra — WhatsApp', phone: '(11) 99102-8844', secondPhone: '', cpf: '', address: 'Rua Modelo, 51 · Osasco, SP (fictício)', note: '', orders: [{ code: 'PED-2799', item: 'Janela temperada · verde · 100 × 120 cm', status: 'Orçamento enviado', date: '02 out 2026', amount: 'R$ 612,00' }] },
-  { id: 1045, name: 'Clínica Exemplo', alias: 'Recepção — WhatsApp', phone: '(11) 96320-1177', secondPhone: '', cpf: 'CNPJ fictício', address: 'Praça Exemplo, 90 · Bairro Modelo, São Paulo (fictício)', note: 'Faturamento para o administrativo.', orders: [{ code: 'PED-2731', item: 'Porta de correr · incolor · 160 × 210 cm', status: 'Entregue', date: '24 set 2026', amount: 'R$ 1.930,00' }] },
-])
+const route = useRoute()
+const customers = computed<Customer[]>(() => reviewCustomers.value.map(customer => ({
+  id: customer.id, name: customer.name, alias: customer.alias, phone: customer.phone, secondPhone: customer.secondPhone,
+  cpf: customer.document, address: customer.addresses[0]?.value ?? '',
+  orders: previewOrders.value.filter(order => order.customerId === customer.id).map(order => ({
+    code: `PED-${order.id}`, item: order.item, status: order.stage === 'Medição' ? 'Aguardando medida' : order.stage,
+    date: order.installDate, amount: new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(order.total / 100),
+  })),
+})))
 const query = ref('')
 const filter = ref<'Todos' | 'Com pedidos' | 'Atenção'>('Todos')
 const filters = ['Todos', 'Com pedidos', 'Atenção'] as const
@@ -24,29 +29,42 @@ const editor = ref<HTMLDialogElement | null>(null)
 const editingId = ref<number | null>(null)
 const notice = ref('')
 const formError = ref('')
-const draft = ref({ name: '', alias: '', phone: '', secondPhone: '', address: '', note: '' })
+const draft = ref({ name: '', phone: '', secondPhone: '', address: '' })
 function openDetails(customer: Customer) { active.value = customer; details.value?.showModal() }
 function close(dialog: HTMLDialogElement | null) { dialog?.close() }
 async function openEditor(customer?: Customer) {
   formError.value = ''
   editingId.value = customer?.id ?? null
-  draft.value = customer ? { name: customer.name, alias: customer.alias, phone: customer.phone, secondPhone: customer.secondPhone, address: customer.address, note: customer.note } : { name: '', alias: '', phone: '', secondPhone: '', address: '', note: '' }
+  const lead = findReviewLead(route.query.leadId)
+  const contextCustomer = route.query.customerId ? customers.value.find(item => item.id === Number(route.query.customerId)) : undefined
+  draft.value = customer ? { name: customer.name, phone: customer.phone, secondPhone: customer.secondPhone, address: customer.address }
+    : { name: contextCustomer?.name ?? lead?.name.value ?? '', phone: contextCustomer?.phone ?? lead?.phone.value ?? '', secondPhone: contextCustomer?.secondPhone ?? '', address: contextCustomer?.address ?? lead?.address.value ?? '' }
   await nextTick(); editor.value?.showModal()
 }
 function save() {
   const name = draft.value.name.trim(); const phone = draft.value.phone.trim()
-  if (!name || phone.replace(/\D/g, '').length < 10) { formError.value = 'Informe o nome e um telefone com DDD para continuar.'; return }
+  if (!name) { formError.value = 'Informe o nome da pessoa ou empresa para continuar.'; return }
   if (editingId.value) {
-    const customer = customers.value.find(c => c.id === editingId.value)
-    if (customer) Object.assign(customer, draft.value, { name, phone })
+    const customer = reviewCustomers.value.find(c => c.id === editingId.value)
+    if (customer) {
+      Object.assign(customer, { name, phone, secondPhone: draft.value.secondPhone })
+      if (customer.addresses[0]) customer.addresses[0].value = draft.value.address.trim()
+      else if (draft.value.address.trim()) customer.addresses.push({ id: Date.now(), label: 'Endereço do cadastro', value: draft.value.address.trim() })
+    }
     notice.value = `${name} atualizado na prévia.`
   } else {
-    const customer: Customer = { id: Math.max(...customers.value.map(c => c.id)) + 1, ...draft.value, name, phone, cpf: '', orders: [] }
-    customers.value.unshift(customer); notice.value = `${name} adicionado à prévia.`
+    const id = Math.max(...reviewCustomers.value.map(c => c.id)) + 1
+    reviewCustomers.value.unshift({ id, name, alias: '', phone, secondPhone: draft.value.secondPhone, document: '', addresses: draft.value.address.trim() ? [{ id: Date.now(), label: 'Endereço do cadastro', value: draft.value.address.trim() }] : [] })
+    notice.value = `${name} adicionado à prévia.`
   }
   formError.value = ''
   editor.value?.close()
 }
+onMounted(() => {
+  const customerId = Number(route.query.customerId)
+  const customer = customers.value.find(item => item.id === customerId)
+  if (customer) openDetails(customer)
+})
 </script>
 
 <template>
@@ -58,7 +76,8 @@ function save() {
       <label class="preview-search"><Search :size="18" aria-hidden="true" /><input v-model="query" aria-label="Buscar clientes" placeholder="Buscar nome, apelido, telefone ou endereço" /></label>
       <div class="customer-filters" aria-label="Filtrar clientes"><button v-for="item in filters" :key="item" type="button" class="preview-chip" :class="{ 'is-active': filter === item }" :aria-pressed="filter === item" @click="filter = item">{{ item }}</button></div>
     </section>
-    <p class="customer-count">{{ shown.length }} {{ shown.length === 1 ? 'cadastro' : 'cadastros' }} <span>· Dados de exemplo desta prévia</span></p>
+    <p v-if="route.query.leadId" class="prefill-note">Contexto da conversa #{{ route.query.leadId }} preservado. Ao iniciar um cadastro, nome, telefone e endereço conhecidos já aparecem para conferência.</p>
+    <p class="customer-count">{{ shown.length }} {{ shown.length === 1 ? 'cadastro' : 'cadastros' }} <span>· Dados sintéticos desta prévia</span></p>
     <section v-if="shown.length" class="preview-grid">
       <button v-for="customer in shown" :key="customer.id" type="button" class="preview-card customer-card" @click="openDetails(customer)">
         <div class="customer-card-top"><span class="customer-initials">{{ customer.name.split(' ').map(n => n[0]).slice(0, 2).join('') }}</span><span class="customer-id">#{{ customer.id }}</span></div>
@@ -72,14 +91,14 @@ function save() {
 
     <dialog ref="details" class="preview-dialog customer-dialog" aria-labelledby="customer-details-title" @click="($event.target as HTMLElement).tagName === 'DIALOG' && close(details)">
       <template v-if="active"><header class="dialog-heading"><div><p class="preview-eyebrow">Cliente #{{ active.id }}</p><h2 id="customer-details-title">{{ active.name }}</h2><p v-if="active.alias" class="customer-alias">WhatsApp salvo como “{{ active.alias }}”</p></div><button class="dialog-close" aria-label="Fechar detalhes do cliente" @click="close(details)"><X :size="20" /></button></header>
-      <div class="dialog-content"><section class="customer-contact"><h3>Contato e entrega</h3><p><strong>Telefone principal</strong>{{ active.phone }}</p><p v-if="active.secondPhone"><strong>Outro telefone</strong>{{ active.secondPhone }}</p><p><strong>Documento</strong>{{ active.cpf || 'Não informado' }}</p><p><strong>Endereço</strong>{{ active.address || 'Endereço ainda não informado' }}</p><p v-if="active.note"><strong>Observação</strong>{{ active.note }}</p><p class="identity-note">O apelido ajuda a reconhecer a conversa; por si só, não confirma a identidade de quem escreveu.</p></section>
-        <section class="customer-history"><div class="history-title"><h3>Pedidos recentes</h3><button class="preview-button" @click="router.push({ name: 'Orders' })">Abrir pedidos</button></div><article v-for="order in active.orders" :key="order.code" class="order-item"><div><strong>{{ order.code }}</strong><span>{{ order.item }}</span><small>{{ order.date }}</small></div><div class="order-meta"><span class="preview-chip" :class="{ 'is-pending': order.status === 'Aguardando medida' }">{{ order.status }}</span><strong>{{ order.amount }}</strong></div></article><p v-if="!active.orders.length" class="history-empty">Ainda não há pedidos neste cadastro.</p></section>
-      </div><footer class="dialog-actions"><button class="preview-button" @click="openEditor(active)">Editar cadastro</button><button class="preview-button-primary" @click="router.push({ name: 'Orders' })">Ver todos os pedidos</button></footer></template>
+      <div class="dialog-content"><section class="customer-contact"><h3>Contato e entrega</h3><p><strong>Telefone principal</strong>{{ active.phone || 'Não informado' }}</p><p v-if="active.secondPhone"><strong>Outro telefone</strong>{{ active.secondPhone }}</p><p><strong>Documento</strong>{{ active.cpf || 'Não informado' }}</p><p><strong>Endereço</strong>{{ active.address || 'Endereço ainda não informado' }}</p><p class="identity-note">O apelido ajuda a reconhecer a conversa; por si só, não confirma a identidade de quem escreveu.</p></section>
+          <section class="customer-history"><div class="history-title"><h3>Pedidos recentes</h3><button class="preview-button" @click="router.push({ name: 'Orders', query: { ...route.query, customerId: String(active.id) } })">Abrir pedidos</button></div><article v-for="order in active.orders" :key="order.code" class="order-item"><div><strong>{{ order.code }}</strong><span>{{ order.item }}</span><small>{{ order.date }}</small></div><div class="order-meta"><span class="preview-chip" :class="{ 'is-pending': order.status === 'Aguardando medida' }">{{ order.status }}</span><strong>{{ order.amount }}</strong></div></article><p v-if="!active.orders.length" class="history-empty">Ainda não há pedidos neste cadastro.</p></section>
+      </div><footer class="dialog-actions"><button class="preview-button" @click="openEditor(active)">Editar cadastro</button><button class="preview-button-primary" @click="router.push({ name: 'Orders', query: { ...route.query, customerId: String(active.id) } })">Ver todos os pedidos</button></footer></template>
     </dialog>
     <dialog ref="editor" class="preview-dialog customer-editor" aria-labelledby="customer-editor-title">
       <form class="editor-form" @submit.prevent="save"><header class="dialog-heading"><div><p class="preview-eyebrow">{{ editingId ? 'Atualizar dados' : 'Novo cadastro' }}</p><h2 id="customer-editor-title">{{ editingId ? 'Editar cliente' : 'Cadastrar cliente' }}</h2><p class="preview-subtitle">As alterações ficam somente nesta prévia.</p></div><button type="button" class="dialog-close" aria-label="Fechar cadastro de cliente" @click="close(editor)"><X :size="20" /></button></header>
         <p v-if="formError" class="form-error" role="alert">{{ formError }}</p>
-        <div class="editor-fields"><label class="preview-form-field">Nome de pessoa ou empresa<input v-model="draft.name" required maxlength="90" placeholder="Ex.: Marina Costa" /></label><label class="preview-form-field">Apelido usado na conversa<input v-model="draft.alias" maxlength="90" placeholder="Ex.: Mari — WhatsApp" /><small>É uma referência para a equipe, não uma confirmação de identidade.</small></label><div class="editor-two"><label class="preview-form-field">Telefone principal<input v-model="draft.phone" required type="tel" minlength="10" placeholder="(11) 99999-9999" /></label><label class="preview-form-field">Outro telefone<input v-model="draft.secondPhone" type="tel" placeholder="Opcional" /></label></div><label class="preview-form-field">Endereço de entrega<input v-model="draft.address" maxlength="140" placeholder="Rua, número · bairro, cidade" /></label><label class="preview-form-field">Observação para a equipe<textarea v-model="draft.note" rows="2" maxlength="180" placeholder="Horário de contato, acesso ao local…" /></label></div>
+        <div class="editor-fields"><label class="preview-form-field">Nome de pessoa ou empresa<input v-model="draft.name" required maxlength="90" placeholder="Ex.: Marina Costa" /></label><p v-if="draft.phone" class="prefill-note">Telefone e endereço vieram do contexto selecionado. Confira e corrija se precisar.</p><div class="editor-two"><label class="preview-form-field">Telefone principal <small>Opcional</small><input v-model="draft.phone" type="tel" placeholder="(11) 99999-9999" /></label><label class="preview-form-field">Outro telefone<input v-model="draft.secondPhone" type="tel" placeholder="Opcional" /></label></div><label class="preview-form-field">Endereço do cadastro<input v-model="draft.address" maxlength="140" placeholder="Rua, número · bairro, cidade" /></label></div>
         <footer class="dialog-actions"><button type="button" class="preview-button" @click="close(editor)">Cancelar</button><button class="preview-button-primary" type="submit">{{ editingId ? 'Salvar alterações' : 'Adicionar cliente' }}</button></footer>
       </form>
     </dialog>
@@ -149,5 +168,6 @@ function save() {
 .preview-notice { display:flex; justify-content:space-between; gap:12px; margin:0 0 14px; padding:12px 15px; border-left:4px solid #1e7a3c; border-radius:8px; background:#edf6ef; color:#245631; font-size:15px; }
 .preview-notice button { min-height:44px; border:0; background:none; color:inherit; font:600 15px var(--font-verly-body); text-decoration:underline; cursor:pointer; }
 .form-error { margin:12px 25px 0; padding:10px 12px; border-left:3px solid #a84f06; background:#fbe8cf; color:#733803; font-size:15px; }
+.prefill-note { margin:12px 0; padding:11px 13px; border-left:3px solid #2e7d7a; border-radius:7px; background:#edf6f4; color:#315e58; font-size:15px; line-height:1.4; }
 @media(max-width:650px) { .preview-heading{align-items:flex-start;flex-direction:column}.customer-toolbar{align-items:stretch;flex-direction:column}.customer-filters{padding-bottom:2px}.customer-card{min-height:210px}.dialog-heading,.dialog-content{padding-right:17px;padding-left:17px}.dialog-actions{padding:13px 17px 18px;flex-wrap:wrap}.order-item{flex-direction:column}.order-meta{display:flex;justify-content:space-between;align-items:center}.editor-fields{padding:16px 17px}.editor-two{grid-template-columns:1fr}.form-error{margin:10px 17px 0} }
 </style>

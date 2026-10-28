@@ -1,12 +1,26 @@
 <script setup lang="ts">
 import { computed, nextTick, ref, watch } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { ArrowRight, CalendarDays, Check, Plus, RectangleHorizontal, Search, X } from 'lucide-vue-next'
 import { formatBRL } from '@/lib/money'
 import StatusPill from '@/components/verly/StatusPill.vue'
-import { convertPreviewQuote, previewQuotes, type QuotePreview, type QuotePreviewStatus } from './vendasPreviewState'
+import { bindPreviewQuoteCustomer, convertPreviewQuote, previewQuotes, type QuotePreview, type QuotePreviewStatus } from './vendasPreviewState'
+
+import { findReviewLead, reviewCustomers } from './reviewContext'
 
 const router = useRouter()
+const route = useRoute()
+const selectedCustomerId = ref<number | null>(null)
+const customerSearch = ref('')
+const conversionError = ref('')
+const candidates = computed(() => {
+ const preferred = findReviewLead(converting.value?.leadId)?.candidateCustomerIds || []
+ const term = customerSearch.value.toLocaleLowerCase('pt-BR').trim()
+ return reviewCustomers.value.filter(c => !term || `${c.name} ${c.alias} ${c.phone}`.toLocaleLowerCase('pt-BR').includes(term)).sort((a,b) => Number(preferred.includes(b.id)) - Number(preferred.includes(a.id)))
+})
+function measureLabel(value: {width?:number | null;height?:number | null;areaM2?:number | null}) {
+ return value.areaM2 != null ? `${value.areaM2.toLocaleString('pt-BR')} m²` : `${value.width ?? '—'} × ${value.height ?? '—'} cm`
+}
 const quotes = previewQuotes
 const query = ref('')
 const filter = ref('Todos')
@@ -19,16 +33,18 @@ const filters = ['Todos', 'Válidos', 'Expirando', 'Convertidos', 'Expirados']
 const visibleQuotes = computed(() => quotes.value.filter(q => {
   const textMatch = `${q.id} ${q.customer} ${q.item}`.toLocaleLowerCase('pt-BR').includes(query.value.toLocaleLowerCase('pt-BR'))
   const statusMatch = filter.value === 'Todos' || ({ Válidos: 'Válido', Expirando: 'Expirando', Convertidos: 'Convertido', Expirados: 'Expirado' } as Record<string, string>)[filter.value] === q.status
-  return textMatch && statusMatch
+  return textMatch && statusMatch && (!route.query.leadId || q.leadId === Number(route.query.leadId)) && (!route.query.customerId || q.customerId === Number(route.query.customerId))
 }))
 const tone = (status: QuotePreviewStatus) => status === 'Válido' ? 'entered' : status === 'Expirando' || status === 'Expirado' ? 'pending' : 'neutral'
 watch(selected, async value => { await nextTick(); if (value) detailDialog.value?.showModal(); else if (detailDialog.value?.open) detailDialog.value.close() })
-watch(converting, async value => { await nextTick(); if (value) confirmDialog.value?.showModal(); else if (confirmDialog.value?.open) confirmDialog.value.close() })
+watch(converting, async value => { selectedCustomerId.value = value?.customerId ?? null; customerSearch.value = ''; conversionError.value = ''; await nextTick(); if (value) confirmDialog.value?.showModal(); else if (confirmDialog.value?.open) confirmDialog.value.close() })
 function convertQuote() {
   if (!converting.value) return
   const quote = converting.value
+  if (!selectedCustomerId.value) { conversionError.value = 'Escolha o cliente do pedido antes de continuar.'; return }
+  if (!bindPreviewQuoteCustomer(quote.id, selectedCustomerId.value)) { conversionError.value = 'O cadastro não está disponível. Confira o cliente.'; return }
   const order = convertPreviewQuote(quote.id)
-  if (!order) return
+  if (!order) { conversionError.value = 'Não foi possível criar este pedido. Confira o vínculo e o orçamento.'; return }
   notice.value = `Pedido #${order.id} criado para ${quote.customer}. Saldo a receber: ${formatBRL(order.total - order.paid)}.`
   converting.value = null
   selected.value = null
@@ -54,7 +70,7 @@ function onConfirmClose() { converting.value = null }
       <div v-if="visibleQuotes.length" class="quote-list">
         <button v-for="quote in visibleQuotes" :key="quote.id" class="quote-row preview-surface" type="button" @click="selected = quote">
           <span class="quote-icon"><RectangleHorizontal :size="21" aria-hidden="true" /></span>
-          <span class="row-copy"><span class="row-title">{{ quote.item }} <small>· #{{ quote.id }}</small></span><span class="row-sub">{{ quote.customer }} · {{ quote.width }} × {{ quote.height }} cm · {{ quote.glass }}</span></span>
+          <span class="row-copy"><span class="row-title">{{ quote.item }} <small>· #{{ quote.id }}</small></span><span class="row-sub">{{ quote.customer }} · {{ measureLabel(quote) }} · {{ quote.glass }}</span></span>
           <span class="row-meta"><StatusPill :tone="tone(quote.status)">{{ quote.status }}</StatusPill><strong>{{ formatBRL(quote.totalCents) }}</strong><small><CalendarDays :size="14" /> Até {{ quote.expires }}</small></span><ArrowRight class="row-arrow" :size="19" />
         </button>
       </div>
@@ -62,11 +78,11 @@ function onConfirmClose() { converting.value = null }
     </section>
     <dialog ref="detailDialog" class="preview-dialog detail-dialog" aria-labelledby="quote-dialog-title" @click.self="closeDetails" @close="onDetailClose">
       <div v-if="selected" class="dialog-shell"><header class="dialog-head"><div><p class="preview-eyebrow">ORÇAMENTO #{{ selected.id }}</p><h2 id="quote-dialog-title">{{ selected.item }}</h2></div><button class="close-button" aria-label="Fechar detalhes do orçamento" @click="closeDetails"><X /></button></header>
-        <div class="detail-content"><div class="detail-customer"><span class="avatar">{{ selected.customer.split(' ').map(w => w[0]).slice(0,2).join('') }}</span><div><strong>{{ selected.customer }}</strong><small>{{ selected.phone }}</small></div></div><div class="detail-grid"><div><span>Situação</span><StatusPill :tone="tone(selected.status)">{{ selected.status }}</StatusPill></div><div><span>Validade</span><strong>{{ selected.expires }}</strong></div><div><span>Medida</span><strong>{{ selected.width }} × {{ selected.height }} cm</strong></div><div><span>Vidro</span><strong>{{ selected.glass }}</strong></div><div><span>Quantidade</span><strong>{{ selected.quantity }} {{ selected.quantity === 1 ? 'unidade' : 'unidades' }}</strong></div><div><span>Condição</span><strong>{{ selected.terms }}</strong></div><div v-if="selected.orderId"><span>Pedido</span><strong>#{{ selected.orderId }}</strong></div></div><section v-if="selected.items?.length" class="quote-lines"><h3>Peças da proposta</h3><article v-for="(line, index) in selected.items" :key="index"><strong>{{ line.name }} · {{ line.glass }}</strong><span>{{ line.quantity }} {{ line.quantity === 1 ? 'unidade' : 'unidades' }} · {{ line.width }} × {{ line.height }} cm<span v-if="line.leaves"> · {{ line.leaves }} folhas por conjunto</span></span><b>{{ formatBRL(line.unitCents * line.quantity) }}</b></article></section><div class="price-block"><span>Total proposto</span><strong>{{ formatBRL(selected.totalCents) }}</strong><small v-if="selected.profitCents > 0">Acréscimo estimado {{ formatBRL(selected.profitCents) }}</small></div></div>
+        <div class="detail-content"><div class="detail-customer"><span class="avatar">{{ selected.customer.split(' ').map(w => w[0]).slice(0,2).join('') }}</span><div><strong>{{ selected.customer }}</strong><small>{{ selected.phone }}</small></div></div><div class="detail-grid"><div><span>Situação</span><StatusPill :tone="tone(selected.status)">{{ selected.status }}</StatusPill></div><div><span>Validade</span><strong>{{ selected.expires }}</strong></div><div><span>Medida</span><strong>{{ measureLabel(selected) }}</strong></div><div><span>Vidro</span><strong>{{ selected.glass }}</strong></div><div><span>Quantidade</span><strong>{{ selected.quantity }} {{ selected.quantity === 1 ? 'unidade' : 'unidades' }}</strong></div><div><span>Condição</span><strong>{{ selected.terms }}</strong></div><div v-if="selected.orderId"><span>Pedido</span><strong>#{{ selected.orderId }}</strong></div></div><section v-if="selected.items?.length" class="quote-lines"><h3>Peças da proposta</h3><article v-for="(line, index) in selected.items" :key="index"><strong>{{ line.name }} · {{ line.glass }}</strong><span>{{ line.quantity }} {{ line.quantity === 1 ? 'unidade' : 'unidades' }} · {{ measureLabel(line) }}<span v-if="line.leaves"> · {{ line.leaves }} folhas por conjunto</span></span><b>{{ formatBRL(line.unitCents * line.quantity) }}</b></article></section><div class="price-block"><span>Total proposto</span><strong>{{ formatBRL(selected.totalCents) }}</strong><small v-if="selected.priceSource">{{ selected.priceSource }}</small><small v-if="selected.profitCents > 0">Acréscimo estimado {{ formatBRL(selected.profitCents) }}</small></div></div>
         <footer class="dialog-footer"><button class="preview-button" @click="closeDetails">Fechar</button><button v-if="selected.status === 'Válido' || selected.status === 'Expirando'" class="preview-button preview-button-primary" @click="converting = selected">Transformar em pedido <ArrowRight :size="17" /></button></footer>
       </div>
     </dialog>
-    <dialog ref="confirmDialog" class="preview-dialog confirm-dialog" aria-labelledby="convert-dialog-title" @click.self="closeConvert" @close="onConfirmClose"><div v-if="converting" class="confirm-content"><button class="close-button close-float" aria-label="Fechar confirmação" @click="closeConvert"><X /></button><span class="confirm-mark"><Check :size="22" /></span><p class="preview-eyebrow">CONFIRMAR PEDIDO</p><h2 id="convert-dialog-title">Transformar este orçamento?</h2><p>O orçamento #{{ converting.id }} de {{ converting.customer }} será marcado como convertido. Um pedido será criado nesta prévia.</p><div class="confirm-total"><span>{{ converting.item }}</span><strong>{{ formatBRL(converting.totalCents) }}</strong></div><button class="preview-button preview-button-primary confirm-action" @click="convertQuote">Confirmar e criar pedido</button></div></dialog>
+    <dialog ref="confirmDialog" class="preview-dialog confirm-dialog" aria-labelledby="convert-dialog-title" @click.self="closeConvert" @close="onConfirmClose"><div v-if="converting" class="confirm-content"><button class="close-button close-float" aria-label="Fechar confirmação" @click="closeConvert"><X /></button><span class="confirm-mark"><Check :size="22" /></span><p class="preview-eyebrow">CONFIRMAR PEDIDO</p><h2 id="convert-dialog-title">Transformar este orçamento?</h2><p>O orçamento #{{ converting.id }} de {{ converting.customer }} será marcado como convertido. Um pedido será criado nesta prévia.</p><div class="confirm-total"><span>{{ converting.item }}</span><strong>{{ formatBRL(converting.totalCents) }}</strong></div><section class="conversion-customer"><h3>Quem é o cliente deste pedido?</h3><p v-if="!converting.customerId">O nome da conversa ajuda a localizar. Escolha o cadastro que ficará no pedido.</p><p v-else>Cadastro já vinculado a esta proposta. Confira antes de criar o pedido.</p><input v-model="customerSearch" class="preview-search" aria-label="Buscar cliente para o pedido" placeholder="Buscar nome, apelido ou telefone" /><div class="conversion-candidates"><button v-for="customer in candidates" :key="customer.id" class="customer-candidate" :class="{ chosen: selectedCustomerId === customer.id }" :aria-pressed="selectedCustomerId === customer.id" @click="selectedCustomerId = customer.id"><strong>{{ customer.name }}</strong><span>{{ customer.phone }}<span v-if="customer.alias"> · {{ customer.alias }}</span></span><small>{{ selectedCustomerId === customer.id ? 'Escolhido para o pedido' : 'Selecionar este cadastro' }}</small></button><p v-if="!candidates.length">Nenhum cadastro encontrado. Ajuste a busca ou cadastre o cliente antes de criar o pedido.</p></div></section><p v-if="conversionError" class="review-pending" role="alert">{{ conversionError }}</p><p v-if="!selectedCustomerId" class="required-reason">Escolha o cadastro do cliente para continuar.</p><button class="preview-button preview-button-primary confirm-action" :disabled="!selectedCustomerId" @click="convertQuote">Confirmar e criar pedido</button></div></dialog>
   </main>
 </template>
 
@@ -76,4 +92,6 @@ function onConfirmClose() { converting.value = null }
 @media(max-width:700px){.preview-dialog{width:calc(100vw - 20px);max-height:90dvh;margin:auto}.dialog-shell{max-height:90dvh}}
 .preview-button-primary{border-color:#141a1f;background:#141a1f;color:#fff}.preview-button-primary:disabled{border-color:#d2dad7;background:#e0e5e3;color:#53615f;opacity:1;cursor:not-allowed}
 .quote-lines{margin:20px 0}.quote-lines h3{font:600 21px var(--font-verly-display)}.quote-lines article{display:grid;gap:5px;padding:14px 0;border-bottom:1px solid #D8E1DD}.quote-lines article span{color:#53615F;font-size:15px}.quote-lines article b{font:600 17px var(--font-verly-mono)}
+.conversion-customer{margin:20px 0;text-align:left}.conversion-customer h3{font:600 21px var(--font-verly-display)}.conversion-customer p{font-size:15px;color:#53615F}.conversion-candidates{display:grid;gap:8px;margin:12px 0;max-height:260px;overflow:auto}.customer-candidate{display:grid;gap:4px;min-height:74px;padding:12px;text-align:left;border:1px solid #CBD5D1;border-radius:12px;color:#141A1F;background:white;cursor:pointer}.customer-candidate strong{font-size:17px}.customer-candidate span,.customer-candidate small{font-size:15px;color:#53615F}.customer-candidate.chosen{background:#E5F2EF;border:2px solid #2E7D7A}.required-reason{font-size:15px;color:#53615F}.confirm-content{padding-top:30px}.confirm-content>h2{padding-right:20px}.confirm-dialog{overflow-y:auto}
+@media(max-width:700px){.row-sub{white-space:normal;max-width:none}.quote-row{grid-template-columns:38px minmax(0,1fr)}.row-meta{grid-column:2;max-width:none;justify-items:start;grid-template-columns:1fr auto}.row-meta small{grid-column:1/-1}.row-meta strong{text-align:right}.confirm-content{padding:24px 18px}}
 </style>

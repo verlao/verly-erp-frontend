@@ -1,30 +1,42 @@
 <script setup lang="ts">
-import { computed, nextTick, ref, watch } from 'vue'
+import { computed, nextTick, onMounted, ref, watch } from 'vue'
+import { useRoute } from 'vue-router'
 import { Box, CalendarClock, Check, ChevronRight, ClipboardList, MapPin, Ruler, Search, X } from 'lucide-vue-next'
 import { formatBRL } from '@/lib/money'
 import StatusPill from '@/components/verly/StatusPill.vue'
 import { previewOrders, type OrderPreview, type OrderPreviewStage } from './vendasPreviewState'
 
 const orders = previewOrders
+const route = useRoute()
 const search = ref('')
 const filter = ref('Todos')
 const selected = ref<OrderPreview | null>(null)
 const orderDialog = ref<HTMLDialogElement | null>(null)
 const installDateInput = ref('')
+const teamInput = ref('')
 const notice = ref('')
 const filters = ['Todos', 'Medição', 'Produção', 'Instalação']
 const visibleOrders = computed(() => orders.value.filter(order => {
   const matchesText = `${order.id} ${order.customer} ${order.item}`.toLocaleLowerCase('pt-BR').includes(search.value.toLocaleLowerCase('pt-BR'))
-  return matchesText && (filter.value === 'Todos' || order.stage === filter.value)
+  const customerIdMatches = !route.query.customerId || order.customerId === Number(route.query.customerId)
+  const orderIdMatches = !route.query.orderId || order.id === Number(route.query.orderId)
+  return matchesText && (!route.query.leadId || order.leadId === Number(route.query.leadId)) && customerIdMatches && orderIdMatches && (filter.value === 'Todos' || order.stage === filter.value)
 }))
 const due = (order: OrderPreview) => Math.max(0, order.total - order.paid)
 const quantityLabel = (quantity: number) => `${quantity} ${quantity === 1 ? 'unidade' : 'unidades'}`
 const stageIndex = (stage: OrderPreviewStage) => ({ Medição: 0, Produção: 1, Instalação: 2 })[stage]
 const progressTone = (stage: OrderPreviewStage) => stage === 'Medição' ? 'pending' : 'neutral'
 watch(selected, async value => { await nextTick(); if (value && !orderDialog.value?.open) orderDialog.value?.showModal(); else if (!value && orderDialog.value?.open) orderDialog.value.close() })
-function openOrder(order: OrderPreview) { selected.value = order; installDateInput.value = order.installDateValue ?? '' }
+function openOrder(order: OrderPreview) { selected.value = order; installDateInput.value = order.installDateValue ?? ''; teamInput.value = order.responsible === 'Equipe a definir' || order.responsible === 'Equipe de instalação a definir' ? '' : order.responsible }
 function closeDetails() { selected.value = null }
 function onDialogClose() { selected.value = null }
+onMounted(() => {
+  const orderId = Number(route.query.orderId)
+  if (orderId) {
+    const order = orders.value.find(item => item.id === orderId)
+    if (order) openOrder(order)
+  }
+})
 function scheduleInstall() {
   if (!selected.value || !installDateInput.value) return
   const date = new Date(installDateInput.value)
@@ -32,7 +44,7 @@ function scheduleInstall() {
   const label = new Intl.DateTimeFormat('pt-BR', { day:'numeric', month:'short', hour:'2-digit', minute:'2-digit' }).format(date).replace('.', '')
   const current = selected.value
   const wasScheduled = current.installDate !== 'A agendar'
-  orders.value = orders.value.map(order => order.id === current.id ? { ...order, installDate: label, installDateValue: installDateInput.value } : order)
+  orders.value = orders.value.map(order => order.id === current.id ? { ...order, installDate: label, installDateValue: installDateInput.value, responsible: teamInput.value.trim() || order.responsible } : order)
   selected.value = orders.value.find(order => order.id === current.id) ?? null
   notice.value = `Data de instalação do pedido #${current.id} ${wasScheduled ? 'atualizada' : 'agendada'} para ${label}.`
 }
@@ -43,6 +55,7 @@ function scheduleInstall() {
     <p class="preview-eyebrow">VENDAS · ACOMPANHAMENTO</p>
     <div class="page-head"><div><h1 class="preview-heading">Pedidos</h1><p class="preview-subtitle">Acompanhe cada trabalho da medição até a instalação.</p></div><div class="order-count"><ClipboardList :size="19" /><span><strong>{{ orders.length }}</strong> em andamento</span></div></div>
     <p v-if="notice" class="preview-notice" role="status">{{ notice }}</p>
+    <p v-if="route.query.customerId || route.query.orderId || route.query.leadId" class="context-note">Contexto preservado: <span v-if="route.query.customerId">cliente #{{ route.query.customerId }}</span><span v-if="route.query.orderId"> · pedido #{{ route.query.orderId }}</span><span v-if="route.query.leadId"> · conversa #{{ route.query.leadId }}</span></p>
     <section class="orders-summary preview-grid"><article class="preview-card"><span>Em medição</span><strong>{{ orders.filter(o => o.stage === 'Medição').length }}</strong><small>confirmar medidas da peça</small></article><article class="preview-card"><span>Em produção</span><strong>{{ orders.filter(o => o.stage === 'Produção').length }}</strong><small>acompanhar preparação</small></article><article class="preview-card"><span>Instalação</span><strong>{{ orders.filter(o => o.stage === 'Instalação').length }}</strong><small>organizar visita ao cliente</small></article></section>
     <div class="preview-toolbar"><label class="preview-search"><Search :size="18" /><input v-model="search" aria-label="Buscar pedido" placeholder="Buscar por pedido, cliente ou item" /></label><div class="filters" aria-label="Filtrar etapa"><button v-for="item in filters" :key="item" class="preview-chip" :class="{ 'is-active': filter === item }" :aria-pressed="filter === item" @click="filter = item">{{ item }}</button></div></div>
     <section class="order-list" aria-label="Pedidos em andamento">
@@ -56,10 +69,10 @@ function scheduleInstall() {
     <dialog ref="orderDialog" class="preview-dialog order-dialog" aria-labelledby="order-dialog-title" @click.self="closeDetails" @close="onDialogClose">
       <div v-if="selected" class="dialog-shell"><header class="dialog-head"><div><p class="preview-eyebrow">PEDIDO #{{ selected.id }}</p><h2 id="order-dialog-title">{{ selected.customer }}</h2></div><button class="close-button" aria-label="Fechar detalhes do pedido" @click="closeDetails"><X /></button></header>
         <div class="dialog-content"><div class="item-heading"><Box :size="20" /><div><strong>{{ selected.item }}</strong><small>{{ quantityLabel(selected.quantity) }} · {{ selected.measure }}</small></div></div>
-          <section v-if="selected.items?.length" class="order-lines"><h3>Peças do pedido</h3><article v-for="(line,index) in selected.items" :key="index"><strong>{{ line.name }} · {{ line.glass }}</strong><span>{{ line.quantity }} {{ line.quantity === 1 ? 'unidade' : 'unidades' }} · {{ line.width }} × {{ line.height }} cm<span v-if="line.leaves"> · {{ line.leaves }} folhas por conjunto</span></span><b>{{ formatBRL(line.unitCents * line.quantity) }}</b></article></section><section class="detail-section"><h3>Andamento do pedido</h3><div class="timeline"><div v-for="(label, index) in ['Medição', 'Produção', 'Instalação']" :key="label" class="timeline-row" :class="{ complete: index < stageIndex(selected.stage), active: index === stageIndex(selected.stage) }"><span class="timeline-icon"><Check v-if="index < stageIndex(selected.stage)" :size="15" /><Ruler v-else-if="index === 0" :size="15" /><Box v-else-if="index === 1" :size="15" /><MapPin v-else :size="15" /></span><span><strong>{{ label }}</strong><small>{{ index === 0 ? selected.measureDate : index === 1 ? selected.production : selected.installDate }}</small></span></div></div></section>
+          <section v-if="selected.items?.length" class="order-lines"><h3>Peças do pedido</h3><article v-for="(line,index) in selected.items" :key="index"><strong>{{ line.name }} · {{ line.glass }}</strong><span>{{ line.quantity }} {{ line.quantity === 1 ? 'unidade' : 'unidades' }}<template v-if="line.width !== null && line.height !== null"> · {{ line.width }} × {{ line.height }} cm</template><template v-if="line.areaM2 !== null && line.areaM2 !== undefined"> · {{ line.areaM2 }} m²</template><span v-if="line.areaM2 == null && (line.width === null || line.height === null)"> · medidas a confirmar</span><span v-if="line.leaves"> · {{ line.leaves }} folhas por conjunto</span></span><b>{{ formatBRL(line.unitCents * line.quantity) }}</b></article></section><section class="detail-section"><h3>Andamento do pedido</h3><div class="timeline"><div v-for="(label, index) in ['Medição', 'Produção', 'Instalação']" :key="label" class="timeline-row" :class="{ complete: index < stageIndex(selected.stage), active: index === stageIndex(selected.stage) }"><span class="timeline-icon"><Check v-if="index < stageIndex(selected.stage)" :size="15" /><Ruler v-else-if="index === 0" :size="15" /><Box v-else-if="index === 1" :size="15" /><MapPin v-else :size="15" /></span><span><strong>{{ label }}</strong><small>{{ index === 0 ? selected.measureDate : index === 1 ? selected.production : selected.installDate }}</small></span></div></div></section>
           <section class="payment-card"><h3>Valores do pedido</h3><div><span>Total</span><strong>{{ formatBRL(selected.total) }}</strong></div><div class="paid-line"><span>Já recebido</span><strong :class="{ neutral: selected.paid === 0 }">{{ formatBRL(selected.paid) }}</strong></div><div class="due-line"><span>Saldo a receber</span><strong>{{ formatBRL(due(selected)) }}</strong></div><small>{{ selected.paymentNote }}</small></section>
-          <section class="detail-section address-section"><h3>Local da instalação</h3><p><MapPin :size="17" /> {{ selected.address }}</p><small>Responsável: {{ selected.responsible }}</small></section>
-          <section class="schedule-section"><h3><CalendarClock :size="18" /> {{ selected.installDate === 'A agendar' ? 'Agendar instalação' : 'Alterar agendamento' }}</h3><label class="preview-form-field">Data e horário<input v-model="installDateInput" type="datetime-local" /></label><button class="preview-button preview-button-primary" :disabled="!installDateInput" @click="scheduleInstall">{{ selected.installDate === 'A agendar' ? 'Salvar agendamento' : 'Salvar nova data' }}</button><p>{{ selected.installDate === 'A agendar' ? 'O agendamento fica registrado sem alterar a etapa atual do pedido.' : `Data agendada: ${selected.installDate}. O pedido mantém a etapa ${selected.stage.toLocaleLowerCase('pt-BR')}.` }}</p></section>
+          <section class="detail-section address-section"><h3>Local da obra</h3><p><MapPin :size="17" /> {{ selected.address }}</p><small>Endereço herdado do cadastro. Confirme se este é o local da obra antes de combinar a instalação.</small></section>
+          <section class="schedule-section"><h3><CalendarClock :size="18" /> {{ selected.installDate === 'A agendar' ? 'Agendar instalação' : 'Conferir agendamento existente' }}</h3><p v-if="selected.installDate !== 'A agendar'">Horário registrado: {{ selected.installDate }}. Confirme com o cliente antes de alterar.</p><label class="preview-form-field">{{ selected.installDate === 'A agendar' ? 'Data e horário' : 'Corrigir data e horário, se necessário' }}<input v-model="installDateInput" type="datetime-local" /></label><label v-if="selected.responsible === 'Equipe a definir' || selected.responsible === 'Equipe de instalação a definir'" class="preview-form-field">Equipe <small>Ainda não definida</small><input v-model="teamInput" type="text" maxlength="80" placeholder="Informe uma equipe apenas se já combinada" /></label><p v-else>Equipe registrada: {{ selected.responsible }}. Ela permanece vinculada ao agendamento.</p><button class="preview-button preview-button-primary" :disabled="!installDateInput" @click="scheduleInstall">{{ selected.installDate === 'A agendar' ? 'Salvar agendamento' : 'Salvar conferência' }}</button><p>Salvar registra apenas data, horário e equipe informada. A etapa {{ selected.stage.toLocaleLowerCase('pt-BR') }}, medição e produção não avançam.</p></section>
         </div><footer class="dialog-footer"><button class="preview-button" @click="closeDetails">Fechar pedido</button></footer>
       </div>
     </dialog>

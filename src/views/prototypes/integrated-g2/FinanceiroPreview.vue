@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, nextTick, onBeforeUnmount, ref, watch } from 'vue'
+import { useRoute } from 'vue-router'
 import { ArrowDownLeft, ArrowUpRight, ArrowLeftRight, HelpCircle, BookOpen, X, Search, CalendarDays, ChevronDown, Check, ReceiptText, ExternalLink } from 'lucide-vue-next'
 import { formatBRL } from '@/lib/money'
 import ActionButton from '@/components/verly/ActionButton.vue'
@@ -11,6 +12,7 @@ import { usePreviewFinance } from './usePreviewFinance'
 import { customers, partners } from './fixtures'
 
 const finance = usePreviewFinance()
+const route = useRoute()
 const { items, selected, selection, reviewing, query, editing, evidenceOpen, notice, summary, toasts, pendingIds, completed, canConfirm, missingReason, correctionRequired, searchResults } = finance
 const dialog = ref<HTMLDialogElement | null>(null)
 const previousFocus = ref<HTMLElement | null>(null)
@@ -20,6 +22,12 @@ const purposeOptions = computed(() => selection.value.movement === 'in' ? ['Sina
 const isOpen = computed(() => Boolean(selected.value))
 const visibleItems = computed(() => items.value.filter(item => {
   if (pendingIds.value.has(item.id)) return false
+  const customerId = queryId(route.query.customerId)
+  const orderId = queryId(route.query.orderId)
+  const partnerId = queryId(route.query.partnerId)
+  if (customerId && item.customerId !== customerId && !item.candidateCustomerIds?.includes(customerId)) return false
+  if (orderId && item.orderId !== orderId && customers.find(customer => customer.id === item.customerId)?.orderId !== orderId && !item.candidateCustomerIds?.some(id => customers.find(customer => customer.id === id)?.orderId === orderId)) return false
+  if (partnerId && item.partnerId !== partnerId) return false
   if (filter.value === 'Entradas') return item.movement === 'in'
   if (filter.value === 'Saídas') return item.movement === 'out'
   if (filter.value === 'Sem sugestão') return item.movement === 'unknown'
@@ -28,11 +36,26 @@ const visibleItems = computed(() => items.value.filter(item => {
 const monthCount = computed(() => visibleItems.value.filter(item => item.date.includes('2026-10')).length)
 const beforeCount = computed(() => visibleItems.value.length - monthCount.value)
 const filteredSearchResults = computed(() => searchResults.value.filter(result => selection.value.movement === 'out' ? result.kind === 'partner' : selection.value.movement === 'in' ? result.kind === 'customer' : true))
-const drawerTitle = computed(() => selected.value?.movement === 'out' ? 'Conferir despesa' : 'Conferir recebimento')
+const drawerTitle = computed(() => selected.value?.movement === 'out' ? 'Conferir despesa' : selected.value?.movement === 'own' ? 'Conferir transferência' : selected.value?.movement === 'unknown' ? 'Conferir comprovante' : selected.value?.movement === 'reference' ? 'Revisar referência' : 'Conferir recebimento')
 const selectedCustomer = computed(() => customers.find(customer => customer.id === selection.value.customerId))
 const selectedPartner = computed(() => partners.find(partner => partner.id === selection.value.partnerId))
 const suggestionName = computed(() => selectedCustomer.value?.name || selectedPartner.value?.name || selected.value?.contact || 'destino escolhido')
-const isPixDifference = computed(() => selected.value?.amountCents === 48000 && selection.value.purpose === 'Sinal' && selection.value.orderId === 1048)
+const isPixDifference = computed(() => selected.value?.amountCents === 48000 && selection.value.orderId === 1048)
+const candidateCustomers = computed(() => (selected.value?.candidateCustomerIds ?? []).map(id => customers.find(customer => customer.id === id)).filter((customer): customer is (typeof customers)[number] => Boolean(customer)))
+const hasRouteContext = computed(() => Boolean(queryId(route.query.customerId) || queryId(route.query.orderId) || queryId(route.query.partnerId)))
+const routeContextLabel = computed(() => {
+  const customer = customers.find(item => item.id === queryId(route.query.customerId))
+  const orderId = queryId(route.query.orderId)
+  const partner = partners.find(item => item.id === queryId(route.query.partnerId))
+  return [customer?.name, orderId ? `pedido #${orderId}` : '', partner?.name].filter(Boolean).join(' · ')
+})
+function queryId(value: unknown): number | null {
+  const raw = Array.isArray(value) ? value[0] : value
+  if (typeof raw !== 'string' || !/^\d+$/.test(raw)) return null
+  const id = Number(raw)
+  return Number.isSafeInteger(id) && id > 0 ? id : null
+}
+function amountLabel(value: number | null) { return value == null ? 'Valor ainda não medido' : formatBRL(value) }
 const finalDestination = computed(() => {
   if (selection.value.movement === 'own') return 'Entre contas da loja · ainda para conferir'
   if (selection.value.movement === 'reference') return 'Guardado como referência'
@@ -72,10 +95,11 @@ onBeforeUnmount(() => { if (dialog.value?.open) dialog.value.close() })
 
 <template>
   <main class="finance-preview verly-surface" @keydown="keyEscape">
-    <div class="preview-note"><span class="preview-dot" /> Prévia · dados de exemplo</div>
+    <div class="preview-note"><span class="preview-dot" /> Prévia · dados de exemplo · sem conexão com dados reais</div>
     <header class="page-heading">
       <div><p class="eyebrow">Controle da loja</p><h1>Financeiro</h1><p class="month-label">Outubro 2026 <CalendarDays :size="18" aria-hidden="true" /></p></div>
     </header>
+    <p v-if="hasRouteContext" class="context-filter">Fila filtrada pelo contexto {{ routeContextLabel || 'selecionado' }}. Isso não vincula nenhum pagamento.</p>
 
     <section class="summary-grid" aria-label="Resumo do mês">
       <article class="summary-card summary-in"><span class="summary-label"><ArrowDownLeft :size="18" aria-hidden="true" /> Entrou</span><strong :class="{ zero: summary.inCents === 0 }">{{ formatBRL(summary.inCents) }}</strong><small>neste mês</small></article>
@@ -89,11 +113,11 @@ onBeforeUnmount(() => { if (dialog.value?.open) dialog.value.close() })
         <button v-for="option in filters" :key="option" type="button" class="filter-chip" :class="{ active: filter === option }" :aria-pressed="filter === option" @click="filter = option">{{ option }}</button>
       </div>
       <div class="movement-list">
-        <button v-for="item in visibleItems" :key="item.id" type="button" class="movement-row" :class="`movement-row--${item.movement}`" @click="openItem(item)" :aria-label="`${item.title}, ${formatBRL(item.amountCents)}. Abrir para conferir.`">
+        <button v-for="item in visibleItems" :key="item.id" type="button" class="movement-row" :class="`movement-row--${item.movement}`" @click="openItem(item)" :aria-label="`${item.title}, ${amountLabel(item.amountCents)}. Abrir para conferir.`">
           <span v-if="item.widthCm && item.heightCm" class="row-piece" aria-hidden="true"><PieceDrawing :width-cm="item.widthCm" :height-cm="item.heightCm" :label="item.title"/></span>
           <span v-else class="movement-icon" :class="`movement-${item.movement}`"><component :is="rowIcon(item.movement)" :size="20" :stroke-width="2" aria-hidden="true" /></span>
           <span class="row-main"><span class="row-title">{{ item.title }}</span><span class="row-subtitle">{{ subtitleFor(item) }}</span><span v-if="item.widthCm && item.heightCm" class="row-dimensions">{{ item.widthCm }} × {{ item.heightCm }} cm</span></span>
-          <span class="row-meta"><time>{{ formatDate(item.date) }}</time><strong class="amount" :class="{ muted: item.movement === 'unknown' || item.movement === 'own' }">{{ formatBRL(item.amountCents) }}</strong><StatusPill :tone="['in', 'out', 'unknown'].includes(item.movement) ? 'pending' : 'neutral'">{{ item.movement === 'unknown' ? 'Revisar' : item.movement === 'own' ? 'Entre contas' : item.movement === 'reference' ? 'Referência' : 'Para confirmar' }}</StatusPill></span>
+          <span class="row-meta"><time>{{ formatDate(item.date) }}</time><strong class="amount" :class="{ muted: item.movement === 'unknown' || item.movement === 'own' || item.amountCents == null }">{{ amountLabel(item.amountCents) }}</strong><StatusPill :tone="['in', 'out', 'unknown'].includes(item.movement) ? 'pending' : 'neutral'">{{ item.amountCents == null ? 'Valor pendente' : item.movement === 'unknown' ? 'Revisar' : item.movement === 'own' ? 'Entre contas' : item.movement === 'reference' ? 'Referência' : 'Para confirmar' }}</StatusPill></span>
           <span class="row-chevron" aria-hidden="true">›</span>
         </button>
         <p v-if="!visibleItems.length" class="empty-state">Nenhum movimento neste filtro.</p>
@@ -105,7 +129,9 @@ onBeforeUnmount(() => { if (dialog.value?.open) dialog.value.close() })
       <div v-if="selected" class="drawer-shell">
         <header class="drawer-header"><div><p class="eyebrow">Conferência do movimento</p><h2 id="drawer-title">{{ drawerTitle }}</h2></div><button data-dialog-close class="icon-button" type="button" aria-label="Fechar conferência" @click="handleClose"><X :size="22" /></button></header>
         <div class="drawer-scroll">
-          <div class="amount-panel"><strong class="drawer-amount">{{ formatBRL(selected.amountCents) }}</strong><span>{{ formatDate(selected.date) }} · {{ selected.title }}</span><span v-if="selected.movement === 'unknown'" class="unknown-message">Precisamos conferir o movimento</span></div>
+          <div class="amount-panel"><strong class="drawer-amount" :class="{ 'amount-unmeasured': selected.amountCents == null }">{{ amountLabel(selected.amountCents) }}</strong><span>{{ formatDate(selected.date) }} · {{ selected.title }}</span><span v-if="selected.movement === 'unknown'" class="unknown-message">Precisamos conferir o movimento</span></div>
+
+          <section class="role-summary" aria-label="Papéis neste movimento"><div><span>Remetente da conversa</span><strong>{{ selected.contact || 'Não identificado' }}</strong></div><div><span>Pagador Pix</span><strong>{{ selected.payer || 'Não identificado' }}</strong></div><div><span>Recebedor Pix</span><strong>{{ selected.payee || 'Não identificado' }}</strong></div><div v-if="selection.movement === 'in'"><span>Cliente comercial / pedido</span><strong>{{ selectedCustomer?.name || 'Cliente a escolher' }}<template v-if="selection.orderId"> · #{{ selection.orderId }}</template></strong></div><div v-else-if="selection.movement === 'out'"><span>Beneficiário / categoria</span><strong>{{ selectedPartner?.name || 'Beneficiário a escolher' }}<template v-if="selection.purpose"> · {{ selection.purpose }}</template></strong></div></section>
 
           <div v-if="selected.widthCm && selected.heightCm" class="piece-preview"><PieceDrawing :width-cm="selected.widthCm" :height-cm="selected.heightCm" :label="selected.title" /></div>
 
@@ -114,21 +140,23 @@ onBeforeUnmount(() => { if (dialog.value?.open) dialog.value.close() })
           <section v-if="selected.movement === 'reference'" class="drawer-section reference-callout"><ReceiptText :size="19"/><div><strong>Referência</strong><p>Este comprovante não altera o financeiro.</p></div></section>
 
             <template v-if="selection.movement === 'in' || selection.movement === 'out'">
-            <section v-if="selected.movement !== 'unknown' && !editing" class="suggestion-card"><div class="suggestion-top"><span class="suggestion-label">Nossa sugestão</span><StatusPill :tone="selection.accepted ? 'neutral' : 'pending'" :class="{ 'suggestion-checked': selection.accepted }">{{ selection.accepted ? 'Sugestão conferida' : 'Confira antes de salvar' }}</StatusPill></div><p class="suggestion-sentence">{{ selection.movement === 'in' ? 'Cliente do pagamento:' : 'Recebedor da despesa:' }} <strong>{{ suggestionName }}</strong><template v-if="selection.purpose"> · {{ selection.purpose.toLowerCase() }}</template><template v-if="selection.orderId"> · pedido #{{ selection.orderId }}</template></p><p class="suggestion-why">{{ selected.subtitle }}</p><ActionButton variant="secondary" class="accept-button" @click="accept"><Check :size="17"/> Conferir sugestão</ActionButton></section>
+            <section v-if="selected.movement !== 'unknown' && !editing" class="suggestion-card"><div class="suggestion-top"><span class="suggestion-label">Proposta para conferir</span><StatusPill :tone="selection.accepted ? 'neutral' : 'pending'" :class="{ 'suggestion-checked': selection.accepted }">{{ selection.accepted ? 'Proposta conferida' : 'Aguardando sua conferência' }}</StatusPill></div><p class="suggestion-sentence">{{ selection.movement === 'in' ? 'Cliente comercial:' : 'Beneficiário:' }} <strong>{{ suggestionName }}</strong><template v-if="selection.orderId"> · pedido #{{ selection.orderId }}</template><template v-if="selection.purpose"> · {{ selection.purpose.toLowerCase() }}</template><template v-else-if="selection.movement === 'in'"> · finalidade pendente</template></p><p class="suggestion-why">{{ selected.subtitle }}</p><ActionButton variant="secondary" class="accept-button" @click="accept"><Check :size="17"/> Conferir proposta</ActionButton></section>
             <div v-else-if="editing || (selected.movement === 'unknown' && !selection.customerId && !selection.partnerId)" class="search-panel"><label for="destination-search">{{ selected.movement === 'unknown' ? 'Quem pagou ou recebeu?' : 'Escolher outro destino' }}</label><div class="search-box"><Search :size="18"/><input id="destination-search" v-model="query" type="search" autocomplete="off" placeholder="Nome ou telefone" /></div><p class="search-help">Buscamos clientes e fornecedores pelo nome ou telefone.</p><div v-if="filteredSearchResults.length" class="search-results"><button v-for="result in filteredSearchResults" :key="`${result.kind}-${result.id}`" type="button" @click="resultSelected(result)"><span>{{ result.label }}</span><small>{{ result.detail }} · {{ result.kind === 'customer' ? 'Cliente' : 'Fornecedor' }}</small></button></div><p v-else-if="query" class="search-empty">Nenhum resultado. Você ainda pode escolher uma categoria.</p><ActionButton v-if="editing" variant="secondary" @click="editing = false">Voltar à sugestão</ActionButton></div>
 
             <section v-if="selection.movement === 'in' || selection.movement === 'out'" class="drawer-section"><h3>{{ selection.movement === 'in' ? 'Categoria do recebimento' : 'Categoria da despesa' }}</h3><div class="chips"><ChoiceChip v-for="purpose in purposeOptions" :key="purpose" :selected="selection.purpose === purpose" @update:selected="finance.setPurpose(purpose)">{{ purpose }}</ChoiceChip></div></section>
-            <section v-if="selection.movement === 'in'" class="drawer-section"><label class="field-label" for="order-select">Pedido relacionado</label><select id="order-select" :value="selection.orderId ?? ''" @change="finance.setOrder(($event.target as HTMLSelectElement).value ? Number(($event.target as HTMLSelectElement).value) : null)"><option value="">Sem pedido</option><option v-for="customer in customers.filter(customer => !selection.customerId || customer.id === selection.customerId)" :key="customer.id" :value="customer.orderId">Pedido #{{ customer.orderId }} · {{ customer.name }}</option></select><p class="field-hint">A sugestão usa o cliente e o pedido que aparecem no movimento.</p><p v-if="isPixDifference" class="difference-note">O Pix de {{ formatBRL(selected.amountCents) }} é maior que o sinal previsto de R$ 380,00. O valor recebido continua {{ formatBRL(selected.amountCents) }}.</p></section>
+            <section v-if="selection.movement === 'in'" class="drawer-section"><label class="field-label" for="order-select">Pedido relacionado</label><select id="order-select" :value="selection.orderId ?? ''" @change="finance.setOrder(($event.target as HTMLSelectElement).value ? Number(($event.target as HTMLSelectElement).value) : null)"><option value="">Sem pedido</option><option v-for="customer in customers.filter(customer => !selection.customerId || customer.id === selection.customerId)" :key="customer.id" :value="customer.orderId">Pedido #{{ customer.orderId }} · {{ customer.name }}</option></select><p class="field-hint">O pedido é uma proposta baseada no contexto; conferir não confirma o pagamento.</p><p v-if="isPixDifference" class="difference-note">O Pix de {{ amountLabel(selected.amountCents) }} difere do sinal previsto de R$ 380,00. Confira a finalidade; o sistema não presume que seja sinal.</p></section>
             </template>
 
-          <section v-if="selection.movement === 'unknown' || editing || correctionRequired" class="drawer-section"><label class="field-label" for="reason-input">{{ selection.movement === 'unknown' ? 'Motivo da conferência' : 'Por que mudou o destino?' }}</label><textarea id="reason-input" v-model="selection.reason" rows="2" placeholder="Conte em poucas palavras"></textarea><p v-if="missingReason" class="field-hint">{{ missingReason }}</p></section>
+          <section v-if="candidateCustomers.length && selected.movement === 'unknown'" class="drawer-section candidate-panel"><h3>Possíveis clientes no contexto <span>sem seleção</span></h3><p class="field-hint">São hipóteses desta prévia, não vínculos confirmados. Escolher uma inicia a conferência e exige motivo.</p><button v-for="candidate in candidateCustomers" :key="candidate.id" class="candidate-option" type="button" @click="finance.selectCustomer(candidate.id)"><strong>{{ candidate.name }}</strong><small>{{ candidate.alias }} · pedido #{{ candidate.orderId }} · saldo {{ formatBRL(candidate.orderBalanceCents) }}</small><span>Escolher para conferir</span></button></section>
 
-          <details class="evidence-details" :open="evidenceOpen" @toggle="evidenceOpen = ($event.target as HTMLDetailsElement).open"><summary><span>Por que sugerimos isso?</span><ChevronDown :size="18" aria-hidden="true" /></summary><div class="evidence-content"><p><strong>Pagador</strong><span>{{ selected.payer || 'Não identificado' }}</span></p><p><strong>Recebedor</strong><span>{{ selected.payee || 'Não identificado' }}</span></p><p><strong>Conversa</strong><span>“{{ selected.evidence.conversation }}”</span></p><p><strong>Comprovante</strong><span>{{ selected.evidence.receipt }}</span></p><p><strong>Dados de apoio</strong><span>{{ selected.evidence.support }}</span></p><p v-if="selected.evidence.warning" class="evidence-warning"><strong>Diferença para conferir</strong><span>{{ selected.evidence.warning }}</span></p></div></details>
+          <section v-if="selection.movement === 'unknown' || editing || correctionRequired" class="drawer-section"><label class="field-label" for="reason-input">{{ selection.movement === 'unknown' ? 'Motivo da conferência' : selected.movement === 'unknown' ? 'Motivo da classificação' : 'Por que mudou o destino?' }}</label><textarea id="reason-input" v-model="selection.reason" rows="2" placeholder="Conte em poucas palavras"></textarea><p v-if="missingReason" class="field-hint">{{ missingReason }}</p></section>
+
+          <details class="evidence-details" :open="evidenceOpen" @toggle="evidenceOpen = ($event.target as HTMLDetailsElement).open"><summary><span>Fontes e papéis deste exemplo</span><ChevronDown :size="18" aria-hidden="true" /></summary><div class="evidence-content"><p><strong>Remetente da conversa</strong><span>{{ selected.contact || 'Não identificado' }}</span></p><p><strong>Titular pagador Pix</strong><span>{{ selected.payer || 'Não identificado' }}</span></p><p><strong>Recebedor Pix</strong><span>{{ selected.payee || 'Não identificado' }}</span></p><p v-if="selected.customerId || selected.orderId"><strong>Cliente comercial / pedido proposto</strong><span>{{ selectedCustomer?.name || 'Cliente não identificado' }}<template v-if="selected.orderId"> · pedido #{{ selected.orderId }}</template></span></p><p v-if="selected.partnerId"><strong>Beneficiário proposto</strong><span>{{ selectedPartner?.name || 'Não identificado' }}</span></p><p><strong>Conversa · simulada</strong><span>“{{ selected.evidence.conversation }}”</span></p><p><strong>Comprovante · simulado</strong><span>{{ selected.evidence.receipt }}</span></p><p><strong>Contexto de apoio · simulado</strong><span>{{ selected.evidence.support }}</span></p><p><strong>Atualização do exemplo</strong><span>{{ selected.evidence.receivedAt }} · dado ilustrativo, sem conexão com serviço real</span></p><p><strong>Origem disponível nesta prévia</strong><span>{{ selected.evidence.sources.join(' · ') }}</span></p><p v-if="selected.evidence.warning" class="evidence-warning"><strong>Diferença para conferir</strong><span>{{ selected.evidence.warning }}</span></p></div></details>
         </div>
         <footer class="drawer-footer">
           <template v-if="selection.movement === 'own'"><p class="destination-summary">{{ finalDestination }}</p><ActionButton variant="secondary" @click="finance.defer()">Deixar para depois</ActionButton></template>
           <template v-else-if="selection.movement === 'reference'"><ActionButton variant="secondary" @click="finance.markReference()">Guardar como referência</ActionButton></template>
-          <template v-else><p class="destination-summary">{{ finalDestination }}</p><div class="footer-actions"><button v-if="selection.movement !== 'unknown'" class="text-action" type="button" @click="editing = true">Escolher outro</button><ActionButton :disabled="!canConfirm" :disabled-reason="canConfirm ? undefined : missingReason || 'Confira a sugestão para continuar.'" @click="finance.confirm()">Confirmar {{ formatBRL(selected.amountCents) }}</ActionButton></div><p v-if="notice" class="notice-text" role="status">{{ notice }}</p></template>
+          <template v-else><p class="destination-summary">{{ finalDestination }}</p><div v-if="selected.amountCents == null" class="footer-actions"><span class="field-hint">Sem valor medido, não há lançamento a confirmar.</span><ActionButton variant="secondary" @click="finance.defer()">Manter na fila</ActionButton></div><div v-else class="footer-actions"><button v-if="selection.movement !== 'unknown'" class="text-action" type="button" @click="editing = true">Escolher outro</button><ActionButton :disabled="!canConfirm" :disabled-reason="canConfirm ? undefined : missingReason || 'Confira a sugestão para continuar.'" @click="finance.confirm()">Confirmar {{ amountLabel(selected.amountCents) }}</ActionButton></div><p v-if="notice" class="notice-text" role="status">{{ notice }}</p></template>
         </footer>
       </div>
     </dialog>
@@ -207,6 +235,15 @@ h1 { font-size: clamp(30px, 4vw, 38px); line-height: 1.08; }
 .suggestion-card :deep(.suggestion-checked) { background: #e0f0e8; color: #235d48; border-color: #b2d2bf; }
 .chips :deep(.verly-choice-chip--selected) { background: #2e7d7a; color: #fff; border-color: #2e7d7a; }
 .difference-note { background: #fff5e8; color: #864408; border-left-color: #a84f06; }
+.context-filter { max-width: 900px; margin: -8px 0 18px; padding: 10px 12px; border-left: 3px solid #2e7d7a; border-radius: 0 8px 8px 0; background: #edf6f4; color: #28514d; font-size: 15px; line-height: 1.4; }
+.drawer-amount.amount-unmeasured { color: #8b4104; font: 600 19px/1.3 var(--font-verly-body); }
+.candidate-panel { padding: 13px; border: 1px solid #d9dfdc; border-radius: 11px; background: #fafbfa; }
+.candidate-panel h3 { display:flex; align-items:center; justify-content:space-between; gap:8px; }
+.candidate-panel h3 span { color:#8b4104; font:600 15px var(--font-verly-body); }
+.candidate-option { display:grid; width:100%; gap:4px; min-height:64px; margin-top:8px; padding:9px 11px; border:1px solid #d4ddda; border-radius:8px; background:#fff; color:#1d2925; text-align:left; cursor:pointer; font:inherit; }
+.candidate-option:hover { border-color:#78a9a0; background:#f3f8f6; }
+.candidate-option small { color:#596662; font-size:15px; }
+.candidate-option span { color:#245e58; font-size:15px; font-weight:600; }
 
 /* Leitura no celular: não ocultar cliente e contexto atrás de reticências. */
 @media (max-width: 680px) {
