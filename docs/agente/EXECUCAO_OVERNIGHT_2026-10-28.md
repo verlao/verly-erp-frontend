@@ -24,7 +24,8 @@ Checkpoint vivo: atualizado a cada cartão. Nenhum merge/deploy/escrita em produ
 | S01 | **concluído** (draft) | HITL-S01 `feat/hitl-s01-lead-review-context` | `ec7f7d9` | 691 testes / 106 classes | service **#120** |
 | F01 | **concluído com lacuna** (draft) | HITL-F01 `feat/hitl-f01-context-navigation` | `bf819bd` | 310 testes / 41 arquivos + build + diff-check | ERP **#74** |
 | F02 | **concluído** (auditoria + 3 correções, draft) | HITL-F02 `feat/hitl-f02-lead-quote-review` | `14d787a` | 287 testes / 39 arquivos + build + diff-check | ERP **#75** |
-| S02–S07 | não iniciados (corte de escopo) | — | — | — | — |
+| S02 | **concluído** (draft) | HITL-S02 `feat/hitl-s02-pix-receipt-evidence` | `0affab8` | 681 testes / 105 classes | service **#121** |
+| S03–S07 | não iniciados (corte de escopo) | — | — | — | — |
 | M01/M02 | não iniciados (corte de escopo) | — | — | — | — |
 | F03–F07 | não iniciados (corte de escopo) | — | — | — | — |
 | B01/B02 | não iniciados (corte de escopo) | — | — | — | — |
@@ -71,9 +72,20 @@ Checkpoint vivo: atualizado a cada cartão. Nenhum merge/deploy/escrita em produ
 - Evidência: `hitl-overnight-2026-10-28/F02/` (lead 2 antes/depois em 393/1440, lead 232 A/B), publicada em `pr-assets`; browser `total="R$ 0,00"` → `total="Aguardando preço"`, `hasZero=false`.
 - **PR #75 draft** contra `prod`, independente do #74 (não toca arquivos compartilhados).
 
+## S02 — evidência do comprovante PIX (checkpoint 02:2x, retomada 2)
+
+- Dois endpoints em controller próprio: `GET /pix-reconciliation/{id}/evidence` (extração com allowlist, conversa **só da mensagem do comprovante**, metadados da mídia, `availability` por fonte) e `GET /pix-reconciliation/{id}/media` (bytes originais, `inline`, `private, no-store`, `nosniff`, allowlist de MIME).
+- Erros de D10 (`{"code": …}`): `404 RECEIPT_NOT_FOUND`, `404 MEDIA_NOT_AVAILABLE`, `415 MEDIA_TYPE_UNSUPPORTED`, `400 INVALID_RECEIPT_ID`, `500 INTERNAL`.
+- **Sem migração**; não toca `PixReconciliationController/Service/Sql/RowDTO`.
+- Regras do contrato §3 aplicadas com teste: `payerDoc` mascarado no servidor (CPF só os 6 centrais, CNPJ só a raiz, já mascarado fica, formato desconhecido → `null`); `"380.00"` string não vira dinheiro, `"true"` não vira flag, data inválida morre; `raw_payload` e mensagens de outro contato nunca são lidos.
+- **Schema do bot opcional por seção**: sem `pix_comprovantes` → 404; sem `media`/`raw_messages` → `UNAVAILABLE` naquela seção (nunca 500).
+- Gates: **681 testes / 105 classes, 0 falhas** (`spotless:check test`, Postgres real via Testcontainers), 12 testes de integração com filtros de segurança ligados + 4 de máscara.
+- Payload real capturado no teste de integração está no corpo do PR (lado a lado com "rota inexistente" em `prod`).
+- **PR #121 draft** contra `prod`. `Run Tests` deve repetir a falha de ambiente do #120 (Docker/Testcontainers + dois `V2_54`).
+
 ## Corte de escopo (declarado, não silencioso)
 
-A noite foi limitada a **C01-S → S01 → F01 → F02**. S02–S07, M01/M02, F03–F07 e B01/B02 **não foram iniciados**; continuam no contrato e no prompt, sem trabalho parcial em worktree.
+A noite foi limitada a **C01-S → S01 → F01 → F02 → S02**. S03–S07, M01/M02, F03–F07 e B01/B02 **não foram iniciados**; continuam no contrato e no prompt, sem trabalho parcial em worktree.
 
 
 
@@ -89,6 +101,7 @@ A noite foi limitada a **C01-S → S01 → F01 → F02**. S02–S07, M01/M02, F0
 2. Quando `prod` do service estiver verde: **verly-service#120** — `GET /leads/{id}/review-context` (read-only, 691 testes locais, 1 endpoint + DTO/serviço/SQL; risco baixo, sem migração). Depois de ready e CI verde, o merge em `prod` dispara deploy — decisão do Matheus.
 3. **verly-erp-frontend#74** — navegação de contexto (432 linhas, 310 testes, sem dependência de backend novo). Pode ir a ready assim que o Matheus aceitar a lacuna "parceiro → financeiro" (não implementável sem contrato).
 4. **verly-erp-frontend#75** — conferência do orçamento sem preço velho/zero (287 testes, 1 arquivo de produção + 1 teste). Independente do #74; pode entrar antes ou depois.
+5. **verly-service#121** — evidência + mídia do comprovante PIX (sem migração, 681 testes locais). Mesma condição do #120: só depois de `prod` verde.
 
 ## Preparados aguardando merge/deploy
 
@@ -97,7 +110,8 @@ A noite foi limitada a **C01-S → S01 → F01 → F02**. S02–S07, M01/M02, F0
 | S01 | `prod` do service com CI verde (dois `V2_54` resolvidos pela frente de fotos) | `gh pr ready 120 --repo verlao/verly-service` |
 | F01 | decisão sobre a lacuna parceiro→financeiro (não bloqueia o resto) | `gh pr ready 74 --repo verlao/verly-erp-frontend` |
 | F02 | nada além do merge (independente) | `gh pr ready 75 --repo verlao/verly-erp-frontend` |
-| S02–S07, M01/M02, F02–F07, B01/B02 | não iniciados por corte de escopo | — |
+| S02 | `prod` do service com CI verde (mesmo bloqueio do S01) | `gh pr ready 121 --repo verlao/verly-service` |
+| S03–S07, M01/M02, F03–F07, B01/B02 | não iniciados por corte de escopo | — |
 
 ## Decisões tomadas sozinho (com reversão)
 
@@ -116,7 +130,7 @@ A noite foi limitada a **C01-S → S01 → F01 → F02**. S02–S07, M01/M02, F0
 | Runner `orangepi-backend` | online/idle | online/idle (nenhum job disparado por nós) |
 | `verly-service` `prod` | `1dbd003` (CI vermelho, serve `b65f56a`) | `1dbd003` — intocado |
 | `verly-erp-frontend` `prod` | `c7b4e96` | `c7b4e96` — intocado |
-| PRs novos | — | service #120 (draft), ERP #74 e #75 (drafts) |
+| PRs novos | — | service #120 e #121 (drafts), ERP #74 e #75 (drafts) |
 | Branch de assets | — | `pr-assets` no ERP (só PNGs, nunca merge) |
 
 ## O que falhou ou foi interrompido
@@ -124,4 +138,5 @@ A noite foi limitada a **C01-S → S01 → F01 → F02**. S02–S07, M01/M02, F0
 - **CI do service:** `Run Tests` falhou com `Could not find a valid Docker environment` (Testcontainers) no runner `ubuntu-latest`; 244 erros em cascata. Não é o diff do S01 — nenhum teste de negócio chegou a rodar. Somado ao `prod` quebrado (dois `V2_54`), não há como provar CI verde hoje.
 - **Revisão adversarial do F01, rodada 2:** `opus` indisponível por cota até 02:20; `gpt-6.1-sol` devolveu 4 FALSO_POSITIVO e 3 INCONCLUSIVO por falta de contexto no prompt (não por defeito). Os três INCONCLUSIVO foram conferidos por inspeção própria no repo (`withoutContextKey` copia a query; template condiciona vazio a `!filterError`; `variantGroups` não tinha consumidor — daí a remoção do lib).
 - **Lacuna de aceite do F01:** parceiro → financeiro sem contrato; declarada, não simulada.
-- **Escopo:** a noite cobriu 3 dos 15+ cartões do mapa; o restante não foi iniciado (registrado acima).
+- **Escopo:** a noite cobriu 5 dos 15+ cartões do mapa (C01-S, S01, F01, F02, S02); o restante não foi iniciado (registrado acima).
+- **Dois orquestradores em paralelo (bug do watchdog):** `alive()` usa `pgrep -f` com o título antigo, que não bate com a linha de comando do `--title` da retomada; o watchdog concluiu "morto" duas vezes e relançou **retomada 1** (02:10) e **retomada 2** (02:13) com 4 s de diferença. As duas ficaram vivas. Coordenação por `hitl-overnight-2026-10-28/LOCKS.md`: retomada 1 seguiu no ERP (F02, PR #75) e retomada 2 foi para o service (S02, PR #121) — worktrees distintos, nenhum arquivo compartilhado. Corrigir o padrão do watchdog (ou usar o pidfile) antes da próxima noite; custo: cota dobrada de dois agentes acordados.
