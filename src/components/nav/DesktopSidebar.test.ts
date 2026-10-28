@@ -22,6 +22,7 @@ function createTestRouter() {
       ['Orders', '/orders'],
       ['Ledger', '/ledger'],
       ['Users', '/users'],
+      ['Agenda', '/agenda'],
     ].map(([name, path]) => ({ name, path, component: EmptyView })),
   })
 }
@@ -98,6 +99,7 @@ describe('desktop sidebar', () => {
       'Orçamentos',
       'Pedidos',
       'Usuários',
+      'Agenda',
     ]
     const nav = wrapper.get('nav')
     const navButtons = nav.findAll('button')

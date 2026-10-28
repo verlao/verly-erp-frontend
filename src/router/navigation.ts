@@ -5,6 +5,7 @@ export const navigationSurfaces = ['bottom', 'more', 'sidebar'] as const
 export type NavigationSurface = (typeof navigationSurfaces)[number]
 export type NavigationPermission = 'admin'
 export type NavigationIcon =
+  | 'calendar'
   | 'finance'
   | 'inbox'
   | 'kanban'
