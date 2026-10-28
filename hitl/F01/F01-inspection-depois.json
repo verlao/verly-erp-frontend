@@ -1,0 +1,584 @@
+{
+  "id": "F01",
+  "suffix": "depois",
+  "base": "http://localhost:5302",
+  "scenario": null,
+  "pages": [
+    {
+      "route": "orders?customerId=1",
+      "width": 393,
+      "errors": [],
+      "external": [],
+      "unknownApi": [],
+      "apiCalls": [
+        "GET /orders/customer/1 -> 200",
+        "GET /customers -> 200",
+        "GET /products -> 200"
+      ],
+      "failedApi": [],
+      "finalUrl": "http://localhost:5302/orders?customerId=1",
+      "redirectedToLogin": false,
+      "screenshot": "F01-orders-customerId-1-393-depois.png",
+      "overflowX": false,
+      "scrollWidth": 393,
+      "innerWidth": 393,
+      "smallTextNodes": 15,
+      "smallTextSamples": [
+        "ID",
+        "Cliente",
+        "Status",
+        "Valor",
+        "Data"
+      ],
+      "smallTargetCount": 3,
+      "smallTargets": [
+        {
+          "tag": "BUTTON",
+          "text": "Novo Pedido",
+          "h": 42,
+          "w": 146
+        },
+        {
+          "tag": "BUTTON",
+          "text": "Editar",
+          "h": 20,
+          "w": 38
+        },
+        {
+          "tag": "BUTTON",
+          "text": "Excluir",
+          "h": 20,
+          "w": 43
+        }
+      ],
+      "unnamedButtons": 0,
+      "unnamedButtonSamples": [],
+      "textLength": 207
+    },
+    {
+      "route": "orders?customerId=1",
+      "width": 1440,
+      "errors": [],
+      "external": [],
+      "unknownApi": [],
+      "apiCalls": [
+        "GET /orders/customer/1 -> 200",
+        "GET /customers -> 200",
+        "GET /products -> 200"
+      ],
+      "failedApi": [],
+      "finalUrl": "http://localhost:5302/orders?customerId=1",
+      "redirectedToLogin": false,
+      "screenshot": "F01-orders-customerId-1-1440-depois.png",
+      "overflowX": false,
+      "scrollWidth": 1440,
+      "innerWidth": 1440,
+      "smallTextNodes": 25,
+      "smallTextSamples": [
+        "Leads",
+        "Financeiro",
+        "Funil",
+        "Clientes",
+        "Parceiros"
+      ],
+      "smallTargetCount": 12,
+      "smallTargets": [
+        {
+          "tag": "BUTTON",
+          "text": "Leads",
+          "h": 32,
+          "w": 47
+        },
+        {
+          "tag": "BUTTON",
+          "text": "Financeiro",
+          "h": 32,
+          "w": 47
+        },
+        {
+          "tag": "BUTTON",
+          "text": "Funil",
+          "h": 32,
+          "w": 47
+        },
+        {
+          "tag": "BUTTON",
+          "text": "Clientes",
+          "h": 32,
+          "w": 47
+        },
+        {
+          "tag": "BUTTON",
+          "text": "Parceiros",
+          "h": 32,
+          "w": 47
+        },
+        {
+          "tag": "BUTTON",
+          "text": "Produtos",
+          "h": 32,
+          "w": 47
+        },
+        {
+          "tag": "BUTTON",
+          "text": "Orçamentos",
+          "h": 32,
+          "w": 47
+        },
+        {
+          "tag": "BUTTON",
+          "text": "Pedidos",
+          "h": 32,
+          "w": 47
+        },
+        {
+          "tag": "BUTTON",
+          "text": "Usuários",
+          "h": 32,
+          "w": 47
+        },
+        {
+          "tag": "BUTTON",
+          "text": "Novo Pedido",
+          "h": 42,
+          "w": 146
+        }
+      ],
+      "unnamedButtons": 0,
+      "unnamedButtonSamples": [],
+      "textLength": 263
+    },
+    {
+      "route": "customers?customerId=1",
+      "width": 393,
+      "errors": [],
+      "external": [],
+      "unknownApi": [],
+      "apiCalls": [
+        "GET /customers/paginated?page=0&size=25&sort=name%2Casc -> 200",
+        "GET /customers/1 -> 200",
+        "GET /cep/01000-000 -> 200"
+      ],
+      "failedApi": [],
+      "finalUrl": "http://localhost:5302/customers?customerId=1",
+      "redirectedToLogin": false,
+      "screenshot": "F01-customers-customerId-1-393-depois.png",
+      "overflowX": false,
+      "scrollWidth": 393,
+      "innerWidth": 393,
+      "smallTextNodes": 28,
+      "smallTextSamples": [
+        "Novo Cliente",
+        "#1 • Ana Exemplo",
+        "+55 11 90000-0001",
+        "Rua Exemplo, 100",
+        "Centro • São Paulo"
+      ],
+      "smallTargetCount": 3,
+      "smallTargets": [
+        {
+          "tag": "BUTTON",
+          "text": "Novo Cliente",
+          "h": 40,
+          "w": 138
+        },
+        {
+          "tag": "BUTTON",
+          "text": "Cancelar",
+          "h": 42,
+          "w": 107
+        },
+        {
+          "tag": "BUTTON",
+          "text": "Atualizar Cliente",
+          "h": 42,
+          "w": 153
+        }
+      ],
+      "unnamedButtons": 0,
+      "unnamedButtonSamples": [],
+      "textLength": 555
+    },
+    {
+      "route": "customers?customerId=1",
+      "width": 1440,
+      "errors": [],
+      "external": [],
+      "unknownApi": [],
+      "apiCalls": [
+        "GET /customers/paginated?page=0&size=25&sort=name%2Casc -> 200",
+        "GET /customers/1 -> 200",
+        "GET /cep/01000-000 -> 200"
+      ],
+      "failedApi": [],
+      "finalUrl": "http://localhost:5302/customers?customerId=1",
+      "redirectedToLogin": false,
+      "screenshot": "F01-customers-customerId-1-1440-depois.png",
+      "overflowX": false,
+      "scrollWidth": 1440,
+      "innerWidth": 1440,
+      "smallTextNodes": 66,
+      "smallTextSamples": [
+        "Leads",
+        "Financeiro",
+        "Funil",
+        "Clientes",
+        "Parceiros"
+      ],
+      "smallTargetCount": 21,
+      "smallTargets": [
+        {
+          "tag": "BUTTON",
+          "text": "Leads",
+          "h": 32,
+          "w": 47
+        },
+        {
+          "tag": "BUTTON",
+          "text": "Financeiro",
+          "h": 32,
+          "w": 47
+        },
+        {
+          "tag": "BUTTON",
+          "text": "Funil",
+          "h": 32,
+          "w": 47
+        },
+        {
+          "tag": "BUTTON",
+          "text": "Clientes",
+          "h": 32,
+          "w": 47
+        },
+        {
+          "tag": "BUTTON",
+          "text": "Parceiros",
+          "h": 32,
+          "w": 47
+        },
+        {
+          "tag": "BUTTON",
+          "text": "Produtos",
+          "h": 32,
+          "w": 47
+        },
+        {
+          "tag": "BUTTON",
+          "text": "Orçamentos",
+          "h": 32,
+          "w": 47
+        },
+        {
+          "tag": "BUTTON",
+          "text": "Pedidos",
+          "h": 32,
+          "w": 47
+        },
+        {
+          "tag": "BUTTON",
+          "text": "Usuários",
+          "h": 32,
+          "w": 47
+        },
+        {
+          "tag": "BUTTON",
+          "text": "Novo Cliente",
+          "h": 40,
+          "w": 138
+        }
+      ],
+      "unnamedButtons": 0,
+      "unnamedButtonSamples": [],
+      "textLength": 761
+    },
+    {
+      "route": "customers",
+      "width": 393,
+      "errors": [],
+      "external": [],
+      "unknownApi": [],
+      "apiCalls": [
+        "GET /customers/paginated?page=0&size=25&sort=name%2Casc -> 200"
+      ],
+      "failedApi": [],
+      "finalUrl": "http://localhost:5302/customers",
+      "redirectedToLogin": false,
+      "screenshot": "F01-customers-393-depois.png",
+      "overflowX": false,
+      "scrollWidth": 393,
+      "innerWidth": 393,
+      "smallTextNodes": 10,
+      "smallTextSamples": [
+        "Novo Cliente",
+        "#1 • Ana Exemplo",
+        "+55 11 90000-0001",
+        "Rua Exemplo, 100",
+        "Centro • São Paulo"
+      ],
+      "smallTargetCount": 1,
+      "smallTargets": [
+        {
+          "tag": "BUTTON",
+          "text": "Novo Cliente",
+          "h": 40,
+          "w": 138
+        }
+      ],
+      "unnamedButtons": 0,
+      "unnamedButtonSamples": [],
+      "textLength": 295
+    },
+    {
+      "route": "customers",
+      "width": 1440,
+      "errors": [],
+      "external": [],
+      "unknownApi": [],
+      "apiCalls": [
+        "GET /customers/paginated?page=0&size=25&sort=name%2Casc -> 200"
+      ],
+      "failedApi": [],
+      "finalUrl": "http://localhost:5302/customers",
+      "redirectedToLogin": false,
+      "screenshot": "F01-customers-1440-depois.png",
+      "overflowX": false,
+      "scrollWidth": 1440,
+      "innerWidth": 1440,
+      "smallTextNodes": 48,
+      "smallTextSamples": [
+        "Leads",
+        "Financeiro",
+        "Funil",
+        "Clientes",
+        "Parceiros"
+      ],
+      "smallTargetCount": 19,
+      "smallTargets": [
+        {
+          "tag": "BUTTON",
+          "text": "Leads",
+          "h": 32,
+          "w": 47
+        },
+        {
+          "tag": "BUTTON",
+          "text": "Financeiro",
+          "h": 32,
+          "w": 47
+        },
+        {
+          "tag": "BUTTON",
+          "text": "Funil",
+          "h": 32,
+          "w": 47
+        },
+        {
+          "tag": "BUTTON",
+          "text": "Clientes",
+          "h": 32,
+          "w": 47
+        },
+        {
+          "tag": "BUTTON",
+          "text": "Parceiros",
+          "h": 32,
+          "w": 47
+        },
+        {
+          "tag": "BUTTON",
+          "text": "Produtos",
+          "h": 32,
+          "w": 47
+        },
+        {
+          "tag": "BUTTON",
+          "text": "Orçamentos",
+          "h": 32,
+          "w": 47
+        },
+        {
+          "tag": "BUTTON",
+          "text": "Pedidos",
+          "h": 32,
+          "w": 47
+        },
+        {
+          "tag": "BUTTON",
+          "text": "Usuários",
+          "h": 32,
+          "w": 47
+        },
+        {
+          "tag": "BUTTON",
+          "text": "Novo Cliente",
+          "h": 40,
+          "w": 138
+        }
+      ],
+      "unnamedButtons": 0,
+      "unnamedButtonSamples": [],
+      "textLength": 501
+    },
+    {
+      "route": "leads/1/orcamento",
+      "width": 393,
+      "errors": [],
+      "external": [],
+      "unknownApi": [],
+      "apiCalls": [
+        "GET /leads/1 -> 200",
+        "POST /products/calculate -> 200"
+      ],
+      "failedApi": [],
+      "finalUrl": "http://localhost:5302/leads/1/orcamento",
+      "redirectedToLogin": false,
+      "screenshot": "F01-leads-1-orcamento-393-depois.png",
+      "overflowX": false,
+      "scrollWidth": 393,
+      "innerWidth": 393,
+      "smallTextNodes": 34,
+      "smallTextSamples": [
+        "Ana Exemplo · +55 11 90000-0001",
+        "Ver conversa (5)",
+        "Oi, quero orçamento de uma janela 120x80",
+        "📐 medidas ·",
+        "Cliente · 28/10, 00:00"
+      ],
+      "smallTargetCount": 6,
+      "smallTargets": [
+        {
+          "tag": "BUTTON",
+          "text": "Voltar",
+          "h": 20,
+          "w": 20
+        },
+        {
+          "tag": "BUTTON",
+          "text": "Remover",
+          "h": 16,
+          "w": 48
+        },
+        {
+          "tag": "BUTTON",
+          "text": "+ Adicionar item",
+          "h": 20,
+          "w": 102
+        },
+        {
+          "tag": "BUTTON",
+          "text": "Salvar",
+          "h": 38,
+          "w": 329
+        },
+        {
+          "tag": "BUTTON",
+          "text": "Enviar PDF",
+          "h": 36,
+          "w": 329
+        },
+        {
+          "tag": "BUTTON",
+          "text": "Enviar mensagem",
+          "h": 36,
+          "w": 329
+        }
+      ],
+      "unnamedButtons": 0,
+      "unnamedButtonSamples": [],
+      "textLength": 495
+    },
+    {
+      "route": "leads/1/orcamento",
+      "width": 1440,
+      "errors": [],
+      "external": [],
+      "unknownApi": [],
+      "apiCalls": [
+        "GET /leads/1 -> 200",
+        "POST /products/calculate -> 200"
+      ],
+      "failedApi": [],
+      "finalUrl": "http://localhost:5302/leads/1/orcamento",
+      "redirectedToLogin": false,
+      "screenshot": "F01-leads-1-orcamento-1440-depois.png",
+      "overflowX": false,
+      "scrollWidth": 1440,
+      "innerWidth": 1440,
+      "smallTextNodes": 45,
+      "smallTextSamples": [
+        "Leads",
+        "Financeiro",
+        "Funil",
+        "Clientes",
+        "Parceiros"
+      ],
+      "smallTargetCount": 15,
+      "smallTargets": [
+        {
+          "tag": "BUTTON",
+          "text": "Leads",
+          "h": 32,
+          "w": 47
+        },
+        {
+          "tag": "BUTTON",
+          "text": "Financeiro",
+          "h": 32,
+          "w": 47
+        },
+        {
+          "tag": "BUTTON",
+          "text": "Funil",
+          "h": 32,
+          "w": 47
+        },
+        {
+          "tag": "BUTTON",
+          "text": "Clientes",
+          "h": 32,
+          "w": 47
+        },
+        {
+          "tag": "BUTTON",
+          "text": "Parceiros",
+          "h": 32,
+          "w": 47
+        },
+        {
+          "tag": "BUTTON",
+          "text": "Produtos",
+          "h": 32,
+          "w": 47
+        },
+        {
+          "tag": "BUTTON",
+          "text": "Orçamentos",
+          "h": 32,
+          "w": 47
+        },
+        {
+          "tag": "BUTTON",
+          "text": "Pedidos",
+          "h": 32,
+          "w": 47
+        },
+        {
+          "tag": "BUTTON",
+          "text": "Usuários",
+          "h": 32,
+          "w": 47
+        },
+        {
+          "tag": "BUTTON",
+          "text": "Voltar",
+          "h": 20,
+          "w": 20
+        }
+      ],
+      "unnamedButtons": 0,
+      "unnamedButtonSamples": [],
+      "textLength": 884
+    }
+  ]
+}
