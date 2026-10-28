@@ -20,6 +20,9 @@ export type LeadLostReason = 'PRECO' | 'PRAZO' | 'SEM_RESPOSTA' | 'FECHOU_COM_OU
 export interface LeadItemDTO {
   id?: number
   productType?: string
+  category?: string
+  pricingBasis?: string
+  areaM2?: number
   widthCm?: number
   heightCm?: number
   sheets?: number
@@ -38,6 +41,11 @@ export interface LeadItemDTO {
 
 export interface LeadDTO {
   id: number
+  // Vínculos devolvidos pelo backend; ausentes em respostas antigas.
+  number?: string | number
+  reference?: string | null
+  partnerLinked?: boolean
+  convertedCustomerId?: number | null
   name: string
   phone: string
   email: string

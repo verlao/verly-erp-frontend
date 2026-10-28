@@ -11,13 +11,35 @@
       </button>
     </div>
 
+    <!-- Filtro de contexto vindo da rota (?customerId=) -->
+    <div v-if="customerFilterId" class="mb-4 flex flex-wrap items-center gap-3">
+      <span
+        data-testid="customer-filter-chip"
+        class="inline-flex min-h-[44px] items-center gap-2 rounded-full bg-primary/10 pl-4 pr-1 text-base font-medium text-gray-900"
+      >
+        Pedidos de {{ customerFilterLabel }}
+        <button
+          type="button"
+          data-testid="customer-filter-clear"
+          class="inline-flex h-11 w-11 items-center justify-center rounded-full hover:bg-primary/20 focus-visible:outline focus-visible:outline-2"
+          aria-label="Remover filtro de cliente"
+          @click="clearCustomerFilter"
+        >
+          <X class="h-5 w-5" aria-hidden="true" />
+        </button>
+      </span>
+    </div>
+    <p v-if="filterError" role="alert" data-testid="filter-error" class="mb-4 text-base text-red-700">
+      {{ filterError }}
+    </p>
+
     <!-- Tabela de Pedidos -->
     <div class="bg-white rounded-lg shadow overflow-hidden">
       <div v-if="loading" class="p-6 text-center">
         <p>Carregando...</p>
       </div>
       <div v-else-if="orders && orders.length === 0" class="p-6 text-center">
-        <p>Nenhum pedido encontrado</p>
+        <p>{{ customerFilterId ? 'Nenhum pedido deste cliente' : 'Nenhum pedido encontrado' }}</p>
       </div>
       <div v-else class="overflow-x-auto">
         <table class="min-w-full divide-y divide-gray-200">
@@ -278,7 +300,11 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, computed, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+import { X } from 'lucide-vue-next'
+import { parseContextId, withoutContextKey } from '../lib/contextRoutes'
+import { friendlyError } from '../lib/errors'
 import orderService from '../services/order'
 import customerService from '../services/customer'
 import productService from '../services/product'
@@ -287,7 +313,16 @@ import type { OrderDTO, PaginatedResponse } from '../services/order'
 import type { CustomerDTO } from '../services/customer'
 import type { ProductDTO } from '../services/product'
 
+const route = useRoute()
+const router = useRouter()
 const orders = ref<OrderDTO[]>([])
+const filterError = ref('')
+const customerFilterId = computed(() => parseContextId(route.query.customerId))
+const customerFilterLabel = computed(() => {
+  const id = customerFilterId.value
+  const customer = customers.value.find(c => c.id === id)
+  return customer ? customer.name : `#${id}`
+})
 const customers = ref<CustomerDTO[]>([])
 const products = ref<ProductDTO[]>([])
 const loading = ref(true)
@@ -332,7 +367,41 @@ onMounted(async () => {
   ])
 })
 
+function clearCustomerFilter() {
+  router.replace({ query: withoutContextKey(route.query, 'customerId') })
+}
+
+watch(customerFilterId, () => {
+  currentPage.value = 1
+  loadOrders()
+})
+
+// O backend não filtra /orders por cliente e a listagem é paginada. Só filtramos
+// aqui se /orders devolver a lista COMPLETA (array); caso contrário não fingimos.
+async function loadOrdersForCustomer(customerId: number) {
+  loading.value = true
+  filterError.value = ''
+  try {
+    const all: unknown = await orderService.getAllNonPaginated()
+    if (!Array.isArray(all)) {
+      orders.value = []
+      filterError.value = 'Ainda não é possível filtrar pedidos por cliente com segurança.'
+    } else {
+      orders.value = (all as OrderDTO[]).filter(o => o.customerId === customerId)
+    }
+  } catch (error) {
+    orders.value = []
+    filterError.value = friendlyError(error, 'Não foi possível carregar os pedidos deste cliente.')
+  } finally {
+    totalItems.value = 0
+    totalPages.value = 0
+    loading.value = false
+  }
+}
+
 async function loadOrders() {
+  if (customerFilterId.value) return loadOrdersForCustomer(customerFilterId.value)
+  filterError.value = ''
   try {
     loading.value = true
     const response: PaginatedResponse<OrderDTO> = await orderService.getAll({

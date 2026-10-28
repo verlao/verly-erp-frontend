@@ -57,6 +57,14 @@
             </p>
           </div>
           <div class="flex justify-end gap-1 pt-1">
+            <router-link
+              v-if="customer.id"
+              :to="customerOrdersRoute(customer.id)"
+              class="min-h-[44px] px-3 flex items-center justify-center text-base text-blue-600 hover:bg-blue-50 rounded-lg"
+              :aria-label="`Ver pedidos de ${customer.name}`"
+            >
+              Ver pedidos
+            </router-link>
             <button
               @click="openModal(customer)"
               class="min-w-[44px] min-h-[44px] flex items-center justify-center text-blue-600 hover:bg-blue-50 rounded-lg active:scale-95 transition-transform"
@@ -150,6 +158,14 @@
               </td>
               <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                 <div class="flex items-center justify-end gap-2">
+                  <router-link
+                    v-if="customer.id"
+                    :to="customerOrdersRoute(customer.id)"
+                    class="inline-flex min-h-[44px] items-center px-3 text-base text-blue-600 hover:bg-blue-50 rounded-md"
+                    :aria-label="`Ver pedidos de ${customer.name}`"
+                  >
+                    Ver pedidos
+                  </router-link>
                   <Button 
                     @click="openModal(customer)" 
                     variant="ghost"
@@ -466,6 +482,8 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue'
+import { useRoute } from 'vue-router'
+import { customerOrdersRoute, parseContextId } from '../lib/contextRoutes'
 import { useIntersectionObserver, useWindowScroll } from '@vueuse/core'
 import customerService from '../services/customer'
 import cepService from '../services/cep'
@@ -531,8 +549,22 @@ const currentCustomer = ref<CustomerDTO>({
 
 const customerToDelete = ref<CustomerDTO | null>(null)
 
+const route = useRoute()
+
+// ?customerId= abre esse cliente por ID (nunca por nome); reload mantém a seleção.
+async function openCustomerFromRoute() {
+  const id = parseContextId(route.query.customerId)
+  if (!id) return
+  try {
+    openModal(await customerService.getById(id))
+  } catch (error) {
+    console.error('Erro ao carregar cliente do contexto:', error)
+  }
+}
+
 onMounted(async () => {
   await loadCustomers()
+  await openCustomerFromRoute()
 })
 
 // Dispara o carregamento da próxima página quando a sentinela entra na
