@@ -68,3 +68,42 @@ A noite foi limitada a **C01-S → S01 → F01**. S02–S07, M01/M02, F02–F07 
 - Harness antes/depois: `~/Documents/repositories/verly/hitl-overnight-2026-10-28/harness/` (Vite com API em host inalcançável,
   Playwright `page.route` com fixtures sintéticas, aborta qualquer host externo). Antes de prod: `hitl-overnight-2026-10-28/BASE/`.
 - Maven: `/private/tmp/verly-mvn-slot.sh <wt> <log>` (≤3 simultâneos; renomeia V2_54 de fotos → V2_55 só no working tree).
+
+## Para o Matheus mergear, nesta ordem
+
+1. **Nada nesta noite.** Os dois PRs estão em **draft** de propósito: o service está com CI vermelho por ambiente e o ERP tem lacuna de aceite declarada.
+2. Quando `prod` do service estiver verde: **verly-service#120** — `GET /leads/{id}/review-context` (read-only, 691 testes locais, 1 endpoint + DTO/serviço/SQL; risco baixo, sem migração). Depois de ready e CI verde, o merge em `prod` dispara deploy — decisão do Matheus.
+3. **verly-erp-frontend#74** — navegação de contexto (432 linhas, 310 testes, sem dependência de backend novo). Pode ir a ready assim que o Matheus aceitar a lacuna "parceiro → financeiro" (não implementável sem contrato).
+
+## Preparados aguardando merge/deploy
+
+| Cartão | Precisa de | Comando para publicar |
+|---|---|---|
+| S01 | `prod` do service com CI verde (dois `V2_54` resolvidos pela frente de fotos) | `gh pr ready 120 --repo verlao/verly-service` |
+| F01 | decisão sobre a lacuna parceiro→financeiro (não bloqueia o resto) | `gh pr ready 74 --repo verlao/verly-erp-frontend` |
+| S02–S07, M01/M02, F02–F07, B01/B02 | não iniciados por corte de escopo | — |
+
+## Decisões tomadas sozinho (com reversão)
+
+- **D-S01-1:** handler de erro próprio (`LeadReviewContextExceptionHandler`) em vez de editar o `GlobalExceptionHandler`. Reverter = apagar a classe e registrar os dois `@ExceptionHandler` no handler global (afeta outras rotas).
+- **D-S01-2:** `reviewToken` normaliza datas para segundos e ordena blocos, para ser estável entre chamadas. Reverter = voltar a hashear o JSON cru (token muda a cada milissegundo e nunca casa).
+- **D-F01-1:** `/orders` pode vir como lista pura ou `Page`; a tela pagina no cliente no primeiro caso. Reverter = assumir `Page` e voltar ao bug de lista vazia.
+- **D-F01-2:** `leadReview.ts` removido do F01 (sem consumidor até F02). Reverter = `git show 97a0e27 -- src/lib/leadReview.ts`.
+- **D-F01-3:** fechar modal aberto por `?customerId=` remove só esse parâmetro. Reverter = deixar a URL como está.
+
+## Estado no fim da noite
+
+| Item | Início | Fim |
+|---|---|---|
+| Runner `orangepi-backend` | online/idle | online/idle (nenhum job disparado por nós) |
+| `verly-service` `prod` | `1dbd003` (CI vermelho, serve `b65f56a`) | `1dbd003` — intocado |
+| `verly-erp-frontend` `prod` | `c7b4e96` | `c7b4e96` — intocado |
+| PRs novos | — | service #120 (draft), ERP #74 (draft) |
+| Branch de assets | — | `pr-assets` no ERP (só PNGs, nunca merge) |
+
+## O que falhou ou foi interrompido
+
+- **CI do service:** `Run Tests` falhou com `Could not find a valid Docker environment` (Testcontainers) no runner `ubuntu-latest`; 244 erros em cascata. Não é o diff do S01 — nenhum teste de negócio chegou a rodar. Somado ao `prod` quebrado (dois `V2_54`), não há como provar CI verde hoje.
+- **Revisão adversarial do F01, rodada 2:** `opus` indisponível por cota até 02:20; `gpt-6.1-sol` devolveu 4 FALSO_POSITIVO e 3 INCONCLUSIVO por falta de contexto no prompt (não por defeito). Os três INCONCLUSIVO foram conferidos por inspeção própria no repo (`withoutContextKey` copia a query; template condiciona vazio a `!filterError`; `variantGroups` não tinha consumidor — daí a remoção do lib).
+- **Lacuna de aceite do F01:** parceiro → financeiro sem contrato; declarada, não simulada.
+- **Escopo:** a noite cobriu 3 dos 15+ cartões do mapa; o restante não foi iniciado (registrado acima).
