@@ -42,7 +42,7 @@ export interface LeadItemDTO {
 export interface LeadDTO {
   id: number
   // Vínculos devolvidos pelo backend; ausentes em respostas antigas.
-  number?: string | number
+  number?: string | null
   reference?: string | null
   partnerLinked?: boolean
   convertedCustomerId?: number | null

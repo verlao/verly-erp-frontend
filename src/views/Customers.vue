@@ -11,6 +11,8 @@
       </Button>
     </div>
 
+    <p v-if="contextError" role="alert" data-testid="context-error" class="mb-4 text-base text-red-700">{{ contextError }}</p>
+
     <!-- Tabela de Clientes -->
     <div class="bg-white rounded-lg shadow overflow-hidden">
       <div v-if="loading" class="p-6 text-center">
@@ -483,6 +485,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute } from 'vue-router'
+import { friendlyError } from '../lib/errors'
 import { customerOrdersRoute, parseContextId } from '../lib/contextRoutes'
 import { useIntersectionObserver, useWindowScroll } from '@vueuse/core'
 import customerService from '../services/customer'
@@ -550,6 +553,7 @@ const currentCustomer = ref<CustomerDTO>({
 const customerToDelete = ref<CustomerDTO | null>(null)
 
 const route = useRoute()
+const contextError = ref('')
 
 // ?customerId= abre esse cliente por ID (nunca por nome); reload mantém a seleção.
 async function openCustomerFromRoute() {
@@ -559,6 +563,7 @@ async function openCustomerFromRoute() {
     openModal(await customerService.getById(id))
   } catch (error) {
     console.error('Erro ao carregar cliente do contexto:', error)
+    contextError.value = friendlyError(error, 'Não foi possível abrir este cliente.')
   }
 }
 

@@ -55,6 +55,12 @@ const orderService = {
     return response.data
   },
   
+  // Filtro no servidor: GET /orders/customer/{customerId} devolve a lista completa do cliente.
+  getByCustomer: async (customerId: number) => {
+    const response = await api.get(`/orders/customer/${customerId}`)
+    return response.data
+  },
+
   getById: async (id: number) => {
     const response = await api.get(`/orders/${id}`)
     return response.data

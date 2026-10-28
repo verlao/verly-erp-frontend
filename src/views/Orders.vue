@@ -376,18 +376,17 @@ watch(customerFilterId, () => {
   loadOrders()
 })
 
-// O backend não filtra /orders por cliente e a listagem é paginada. Só filtramos
-// aqui se /orders devolver a lista COMPLETA (array); caso contrário não fingimos.
+// Filtro feito pelo servidor (/orders/customer/{id}); nunca por nome nem no cliente.
 async function loadOrdersForCustomer(customerId: number) {
   loading.value = true
   filterError.value = ''
   try {
-    const all: unknown = await orderService.getAllNonPaginated()
-    if (!Array.isArray(all)) {
+    const result: unknown = await orderService.getByCustomer(customerId)
+    if (!Array.isArray(result)) {
       orders.value = []
-      filterError.value = 'Ainda não é possível filtrar pedidos por cliente com segurança.'
+      filterError.value = 'Não foi possível carregar os pedidos deste cliente.'
     } else {
-      orders.value = (all as OrderDTO[]).filter(o => o.customerId === customerId)
+      orders.value = result as OrderDTO[]
     }
   } catch (error) {
     orders.value = []

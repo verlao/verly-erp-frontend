@@ -5,7 +5,7 @@ import Orders from './Orders.vue'
 import orderService from '../services/order'
 
 vi.mock('../services/order', () => ({
-  default: { getAll: vi.fn(), getAllNonPaginated: vi.fn() },
+  default: { getAll: vi.fn(), getAllNonPaginated: vi.fn(), getByCustomer: vi.fn() },
 }))
 vi.mock('../services/customer', () => ({
   // Dois clientes com o MESMO nome: só o ID distingue.
@@ -28,8 +28,9 @@ async function mountAt(url: string) {
 
 describe('Orders customer filter', () => {
   beforeEach(() => {
+    vi.clearAllMocks()
     vi.mocked(orderService.getAll).mockResolvedValue({ content: [order(10, 1), order(11, 2)], totalElements: 2, totalPages: 1 })
-    vi.mocked(orderService.getAllNonPaginated).mockResolvedValue([order(10, 1), order(11, 2), order(12, 2)])
+    vi.mocked(orderService.getByCustomer).mockResolvedValue([order(11, 2), order(12, 2)])
   })
 
   it('without the param shows the paginated list and no chip', async () => {
@@ -39,8 +40,10 @@ describe('Orders customer filter', () => {
     expect(wrapper.text()).toContain('#11')
   })
 
-  it('filters by customer id, not by name, and shows a chip', async () => {
+  it('filters on the server by customer id, not by name, and shows a chip', async () => {
     const { wrapper } = await mountAt('/orders?customerId=2')
+    expect(orderService.getByCustomer).toHaveBeenCalledWith(2)
+    expect(orderService.getAllNonPaginated).not.toHaveBeenCalled()
     expect(wrapper.find('[data-testid="customer-filter-chip"]').text()).toContain('Pedidos de Cliente Teste')
     expect(wrapper.text()).not.toContain('#10')
     expect(wrapper.text()).toContain('#11')
@@ -62,15 +65,15 @@ describe('Orders customer filter', () => {
     expect(wrapper.text()).toContain('#10')
   })
 
-  it('does not fake the filter when /orders is not a full list', async () => {
-    vi.mocked(orderService.getAllNonPaginated).mockResolvedValue({ content: [order(10, 1)], totalElements: 9 })
+  it('shows no rows when the response is not an array', async () => {
+    vi.mocked(orderService.getByCustomer).mockResolvedValue({ content: [order(10, 1)], totalElements: 9 })
     const { wrapper } = await mountAt('/orders?customerId=1')
     expect(wrapper.find('[data-testid="filter-error"]').exists()).toBe(true)
     expect(wrapper.text()).not.toContain('#10')
   })
 
   it('shows a friendly error, never backend text', async () => {
-    vi.mocked(orderService.getAllNonPaginated).mockRejectedValue({ response: { status: 500, data: { message: 'SQL boom' } } })
+    vi.mocked(orderService.getByCustomer).mockRejectedValue({ response: { status: 500, data: { message: 'SQL boom' } } })
     const { wrapper } = await mountAt('/orders?customerId=1')
     expect(wrapper.find('[data-testid="filter-error"]').text()).not.toContain('SQL')
   })
