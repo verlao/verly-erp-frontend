@@ -21,7 +21,7 @@
       "overflowX": false,
       "scrollWidth": 393,
       "innerWidth": 393,
-      "smallTextNodes": 23,
+      "smallTextNodes": 24,
       "smallTextSamples": [
         "Visita técnica é um dia; instalação tem ",
         "Novo agendamento",
@@ -94,7 +94,7 @@
       ],
       "unnamedButtons": 0,
       "unnamedButtonSamples": [],
-      "textLength": 540
+      "textLength": 604
     },
     {
       "route": "agenda",
@@ -113,7 +113,7 @@
       "overflowX": false,
       "scrollWidth": 1440,
       "innerWidth": 1440,
-      "smallTextNodes": 34,
+      "smallTextNodes": 35,
       "smallTextSamples": [
         "Leads",
         "Financeiro",
@@ -186,7 +186,7 @@
       ],
       "unnamedButtons": 0,
       "unnamedButtonSamples": [],
-      "textLength": 603
+      "textLength": 667
     }
   ]
 }
