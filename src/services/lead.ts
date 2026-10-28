@@ -45,6 +45,9 @@ export interface LeadDTO {
   number?: string | null
   reference?: string | null
   partnerLinked?: boolean
+  /** Nome real da coluna no JSON do service (snake_case, @JsonProperty). */
+  converted_customer_id?: number | null
+  /** Compatibilidade com fixtures/adaptadores antigos; a API não devolve camelCase. */
   convertedCustomerId?: number | null
   name: string
   phone: string

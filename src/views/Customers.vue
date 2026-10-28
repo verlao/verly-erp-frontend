@@ -11,7 +11,7 @@
       </Button>
     </div>
 
-    <p v-if="contextError" role="alert" data-testid="context-error" class="mb-4 text-base text-red-700">{{ contextError }}</p>
+    <p v-if="contextError" role="alert" data-testid="context-error" class="mb-4 text-base text-destructive">{{ contextError }}</p>
 
     <!-- Tabela de Clientes -->
     <div class="bg-white rounded-lg shadow overflow-hidden">
@@ -422,7 +422,7 @@
           <div class="mt-8 flex justify-end space-x-3">
             <button 
               type="button" 
-              @click="showModal = false" 
+              @click="closeModal"
               class="px-6 py-2.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 transition-all duration-200 shadow-sm"
             >
               Cancelar
@@ -484,9 +484,9 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { friendlyError } from '../lib/errors'
-import { customerOrdersRoute, parseContextId } from '../lib/contextRoutes'
+import { customerOrdersRoute, parseContextId, withoutContextKey } from '../lib/contextRoutes'
 import { useIntersectionObserver, useWindowScroll } from '@vueuse/core'
 import customerService from '../services/customer'
 import cepService from '../services/cep'
@@ -553,15 +553,42 @@ const currentCustomer = ref<CustomerDTO>({
 const customerToDelete = ref<CustomerDTO | null>(null)
 
 const route = useRoute()
+const router = useRouter()
 const contextError = ref('')
+// Modal aberto por ?customerId=: fechar devolve a rota sem o parâmetro.
+const modalFromRoute = ref(false)
+// Descarta resposta de contexto antiga quando a query muda no meio do caminho.
+let contextRequestId = 0
+
+function closeModal() {
+  showModal.value = false
+  modalFromRoute.value = false
+  if (parseContextId(route.query.customerId)) {
+    void router.replace({ query: withoutContextKey(route.query, 'customerId') })
+  }
+}
 
 // ?customerId= abre esse cliente por ID (nunca por nome); reload mantém a seleção.
 async function openCustomerFromRoute() {
   const id = parseContextId(route.query.customerId)
-  if (!id) return
+  const requestId = ++contextRequestId
+  if (!id) {
+    // Query saiu (voltar do navegador, limpar): fecha o que foi aberto por contexto.
+    if (modalFromRoute.value) {
+      modalFromRoute.value = false
+      showModal.value = false
+    }
+    contextError.value = ''
+    return
+  }
+  contextError.value = ''
   try {
-    openModal(await customerService.getById(id))
+    const customer = await customerService.getById(id)
+    if (requestId !== contextRequestId) return
+    openModal(customer)
+    modalFromRoute.value = true
   } catch (error) {
+    if (requestId !== contextRequestId) return
     console.error('Erro ao carregar cliente do contexto:', error)
     contextError.value = friendlyError(error, 'Não foi possível abrir este cliente.')
   }
@@ -571,6 +598,14 @@ onMounted(async () => {
   await loadCustomers()
   await openCustomerFromRoute()
 })
+
+// Navegação dentro da própria tela (?customerId= trocado) também reabre.
+watch(
+  () => route.query.customerId,
+  () => {
+    void openCustomerFromRoute()
+  }
+)
 
 // Dispara o carregamento da próxima página quando a sentinela entra na
 // viewport. useIntersectionObserver re-observa ao (re)montar o elemento e
@@ -694,6 +729,7 @@ async function loadCustomers(append = false) {
 }
 
 function openModal(customer?: CustomerDTO) {
+  modalFromRoute.value = false
   // Limpa erros de CEP
   cepError.value = ''
   searchingCep.value = false
@@ -744,6 +780,7 @@ function openModal(customer?: CustomerDTO) {
 }
 
 const editCustomer = (customer: CustomerDTO) => {
+  modalFromRoute.value = false
   currentCustomer.value = { ...customer }
   isEditing.value = true
   // Habilita campos de endereço para edição de cliente existente
@@ -768,7 +805,7 @@ async function saveCustomer() {
       console.log('Resultado da criação:', result)
     }
     
-    showModal.value = false
+    closeModal()
     currentPage.value = 1
     await loadCustomers()
   } catch (error) {

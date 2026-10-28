@@ -29,7 +29,7 @@
         </button>
       </span>
     </div>
-    <p v-if="filterError" role="alert" data-testid="filter-error" class="mb-4 text-base text-red-700">
+    <p v-if="filterError" role="alert" data-testid="filter-error" class="mb-4 text-base text-destructive">
       {{ filterError }}
     </p>
 
@@ -38,7 +38,7 @@
       <div v-if="loading" class="p-6 text-center">
         <p>Carregando...</p>
       </div>
-      <div v-else-if="orders && orders.length === 0" class="p-6 text-center">
+      <div v-else-if="orders && orders.length === 0 && !filterError" class="p-6 text-center">
         <p>{{ customerFilterId ? 'Nenhum pedido deste cliente' : 'Nenhum pedido encontrado' }}</p>
       </div>
       <div v-else class="overflow-x-auto">
@@ -376,12 +376,17 @@ watch(customerFilterId, () => {
   loadOrders()
 })
 
+// Toda carga incrementa o token; resposta de request antiga é descartada.
+let ordersRequestId = 0
+
 // Filtro feito pelo servidor (/orders/customer/{id}); nunca por nome nem no cliente.
 async function loadOrdersForCustomer(customerId: number) {
+  const requestId = ++ordersRequestId
   loading.value = true
   filterError.value = ''
   try {
     const result: unknown = await orderService.getByCustomer(customerId)
+    if (requestId !== ordersRequestId) return
     if (!Array.isArray(result)) {
       orders.value = []
       filterError.value = 'Não foi possível carregar os pedidos deste cliente.'
@@ -389,41 +394,69 @@ async function loadOrdersForCustomer(customerId: number) {
       orders.value = result as OrderDTO[]
     }
   } catch (error) {
+    if (requestId !== ordersRequestId) return
     orders.value = []
     filterError.value = friendlyError(error, 'Não foi possível carregar os pedidos deste cliente.')
   } finally {
-    totalItems.value = 0
-    totalPages.value = 0
-    loading.value = false
+    if (requestId === ordersRequestId) {
+      totalItems.value = 0
+      totalPages.value = 0
+      loading.value = false
+    }
   }
 }
 
 async function loadOrders() {
   if (customerFilterId.value) return loadOrdersForCustomer(customerFilterId.value)
+  const requestId = ++ordersRequestId
   filterError.value = ''
   try {
     loading.value = true
-    const response: PaginatedResponse<OrderDTO> = await orderService.getAll({
+    const response: unknown = await orderService.getAll({
       page: currentPage.value - 1, // Spring Boot usa páginas baseadas em 0
       size: pageSize.value,
       sort: 'createdDate,desc'
     })
-    
-    orders.value = response.content
-    totalItems.value = response.totalElements
-    totalPages.value = response.totalPages
+    if (requestId !== ordersRequestId) return
+
+    if (Array.isArray(response)) {
+      // /orders do service devolve List puro (sem Page): pagina no cliente.
+      const all = response as OrderDTO[]
+      const start = (currentPage.value - 1) * pageSize.value
+      orders.value = all.slice(start, start + pageSize.value)
+      totalItems.value = all.length
+      totalPages.value = Math.max(1, Math.ceil(all.length / pageSize.value))
+    } else if (
+      response &&
+      typeof response === 'object' &&
+      Array.isArray((response as PaginatedResponse<OrderDTO>).content)
+    ) {
+      const page = response as PaginatedResponse<OrderDTO>
+      orders.value = page.content
+      totalItems.value = page.totalElements
+      totalPages.value = page.totalPages
+    } else {
+      throw new Error('Unexpected /orders response shape')
+    }
   } catch (error) {
+    if (requestId !== ordersRequestId) return
     console.error('Erro ao carregar pedidos:', error)
     // Fallback para API sem paginação
     try {
-      orders.value = await orderService.getAllNonPaginated()
-      totalItems.value = orders.value.length
-      totalPages.value = 1
+      const fallback = await orderService.getAllNonPaginated()
+      if (requestId !== ordersRequestId) return
+      if (Array.isArray(fallback)) {
+        orders.value = fallback as OrderDTO[]
+        totalItems.value = orders.value.length
+        totalPages.value = 1
+      }
     } catch (fallbackError) {
+      if (requestId !== ordersRequestId) return
       console.error('Erro no fallback:', fallbackError)
+      orders.value = []
     }
   } finally {
-    loading.value = false
+    if (requestId === ordersRequestId) loading.value = false
   }
 }
 

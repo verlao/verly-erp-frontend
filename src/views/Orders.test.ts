@@ -77,4 +77,26 @@ describe('Orders customer filter', () => {
     const { wrapper } = await mountAt('/orders?customerId=1')
     expect(wrapper.find('[data-testid="filter-error"]').text()).not.toContain('SQL')
   })
+
+  it('accepts the plain list /orders really returns (no Page wrapper)', async () => {
+    vi.mocked(orderService.getAll).mockResolvedValue([order(20, 1), order(21, 1)])
+    const { wrapper } = await mountAt('/orders')
+    expect(wrapper.text()).toContain('#20')
+    expect(wrapper.text()).toContain('#21')
+    expect(wrapper.text()).not.toContain('Nenhum pedido encontrado')
+  })
+
+  it('discards a stale list response when the filter changes mid-flight', async () => {
+    let resolveStale: (value: unknown) => void = () => {}
+    vi.mocked(orderService.getAll).mockReturnValue(new Promise(r => (resolveStale = r)))
+    const { wrapper, router } = await mountAt('/orders')
+
+    await router.push('/orders?customerId=2')
+    await flushPromises()
+    expect(wrapper.text()).toContain('#11')
+
+    resolveStale({ content: [order(10, 1)], totalElements: 1, totalPages: 1 })
+    await flushPromises()
+    expect(wrapper.text()).not.toContain('#10')
+  })
 })

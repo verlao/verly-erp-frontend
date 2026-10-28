@@ -28,6 +28,8 @@ export interface ReviewItem {
 export interface VariantGroup {
   group: string
   items: ReviewItem[]
+  /** true quando mais de uma alternativa veio marcada: exige escolha humana, nunca somar. */
+  conflict: boolean
 }
 
 export interface TranscriptMessage {
@@ -125,7 +127,15 @@ function translateItem(item: LeadItemDTO, confirmed: boolean): ReviewItem {
   }
 }
 
-const ITEM_FIELDS = ['productType', 'color', 'sheets', 'widthCm', 'heightCm', 'quantity'] as const
+const ITEM_FIELDS = [
+  'productType',
+  'color',
+  'sheets',
+  'widthCm',
+  'heightCm',
+  'quantity',
+  'estimatedValue',
+] as const
 
 export function translateLead(lead: LeadDTO): LeadReview {
   const data = parseLeadData(lead.data)
@@ -140,7 +150,8 @@ export function translateLead(lead: LeadDTO): LeadReview {
     else groups.set(it.variantGroup, [...(groups.get(it.variantGroup) ?? []), it])
   }
 
-  const customerId = num(lead.convertedCustomerId)
+  const customerId =
+    num(lead.converted_customer_id) ?? num(lead.convertedCustomerId)
   const review: LeadReview = {
     // Nome do perfil do WhatsApp não é nome legal: sempre 'extracted'.
     contactName: field(str(lead.name), 'extracted'),
@@ -148,7 +159,11 @@ export function translateLead(lead: LeadDTO): LeadReview {
     customerLink: field(customerId !== null && customerId > 0 ? customerId : null, 'record'),
     extractionConfirmed: confirmed,
     items,
-    variantGroups: [...groups].map(([group, list]) => ({ group, items: list })),
+    variantGroups: [...groups].map(([group, list]) => ({
+      group,
+      items: list,
+      conflict: list.filter(i => i.variantSelected).length > 1,
+    })),
     ...parseSignals(data),
     transcript: parseTranscript(data),
     missing: [],
@@ -156,8 +171,15 @@ export function translateLead(lead: LeadDTO): LeadReview {
 
   if (review.contactName.value === null) review.missing.push('contactName')
   if (review.contactPhone.value === null) review.missing.push('contactPhone')
-  all.forEach((it, i) => {
+  // Labels follow what the screen renders: loose items first, then each variant group.
+  items.forEach((it, i) => {
     for (const f of ITEM_FIELDS) if (it[f].value === null) review.missing.push(`items[${i}].${f}`)
+  })
+  review.variantGroups.forEach((g, gi) => {
+    g.items.forEach((it, i) => {
+      for (const f of ITEM_FIELDS)
+        if (it[f].value === null) review.missing.push(`variantGroups[${gi}].items[${i}].${f}`)
+    })
   })
   return review
 }

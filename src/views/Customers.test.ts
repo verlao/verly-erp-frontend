@@ -15,7 +15,7 @@ async function mountAt(url: string) {
   await router.isReady()
   const wrapper = mount(Customers, { global: { plugins: [router], stubs: { Pagination: true } } })
   await flushPromises()
-  return wrapper
+  return { wrapper, router }
 }
 
 describe('Customers route context', () => {
@@ -37,8 +37,28 @@ describe('Customers route context', () => {
 
   it('shows a friendly alert, not backend text, when the customer cannot be opened', async () => {
     vi.mocked(customerService.getById).mockRejectedValue({ response: { status: 400, data: { message: 'SQL boom' } } })
-    const wrapper = await mountAt('/customers?customerId=7')
+    const { wrapper } = await mountAt('/customers?customerId=7')
     const alert = wrapper.find('[data-testid="context-error"]')
     expect(alert.text()).toBe('Não foi possível abrir este cliente.')
+  })
+
+  it('reopens when ?customerId changes without remount', async () => {
+    const { router } = await mountAt('/customers?customerId=7')
+    vi.mocked(customerService.getById).mockResolvedValue({ id: 8, name: 'Outro Cliente', addresses: [] })
+
+    await router.push('/customers?customerId=8')
+    await flushPromises()
+    expect(customerService.getById).toHaveBeenLastCalledWith(8)
+  })
+
+  it('closing a route-opened modal drops only the context param', async () => {
+    const { wrapper, router } = await mountAt('/customers?customerId=7&x=1')
+    const cancel = wrapper.findAll('button').find(b => b.text() === 'Cancelar')
+    expect(cancel).toBeDefined()
+
+    await cancel!.trigger('click')
+    await flushPromises()
+    expect(router.currentRoute.value.query).toEqual({ x: '1' })
+    expect(wrapper.text()).not.toContain('Editar Cliente')
   })
 })
