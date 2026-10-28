@@ -1,0 +1,192 @@
+{
+  "id": "F04",
+  "suffix": "depois-dialogo-instalacao",
+  "base": "http://127.0.0.1:5304",
+  "scenario": null,
+  "pages": [
+    {
+      "route": "agenda",
+      "width": 393,
+      "errors": [],
+      "external": [],
+      "unknownApi": [],
+      "apiCalls": [
+        "GET /lead-installations?start=2026-10-26T00%3A00%3A00&end=2026-11-01T23%3A59%3A59 -> 200",
+        "GET /leads -> 200"
+      ],
+      "failedApi": [],
+      "finalUrl": "http://127.0.0.1:5304/agenda",
+      "redirectedToLogin": false,
+      "screenshot": "F04-agenda-393-depois-dialogo-instalacao.png",
+      "overflowX": false,
+      "scrollWidth": 393,
+      "innerWidth": 393,
+      "smallTextNodes": 26,
+      "smallTextSamples": [
+        "Visita técnica é um dia; instalação tem ",
+        "Novo agendamento",
+        "26/10 – 01/11",
+        "Hoje",
+        "0 na semana"
+      ],
+      "smallTargetCount": 10,
+      "smallTargets": [
+        {
+          "tag": "BUTTON",
+          "text": "Novo agendamento",
+          "h": 40,
+          "w": 182
+        },
+        {
+          "tag": "BUTTON",
+          "text": "Semana anterior",
+          "h": 34,
+          "w": 23
+        },
+        {
+          "tag": "BUTTON",
+          "text": "Hoje",
+          "h": 24,
+          "w": 41
+        },
+        {
+          "tag": "BUTTON",
+          "text": "Próxima semana",
+          "h": 34,
+          "w": 23
+        },
+        {
+          "tag": "BUTTON",
+          "text": "Reagendar",
+          "h": 36,
+          "w": 87
+        },
+        {
+          "tag": "BUTTON",
+          "text": "Cancelar",
+          "h": 36,
+          "w": 74
+        },
+        {
+          "tag": "BUTTON",
+          "text": "Visita técnica",
+          "h": 34,
+          "w": 110
+        },
+        {
+          "tag": "BUTTON",
+          "text": "Instalação",
+          "h": 34,
+          "w": 90
+        },
+        {
+          "tag": "BUTTON",
+          "text": "Cancelar",
+          "h": 40,
+          "w": 91
+        },
+        {
+          "tag": "BUTTON",
+          "text": "Agendar",
+          "h": 40,
+          "w": 87
+        }
+      ],
+      "unnamedButtons": 0,
+      "unnamedButtonSamples": [],
+      "textLength": 540
+    },
+    {
+      "route": "agenda",
+      "width": 1440,
+      "errors": [],
+      "external": [],
+      "unknownApi": [],
+      "apiCalls": [
+        "GET /lead-installations?start=2026-10-26T00%3A00%3A00&end=2026-11-01T23%3A59%3A59 -> 200",
+        "GET /leads -> 200"
+      ],
+      "failedApi": [],
+      "finalUrl": "http://127.0.0.1:5304/agenda",
+      "redirectedToLogin": false,
+      "screenshot": "F04-agenda-1440-depois-dialogo-instalacao.png",
+      "overflowX": false,
+      "scrollWidth": 1440,
+      "innerWidth": 1440,
+      "smallTextNodes": 37,
+      "smallTextSamples": [
+        "Leads",
+        "Financeiro",
+        "Funil",
+        "Clientes",
+        "Parceiros"
+      ],
+      "smallTargetCount": 20,
+      "smallTargets": [
+        {
+          "tag": "BUTTON",
+          "text": "Leads",
+          "h": 32,
+          "w": 47
+        },
+        {
+          "tag": "BUTTON",
+          "text": "Financeiro",
+          "h": 32,
+          "w": 47
+        },
+        {
+          "tag": "BUTTON",
+          "text": "Funil",
+          "h": 32,
+          "w": 47
+        },
+        {
+          "tag": "BUTTON",
+          "text": "Clientes",
+          "h": 32,
+          "w": 47
+        },
+        {
+          "tag": "BUTTON",
+          "text": "Parceiros",
+          "h": 32,
+          "w": 47
+        },
+        {
+          "tag": "BUTTON",
+          "text": "Produtos",
+          "h": 32,
+          "w": 47
+        },
+        {
+          "tag": "BUTTON",
+          "text": "Orçamentos",
+          "h": 32,
+          "w": 47
+        },
+        {
+          "tag": "BUTTON",
+          "text": "Pedidos",
+          "h": 32,
+          "w": 47
+        },
+        {
+          "tag": "BUTTON",
+          "text": "Usuários",
+          "h": 32,
+          "w": 47
+        },
+        {
+          "tag": "BUTTON",
+          "text": "Agenda",
+          "h": 32,
+          "w": 47
+        }
+      ],
+      "unnamedButtons": 0,
+      "unnamedButtonSamples": [],
+      "textLength": 603
+    }
+  ]
+}

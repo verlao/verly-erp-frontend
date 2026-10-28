@@ -1,0 +1,52 @@
+{
+  "id": "F04",
+  "suffix": "antes",
+  "base": "http://127.0.0.1:5301",
+  "scenario": null,
+  "pages": [
+    {
+      "route": "agenda",
+      "width": 393,
+      "errors": [],
+      "external": [],
+      "unknownApi": [],
+      "apiCalls": [],
+      "failedApi": [],
+      "finalUrl": "http://127.0.0.1:5301/agenda",
+      "redirectedToLogin": false,
+      "screenshot": "F04-agenda-393-antes.png",
+      "overflowX": false,
+      "scrollWidth": 393,
+      "innerWidth": 393,
+      "smallTextNodes": 0,
+      "smallTextSamples": [],
+      "smallTargetCount": 0,
+      "smallTargets": [],
+      "unnamedButtons": 0,
+      "unnamedButtonSamples": [],
+      "textLength": 0
+    },
+    {
+      "route": "agenda",
+      "width": 1440,
+      "errors": [],
+      "external": [],
+      "unknownApi": [],
+      "apiCalls": [],
+      "failedApi": [],
+      "finalUrl": "http://127.0.0.1:5301/agenda",
+      "redirectedToLogin": false,
+      "screenshot": "F04-agenda-1440-antes.png",
+      "overflowX": false,
+      "scrollWidth": 1440,
+      "innerWidth": 1440,
+      "smallTextNodes": 0,
+      "smallTextSamples": [],
+      "smallTargetCount": 0,
+      "smallTargets": [],
+      "unnamedButtons": 0,
+      "unnamedButtonSamples": [],
+      "textLength": 0
+    }
+  ]
+}
