@@ -45,3 +45,10 @@ Cada uma com o padrão seguro já aplicado. Nada aqui bloqueia o trabalho.
     o token não protege esse caminho ainda. Registrado, não escondido.
 17. **`POST /products` público, segredos JWT/Telegram, menu Leads×Clientes** (nº1–3) continuam abertos e intocados;
     a frente HITL não os toca nesta noite.
+
+18. **Parceiro → financeiro (aceite do F01) não tem contrato.** Não existe view nem endpoint que filtre o ledger por
+    parceiro: `LedgerResponseDTO` não carrega `partnerId` e não há rota equivalente a `/ledger/partner/{id}`.
+    *Padrão aplicado:* o F01 entrega o resto da navegação de contexto e **declara a lacuna** no PR; a UI não inventa a
+    rota nem filtra no cliente (D11). *Risco:* o aceite do cartão fica parcialmente aberto até existir contrato de
+    financeiro por parceiro no `verly-service`. *Decisão necessária:* esse filtro é por parceiro do lead/cliente
+    (vínculo) ou por parceiro do lançamento? Muda o modelo de dados, não só a query.

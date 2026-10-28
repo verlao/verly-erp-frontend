@@ -20,16 +20,48 @@ Checkpoint vivo: atualizado a cada cartão. Nenhum merge/deploy/escrita em produ
 
 | Cartão | Estado | Worktree / branch | Head | Gates | PR |
 |---|---|---|---|---|---|
-| C01-S | contrato escrito; Guia revisando | G2-INTEGRATED `CONTRATO_HITL_BACKEND_2026-10-28.md` | — | — | — |
-| F01 | em correção (rodada 1) | HITL-F01 `feat/hitl-f01-context-navigation` | `97a0e27` | 322 testes ok | — |
-| F02 | a disparar | | | | |
-| F03a/F03b | a disparar | | | | |
-| F04 | a disparar | | | | |
-| S01/S02/M01/S05 | aguardam Guia | | | | |
-| S03/S04 | PREPARADO (dependem de M01 no ar) | | | | |
-| S07 | PREPARADO se sobrar tempo | | | | |
-| M02/S06 | M02 dispensada nesta fase (contrato §8); S06 não iniciado | | | | |
-| B01/B02 | não tocados (dependem de S06 no ar) | | | | |
+| C01-S | **concluído** (contrato revisado) | G2-INTEGRATED `CONTRATO_HITL_BACKEND_2026-10-28.md` | `2286f44` | revisão adversarial do Guia | — |
+| S01 | **concluído** (draft) | HITL-S01 `feat/hitl-s01-lead-review-context` | `ec7f7d9` | 691 testes / 106 classes | service **#120** |
+| F01 | **concluído com lacuna** (draft) | HITL-F01 `feat/hitl-f01-context-navigation` | `bf819bd` | 310 testes / 41 arquivos + build + diff-check | ERP **#74** |
+| S02–S07 | não iniciados (corte de escopo) | — | — | — | — |
+| M01/M02 | não iniciados (corte de escopo) | — | — | — | — |
+| F02–F07 | não iniciados (corte de escopo) | — | — | — | — |
+| B01/B02 | não iniciados (corte de escopo) | — | — | — | — |
+
+## C01-S — contrato do backend HITL (checkpoint 01:4x)
+
+- Contrato escrito e revisado por oráculo independente (`gpt-6.1-sol`), que devolveu **NAO_APTO** com 9 achados (G01–G09).
+- Todos os achados foram endereçados no próprio contrato (§10), com padrões conservadores onde havia decisão de produto em aberto.
+- **G01 confirmado por inspeção própria:** `whatsapp_bot.v_address_consolidated` **não existe**; a fonte real é `whatsapp_bot.addresses`. O contrato foi corrigido para a tabela real.
+- **G05 fica como dívida explícita** (não há endpoint humano que grave `extraction_confirmed_at`); registrada em `PERGUNTAS.md` nº16.
+- Veredito final: **APTO_COM_RESSALVA**.
+- Nenhum código de produção foi escrito neste cartão.
+
+## S01 — `GET /leads/{id}/review-context` (checkpoint 02:0x)
+
+- Branch `feat/hitl-s01-lead-review-context`, 2 commits, 7 arquivos (controller, DTO, service, SQL, token, 2 testes).
+- Gates locais: `spotless:apply` + `mvn -B -q test` → **691 testes, 0 falhas, 106 classes**.
+- Payload de evidência capturado em teste (`/private/tmp/verly-S01-evidence.log`): `address.source=MIXED`, `leadCustomerLink=UNAVAILABLE`, `reviewToken` determinístico.
+- Correções aplicadas após revisão adversarial: `detected` obrigatório; `availability` de signals cobre payment/closed/objection; `at` limitado a 64; truncamento seguro de surrogate; token normaliza datas a segundos; `SELECT_CONTACT` com `ORDER BY updated_at`; handler de erro próprio (`INVALID_LEAD_ID` 400 / `INTERNAL` 500) sem tocar o `GlobalExceptionHandler`.
+- **PR #120 publicado como draft** contra `prod`. CI `Run Tests` vermelho por ambiente: `Could not find a valid Docker environment` (Testcontainers) — 244 erros em cascata, nenhum teste de negócio executado. Somado a isso, `prod` segue com dois `V2_54`.
+- **Não promovido a ready**: só depois de `prod` voltar a ter CI verde.
+
+## F01 — contexto entre telas do ERP (checkpoint 02:1x)
+
+- Branch `feat/hitl-f01-context-navigation`, head `bf819bd`, **432 inserções / 8 arquivos** (produção ~240 linhas).
+- Entrega: `?customerId=` abre o cliente por ID e mantém no reload; "Ver pedidos" leva a `/orders?customerId=`; pedidos filtram **no servidor** (`GET /orders/customer/{id}`) com chip e limpeza; rota de revisão do lead construída por helper validado.
+- Bug latente corrigido: `/orders` devolve `List` puro; a tela agora aceita lista e `Page`, paginando a lista no cliente.
+- Correções da rodada 1 de review: corrida entre cargas (token de requisição), erro de filtro não é sobrescrito por lista vazia, fechar modal remove só o parâmetro, `text-destructive`.
+- **Corte de escopo feito em revisão própria:** `leadReview.ts` (185 linhas) não tinha consumidor — pertence ao cartão da tela de revisão (F02). Removido junto com os campos de DTO que só ele usava, para não publicar código morto.
+- Gates: `vue-tsc -b`, **310 testes / 41 arquivos**, `vite build`, `git diff --check`.
+- Evidências antes/depois (393 e 1440) em `hitl-overnight-2026-10-28/F01/`, publicadas na branch órfã `pr-assets`; todas as capturas com `errors=0`, `external=0`, `overflow=false`.
+- **PR #74 publicado como draft** contra `prod`. Lacuna declarada: **parceiro → financeiro** não é implementável hoje (ver `PERGUNTAS.md` nº18).
+- `gh pr checks` do ERP: nenhum workflow roda em PR (todos são `push` para `dev`/`main`/`prod`), então não há CI a esperar.
+
+## Corte de escopo (declarado, não silencioso)
+
+A noite foi limitada a **C01-S → S01 → F01**. S02–S07, M01/M02, F02–F07 e B01/B02 **não foram iniciados**; continuam no contrato e no prompt, sem trabalho parcial em worktree.
+
 
 ## Ferramentas
 
