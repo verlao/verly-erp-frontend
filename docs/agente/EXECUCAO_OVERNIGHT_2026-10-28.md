@@ -23,9 +23,10 @@ Checkpoint vivo: atualizado a cada cartão. Nenhum merge/deploy/escrita em produ
 | C01-S | **concluído** (contrato revisado) | G2-INTEGRATED `CONTRATO_HITL_BACKEND_2026-10-28.md` | `2286f44` | revisão adversarial do Guia | — |
 | S01 | **concluído** (draft) | HITL-S01 `feat/hitl-s01-lead-review-context` | `ec7f7d9` | 691 testes / 106 classes | service **#120** |
 | F01 | **concluído com lacuna** (draft) | HITL-F01 `feat/hitl-f01-context-navigation` | `bf819bd` | 310 testes / 41 arquivos + build + diff-check | ERP **#74** |
+| F02 | **concluído** (auditoria + 3 correções, draft) | HITL-F02 `feat/hitl-f02-lead-quote-review` | `14d787a` | 287 testes / 39 arquivos + build + diff-check | ERP **#75** |
 | S02–S07 | não iniciados (corte de escopo) | — | — | — | — |
 | M01/M02 | não iniciados (corte de escopo) | — | — | — | — |
-| F02–F07 | não iniciados (corte de escopo) | — | — | — | — |
+| F03–F07 | não iniciados (corte de escopo) | — | — | — | — |
 | B01/B02 | não iniciados (corte de escopo) | — | — | — | — |
 
 ## C01-S — contrato do backend HITL (checkpoint 01:4x)
@@ -58,9 +59,22 @@ Checkpoint vivo: atualizado a cada cartão. Nenhum merge/deploy/escrita em produ
 - **PR #74 publicado como draft** contra `prod`. Lacuna declarada: **parceiro → financeiro** não é implementável hoje (ver `PERGUNTAS.md` nº18).
 - `gh pr checks` do ERP: nenhum workflow roda em PR (todos são `push` para `dev`/`main`/`prod`), então não há CI a esperar.
 
+## F02 — conferência do orçamento (checkpoint 02:2x)
+
+- Auditoria do aceite contra `LeadQuote.vue` + backend (`ProductCalculationService`): a maior parte já estava correta (itens sem redigitação, A/B só a escolhida, item sem medida fora do total, PVC/ALU sem medida, salvar recalcula, orçar sem CPF).
+- **Três furos fechados**, todos com prova:
+  1. **Corrida de preço** — `POST /products/calculate` por `change`; resposta de medida antiga sobrescrevia a nova. Reproduzido no código de `prod`: 200×100 → 200×300, resposta 900 chega primeiro, 200 chega depois e vence. Agora cada linha carrega o token da última medição e respostas velhas são descartadas; limpar a medida também invalida a requisição em voo.
+  2. **R$ 0,00 como "grátis"** — com item na tela e nenhum preço calculável, subtotal/total agora dizem **Aguardando preço**; estimativa de IA igual a zero deixa de aparecer.
+  3. **Mensagem do backend na tela** — erro ao salvar usava `response.data.message`; agora `friendlyError` (D10).
+- Contrato de unidade fixado em teste: largura/altura em **cm** (backend divide por 10.000).
+- Gates: `vue-tsc -b`, **287 testes / 39 arquivos**, `vite build`, `git diff --check`. Diff: 1 arquivo de produção (+33/−5) + 1 teste.
+- Evidência: `hitl-overnight-2026-10-28/F02/` (lead 2 antes/depois em 393/1440, lead 232 A/B), publicada em `pr-assets`; browser `total="R$ 0,00"` → `total="Aguardando preço"`, `hasZero=false`.
+- **PR #75 draft** contra `prod`, independente do #74 (não toca arquivos compartilhados).
+
 ## Corte de escopo (declarado, não silencioso)
 
-A noite foi limitada a **C01-S → S01 → F01**. S02–S07, M01/M02, F02–F07 e B01/B02 **não foram iniciados**; continuam no contrato e no prompt, sem trabalho parcial em worktree.
+A noite foi limitada a **C01-S → S01 → F01 → F02**. S02–S07, M01/M02, F03–F07 e B01/B02 **não foram iniciados**; continuam no contrato e no prompt, sem trabalho parcial em worktree.
+
 
 
 ## Ferramentas
@@ -74,6 +88,7 @@ A noite foi limitada a **C01-S → S01 → F01**. S02–S07, M01/M02, F02–F07 
 1. **Nada nesta noite.** Os dois PRs estão em **draft** de propósito: o service está com CI vermelho por ambiente e o ERP tem lacuna de aceite declarada.
 2. Quando `prod` do service estiver verde: **verly-service#120** — `GET /leads/{id}/review-context` (read-only, 691 testes locais, 1 endpoint + DTO/serviço/SQL; risco baixo, sem migração). Depois de ready e CI verde, o merge em `prod` dispara deploy — decisão do Matheus.
 3. **verly-erp-frontend#74** — navegação de contexto (432 linhas, 310 testes, sem dependência de backend novo). Pode ir a ready assim que o Matheus aceitar a lacuna "parceiro → financeiro" (não implementável sem contrato).
+4. **verly-erp-frontend#75** — conferência do orçamento sem preço velho/zero (287 testes, 1 arquivo de produção + 1 teste). Independente do #74; pode entrar antes ou depois.
 
 ## Preparados aguardando merge/deploy
 
@@ -81,6 +96,7 @@ A noite foi limitada a **C01-S → S01 → F01**. S02–S07, M01/M02, F02–F07 
 |---|---|---|
 | S01 | `prod` do service com CI verde (dois `V2_54` resolvidos pela frente de fotos) | `gh pr ready 120 --repo verlao/verly-service` |
 | F01 | decisão sobre a lacuna parceiro→financeiro (não bloqueia o resto) | `gh pr ready 74 --repo verlao/verly-erp-frontend` |
+| F02 | nada além do merge (independente) | `gh pr ready 75 --repo verlao/verly-erp-frontend` |
 | S02–S07, M01/M02, F02–F07, B01/B02 | não iniciados por corte de escopo | — |
 
 ## Decisões tomadas sozinho (com reversão)
@@ -90,6 +106,8 @@ A noite foi limitada a **C01-S → S01 → F01**. S02–S07, M01/M02, F02–F07 
 - **D-F01-1:** `/orders` pode vir como lista pura ou `Page`; a tela pagina no cliente no primeiro caso. Reverter = assumir `Page` e voltar ao bug de lista vazia.
 - **D-F01-2:** `leadReview.ts` removido do F01 (sem consumidor até F02). Reverter = `git show 97a0e27 -- src/lib/leadReview.ts`.
 - **D-F01-3:** fechar modal aberto por `?customerId=` remove só esse parâmetro. Reverter = deixar a URL como está.
+- **D-F02-1:** preço em cálculo é identificado por token por linha; resposta velha é descartada em vez de sobrescrever. Reverter = remover `calcToken` e as comparações em `recalcRow`.
+- **D-F02-2:** total com item sem preço mostra "Aguardando preço" em vez de R$ 0,00 (e esconde estimativa de IA = 0). Reverter = voltar `v-if` do bloco de estimativa e o `totalLabel` para `currency.formatCurrency`.
 
 ## Estado no fim da noite
 
@@ -98,7 +116,7 @@ A noite foi limitada a **C01-S → S01 → F01**. S02–S07, M01/M02, F02–F07 
 | Runner `orangepi-backend` | online/idle | online/idle (nenhum job disparado por nós) |
 | `verly-service` `prod` | `1dbd003` (CI vermelho, serve `b65f56a`) | `1dbd003` — intocado |
 | `verly-erp-frontend` `prod` | `c7b4e96` | `c7b4e96` — intocado |
-| PRs novos | — | service #120 (draft), ERP #74 (draft) |
+| PRs novos | — | service #120 (draft), ERP #74 e #75 (drafts) |
 | Branch de assets | — | `pr-assets` no ERP (só PNGs, nunca merge) |
 
 ## O que falhou ou foi interrompido
