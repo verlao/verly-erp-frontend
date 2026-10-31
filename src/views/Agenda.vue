@@ -84,7 +84,7 @@
                 <span class="rounded-full px-2 py-0.5 text-xs font-medium" :class="statusClass(row.status)">
                   {{ statusLabel(row.status) }}
                 </span>
-                <div v-if="row.status !== 'CANCELLED'" class="flex w-full flex-wrap items-center justify-end gap-2 sm:ml-auto sm:w-auto">
+                <div v-if="row.status === 'SCHEDULED'" class="flex w-full flex-wrap items-center justify-end gap-2 sm:ml-auto sm:w-auto">
                   <template v-if="confirmingCancelId === row.id">
                     <span class="text-xs text-muted-foreground">Cancelar esta instalação?</span>
                     <Button variant="destructive" size="sm" @click="cancelInstallation(row)">Sim, cancelar</Button>
@@ -560,6 +560,7 @@ const editing = ref<LeadInstallationDTO | null>(null)
 const confirmingCancelId = ref<number | null>(null)
 
 function openReschedule(row: LeadInstallationDTO) {
+  if (row.status !== 'SCHEDULED') return
   editing.value = row
   formError.value = ''
   const [day, time] = row.scheduledAt.split('T')
@@ -596,6 +597,8 @@ async function submitReschedule() {
 }
 
 async function cancelInstallation(row: LeadInstallationDTO) {
+  // O backend grava CANCELLED por cima de DONE: só agendada pode ser cancelada.
+  if (row.status !== 'SCHEDULED') return
   confirmingCancelId.value = null
   try {
     await leadInstallationService.cancel(row.leadId, row.id)

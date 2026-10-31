@@ -250,6 +250,16 @@ describe('Agenda', () => {
     expect(leadInstallationService.cancel).toHaveBeenCalledWith(1, 5)
   })
 
+  it('does not offer reschedule or cancel for a completed installation', async () => {
+    vi.mocked(leadInstallationService.list).mockResolvedValue([installation({ status: 'DONE' })] as never)
+    const wrapper = await mountAgenda()
+
+    expect(wrapper.text()).toContain('Concluída')
+    const labels = wrapper.findAll('button').map((b) => b.text())
+    expect(labels).not.toContain('Reagendar')
+    expect(labels).not.toContain('Cancelar')
+  })
+
   it('schedules a visit with the day only', async () => {
     vi.mocked(leadService.updateMeasurement).mockResolvedValue({} as never)
     const wrapper = await mountAgenda()
