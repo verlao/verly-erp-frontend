@@ -241,7 +241,10 @@ import type { LeadDTO } from '../services/lead'
 import productService from '../services/product'
 import quoteService from '../services/quote'
 import type { CreateQuoteFromLeadPayload } from '../services/quote'
-import { confirmLeadExtraction } from '../services/extractionConfirmation'
+import {
+  confirmLeadExtraction,
+  LeadConfirmationNotReadError,
+} from '../services/extractionConfirmation'
 import { buildRichQuoteMessage, buildWhatsAppUrl } from '../lib/whatsapp'
 import { useLeadSignals, fmtTime } from '../composables/useLeadSignals'
 import { useCurrency } from '../composables/useCurrency'
@@ -546,6 +549,14 @@ async function save(): Promise<{ id: number; daysUntilExpiration?: number } | nu
     notification.success('Conferência salva', 'Lead, total e tier atualizados')
     return result.quote
   } catch (e: any) {
+    // O POST já criou o orçamento: pedir para salvar de novo duplicaria.
+    if (e instanceof LeadConfirmationNotReadError) {
+      notification.error(
+        'Orçamento criado',
+        `O orçamento #${e.quoteId} foi criado, mas a confirmação do lead não voltou. Recarregue a página para conferir — não salve de novo.`,
+      )
+      return null
+    }
     notification.error(
       'Erro ao confirmar',
       friendlyError(e, 'Não foi possível salvar a conferência'),

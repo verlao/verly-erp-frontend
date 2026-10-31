@@ -1,7 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import leadService, { type LeadDTO } from './lead'
 import quoteService from './quote'
-import { confirmLeadExtraction } from './extractionConfirmation'
+import {
+  confirmLeadExtraction,
+  LeadConfirmationNotReadError,
+} from './extractionConfirmation'
 
 vi.mock('./lead', async (importOriginal) => {
   const actual = await importOriginal<typeof import('./lead')>()
@@ -86,8 +89,21 @@ describe('confirmLeadExtraction', () => {
       extractionConfirmedAt: null,
     })
 
-    await expect(confirmLeadExtraction(payload)).rejects.toThrow(
+    const attempt = confirmLeadExtraction(payload)
+    await expect(attempt).rejects.toThrow(
       'A API não confirmou a atualização do lead',
     )
+    await expect(attempt).rejects.toBeInstanceOf(LeadConfirmationNotReadError)
+    await expect(attempt).rejects.toHaveProperty('quoteId', 99)
+  })
+
+  it('reports the created quote when the fresh lead read fails', async () => {
+    vi.mocked(quoteService.createFromLead).mockResolvedValue({ id: 99 })
+    vi.mocked(leadService.getFreshById).mockRejectedValue(new Error('Network Error'))
+
+    const attempt = confirmLeadExtraction(payload)
+    await expect(attempt).rejects.toBeInstanceOf(LeadConfirmationNotReadError)
+    await expect(attempt).rejects.toHaveProperty('quoteId', 99)
+    expect(quoteService.createFromLead).toHaveBeenCalledTimes(1)
   })
 })

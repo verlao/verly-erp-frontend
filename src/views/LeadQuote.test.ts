@@ -481,3 +481,64 @@ describe('LeadQuote with an item still without price', () => {
     expect(wrapper.find('[data-testid="quote-pending"]').exists()).toBe(false)
   })
 })
+
+describe('LeadQuote when the quote is created but the lead is not re-read', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    vi.mocked(leadService.getById).mockResolvedValue(lead() as never)
+    vi.mocked(productService.calculate).mockResolvedValue({ price: 120 } as never)
+    vi.mocked(quoteService.createFromLead).mockResolvedValue({ id: 7 } as never)
+  })
+
+  const button = (w: Awaited<ReturnType<typeof mountQuote>>, label: string) => {
+    const found = w.findAll('button').find((b) => b.text().includes(label))
+    expect(found, label).toBeTruthy()
+    return found!
+  }
+
+  function expectQuoteCreatedNotice() {
+    expect(notification.error).toHaveBeenCalledTimes(1)
+    const [title, text] = vi.mocked(notification.error).mock.calls[0] ?? []
+    expect(text).not.toContain('Sem conexão')
+    expect(text).not.toContain('tente de novo')
+    expect(text).toContain('#7')
+    expect(text).toContain('não salve de novo')
+    expect(title).toBe('Orçamento criado')
+  }
+
+  it('says the quote was created when the lead comes back unconfirmed', async () => {
+    vi.mocked(leadService.getFreshById).mockResolvedValue(lead() as never)
+    const wrapper = await mountQuote()
+
+    await button(wrapper, 'Salvar').trigger('click')
+    await flushPromises()
+
+    expectQuoteCreatedNotice()
+    expect(notification.success).not.toHaveBeenCalled()
+    expect(wrapper.text()).not.toContain('✓ Conferido')
+  })
+
+  it('says the quote was created when the lead re-read fails', async () => {
+    vi.mocked(leadService.getFreshById).mockRejectedValue(new Error('Network Error'))
+    const wrapper = await mountQuote()
+
+    await button(wrapper, 'Salvar').trigger('click')
+    await flushPromises()
+
+    expectQuoteCreatedNotice()
+    expect(wrapper.text()).not.toContain('✓ Conferido')
+  })
+
+  it('does not open the message when the lead re-read fails', async () => {
+    vi.mocked(leadService.getFreshById).mockRejectedValue(new Error('Network Error'))
+    const wrapper = await mountQuote()
+    const open = vi.spyOn(window, 'open').mockImplementation(() => null)
+
+    await button(wrapper, 'Enviar mensagem').trigger('click')
+    await flushPromises()
+
+    expect(open).not.toHaveBeenCalled()
+    expectQuoteCreatedNotice()
+    open.mockRestore()
+  })
+})
