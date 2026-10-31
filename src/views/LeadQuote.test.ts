@@ -161,7 +161,7 @@ describe('LeadQuote pricing', () => {
     expect(text).not.toContain('Estimativa da IA')
   })
 
-  it('counts only the chosen alternative of an A/B group', async () => {
+  it('totals, saves and sends only the chosen alternative of an A/B group', async () => {
     vi.mocked(leadService.getById).mockResolvedValue({
       ...lead(),
       items: [
@@ -169,18 +169,43 @@ describe('LeadQuote pricing', () => {
         { quantity: 1, productType: 'JANELA', color: 'INCOLOR', sheets: 1, widthCm: 200, heightCm: 200, variantGroup: 'A', variantSelected: false },
       ],
     } as never)
+    vi.mocked(leadService.getFreshById).mockResolvedValue({
+      ...lead(),
+      extractionConfirmedAt: '2026-10-30T10:00:00',
+    } as never)
     vi.mocked(productService.calculate)
       .mockResolvedValueOnce({ price: 100 } as never)
       .mockResolvedValueOnce({ price: 250 } as never)
+    vi.mocked(quoteService.createFromLead).mockResolvedValue({ id: 7 } as never)
 
     const wrapper = await mountQuote()
     const total = () => wrapper.find('[data-testid="quote-total"]').text()
+    const button = (label: string) => wrapper.findAll('button').find((b) => b.text().includes(label))!
+    const savedItems = (call: number) => vi.mocked(quoteService.createFromLead).mock.calls[call]?.[0]?.items
     expect(total()).toBe('R$ 100,00')
+
+    await button('Salvar').trigger('click')
+    await flushPromises()
+    expect(savedItems(0)).toHaveLength(1)
+    expect(savedItems(0)?.[0]).toMatchObject({ type: 'BOX', width: 100 })
 
     const radios = wrapper.findAll('input[type="radio"]')
     await radios[1].trigger('change')
     await flushPromises()
     expect(total()).toBe('R$ 250,00')
+
+    await button('Salvar').trigger('click')
+    await flushPromises()
+    expect(savedItems(1)).toHaveLength(1)
+    expect(savedItems(1)?.[0]).toMatchObject({ type: 'JANELA', width: 200 })
+
+    const open = vi.spyOn(window, 'open').mockImplementation(() => null)
+    await button('Enviar mensagem').trigger('click')
+    await flushPromises()
+    const message = decodeURIComponent(String(open.mock.calls[0]?.[0] ?? ''))
+    open.mockRestore()
+    expect(message).toContain('JANELA')
+    expect(message).not.toContain('BOX')
   })
 
   it('never shows the backend message when saving fails', async () => {
