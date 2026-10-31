@@ -11,13 +11,35 @@
       </button>
     </div>
 
+    <!-- Filtro de contexto vindo da rota (?customerId=) -->
+    <div v-if="customerFilterId" class="mb-4 flex flex-wrap items-center gap-3">
+      <span
+        data-testid="customer-filter-chip"
+        class="inline-flex min-h-[44px] items-center gap-2 rounded-full bg-primary/10 pl-4 pr-1 text-base font-medium text-gray-900"
+      >
+        Pedidos de {{ customerFilterLabel }}
+        <button
+          type="button"
+          data-testid="customer-filter-clear"
+          class="inline-flex h-11 w-11 items-center justify-center rounded-full hover:bg-primary/20 focus-visible:outline focus-visible:outline-2"
+          aria-label="Remover filtro de cliente"
+          @click="clearCustomerFilter"
+        >
+          <X class="h-5 w-5" aria-hidden="true" />
+        </button>
+      </span>
+    </div>
+    <p v-if="filterError" role="alert" data-testid="filter-error" class="mb-4 text-base text-destructive">
+      {{ filterError }}
+    </p>
+
     <!-- Tabela de Pedidos -->
     <div class="bg-white rounded-lg shadow overflow-hidden">
       <div v-if="loading" class="p-6 text-center">
         <p>Carregando...</p>
       </div>
-      <div v-else-if="orders && orders.length === 0" class="p-6 text-center">
-        <p>Nenhum pedido encontrado</p>
+      <div v-else-if="orders && orders.length === 0 && !filterError" class="p-6 text-center">
+        <p>{{ customerFilterId ? 'Nenhum pedido deste cliente' : 'Nenhum pedido encontrado' }}</p>
       </div>
       <div v-else class="overflow-x-auto">
         <table class="min-w-full divide-y divide-gray-200">
@@ -278,7 +300,11 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, computed, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+import { X } from 'lucide-vue-next'
+import { parseContextId, withoutContextKey } from '../lib/contextRoutes'
+import { friendlyError } from '../lib/errors'
 import orderService from '../services/order'
 import customerService from '../services/customer'
 import productService from '../services/product'
@@ -287,7 +313,16 @@ import type { OrderDTO, PaginatedResponse } from '../services/order'
 import type { CustomerDTO } from '../services/customer'
 import type { ProductDTO } from '../services/product'
 
+const route = useRoute()
+const router = useRouter()
 const orders = ref<OrderDTO[]>([])
+const filterError = ref('')
+const customerFilterId = computed(() => parseContextId(route.query.customerId))
+const customerFilterLabel = computed(() => {
+  const id = customerFilterId.value
+  const customer = customers.value.find(c => c.id === id)
+  return customer ? customer.name : `#${id}`
+})
 const customers = ref<CustomerDTO[]>([])
 const products = ref<ProductDTO[]>([])
 const loading = ref(true)
@@ -332,30 +367,96 @@ onMounted(async () => {
   ])
 })
 
+function clearCustomerFilter() {
+  router.replace({ query: withoutContextKey(route.query, 'customerId') })
+}
+
+watch(customerFilterId, () => {
+  currentPage.value = 1
+  loadOrders()
+})
+
+// Toda carga incrementa o token; resposta de request antiga é descartada.
+let ordersRequestId = 0
+
+// Filtro feito pelo servidor (/orders/customer/{id}); nunca por nome nem no cliente.
+async function loadOrdersForCustomer(customerId: number) {
+  const requestId = ++ordersRequestId
+  loading.value = true
+  filterError.value = ''
+  try {
+    const result: unknown = await orderService.getByCustomer(customerId)
+    if (requestId !== ordersRequestId) return
+    if (!Array.isArray(result)) {
+      orders.value = []
+      filterError.value = 'Não foi possível carregar os pedidos deste cliente.'
+    } else {
+      orders.value = result as OrderDTO[]
+    }
+  } catch (error) {
+    if (requestId !== ordersRequestId) return
+    orders.value = []
+    filterError.value = friendlyError(error, 'Não foi possível carregar os pedidos deste cliente.')
+  } finally {
+    if (requestId === ordersRequestId) {
+      totalItems.value = 0
+      totalPages.value = 0
+      loading.value = false
+    }
+  }
+}
+
 async function loadOrders() {
+  if (customerFilterId.value) return loadOrdersForCustomer(customerFilterId.value)
+  const requestId = ++ordersRequestId
+  filterError.value = ''
   try {
     loading.value = true
-    const response: PaginatedResponse<OrderDTO> = await orderService.getAll({
+    const response: unknown = await orderService.getAll({
       page: currentPage.value - 1, // Spring Boot usa páginas baseadas em 0
       size: pageSize.value,
       sort: 'createdDate,desc'
     })
-    
-    orders.value = response.content
-    totalItems.value = response.totalElements
-    totalPages.value = response.totalPages
+    if (requestId !== ordersRequestId) return
+
+    if (Array.isArray(response)) {
+      // /orders do service devolve List puro (sem Page): pagina no cliente.
+      const all = response as OrderDTO[]
+      const start = (currentPage.value - 1) * pageSize.value
+      orders.value = all.slice(start, start + pageSize.value)
+      totalItems.value = all.length
+      totalPages.value = Math.max(1, Math.ceil(all.length / pageSize.value))
+    } else if (
+      response &&
+      typeof response === 'object' &&
+      Array.isArray((response as PaginatedResponse<OrderDTO>).content)
+    ) {
+      const page = response as PaginatedResponse<OrderDTO>
+      orders.value = page.content
+      totalItems.value = page.totalElements
+      totalPages.value = page.totalPages
+    } else {
+      throw new Error('Unexpected /orders response shape')
+    }
   } catch (error) {
+    if (requestId !== ordersRequestId) return
     console.error('Erro ao carregar pedidos:', error)
     // Fallback para API sem paginação
     try {
-      orders.value = await orderService.getAllNonPaginated()
-      totalItems.value = orders.value.length
-      totalPages.value = 1
+      const fallback = await orderService.getAllNonPaginated()
+      if (requestId !== ordersRequestId) return
+      if (Array.isArray(fallback)) {
+        orders.value = fallback as OrderDTO[]
+        totalItems.value = orders.value.length
+        totalPages.value = 1
+      }
     } catch (fallbackError) {
+      if (requestId !== ordersRequestId) return
       console.error('Erro no fallback:', fallbackError)
+      orders.value = []
     }
   } finally {
-    loading.value = false
+    if (requestId === ordersRequestId) loading.value = false
   }
 }
 
