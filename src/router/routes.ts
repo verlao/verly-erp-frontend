@@ -43,6 +43,19 @@ export const routes: RouteRecordRaw[] = [
         },
       },
       {
+        path: 'agenda',
+        name: 'Agenda',
+        component: () => import('../views/Agenda.vue'),
+        meta: {
+          pageTitle: 'Agenda',
+          nav: {
+            label: 'Agenda',
+            icon: 'calendar',
+            placements: { sidebar: 10, more: 7 },
+          },
+        },
+      },
+      {
         path: 'products',
         name: 'Products',
         component: () => import('../views/Products.vue'),

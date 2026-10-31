@@ -28,6 +28,7 @@ function createTestRouter() {
       { path: '/partners', name: 'Partners', component: EmptyView },
       { path: '/orders', name: 'Orders', component: EmptyView },
       { path: '/users', name: 'Users', component: EmptyView },
+      { path: '/agenda', name: 'Agenda', component: EmptyView },
     ],
   })
 }

@@ -41,6 +41,7 @@ describe('route navigation metadata', () => {
       'Pedidos',
       'Produtos',
       'Usuários',
+      'Agenda',
     ])
     expect(
       navigationItemsFor(routes, 'sidebar').map((item) => item.label),
@@ -54,6 +55,7 @@ describe('route navigation metadata', () => {
       'Orçamentos',
       'Pedidos',
       'Usuários',
+      'Agenda',
     ])
   })
 })
