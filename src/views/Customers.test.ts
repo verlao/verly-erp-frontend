@@ -61,4 +61,45 @@ describe('Customers route context', () => {
     expect(router.currentRoute.value.query).toEqual({ x: '1' })
     expect(wrapper.text()).not.toContain('Editar Cliente')
   })
+
+  describe('a late ?customerId response does not replace a modal opened by hand', () => {
+    let resolveRouteCustomer: (customer: unknown) => void
+
+    beforeEach(() => {
+      vi.mocked(customerService.getAll).mockResolvedValue({
+        content: [{ id: 7, name: 'Sete', addresses: [] }, { id: 9, name: 'Nove', addresses: [] }],
+        totalElements: 2,
+        totalPages: 1,
+      })
+      vi.mocked(customerService.getById).mockReturnValue(
+        new Promise(resolve => { resolveRouteCustomer = resolve }) as ReturnType<typeof customerService.getById>
+      )
+    })
+
+    const nameValue = (wrapper: Awaited<ReturnType<typeof mountAt>>['wrapper']) =>
+      (wrapper.find('#name').element as HTMLInputElement).value
+
+    it('keeps the customer the user chose to edit', async () => {
+      const { wrapper } = await mountAt('/customers?customerId=7')
+      const editButtons = wrapper.findAll('button').filter(b => /Editar/i.test((b.attributes('aria-label') ?? '') + b.text()))
+      await editButtons[editButtons.length - 1].trigger('click')
+      expect(nameValue(wrapper)).toBe('Nove')
+
+      resolveRouteCustomer({ id: 7, name: 'Sete', addresses: [] })
+      await flushPromises()
+      expect(nameValue(wrapper)).toBe('Nove')
+    })
+
+    it('keeps the new-customer form', async () => {
+      const { wrapper } = await mountAt('/customers?customerId=7')
+      const newButton = wrapper.findAll('button').find(b => b.text().includes('Novo Cliente'))
+      await newButton!.trigger('click')
+      await wrapper.find('#name').setValue('Digitado')
+
+      resolveRouteCustomer({ id: 7, name: 'Sete', addresses: [] })
+      await flushPromises()
+      expect(nameValue(wrapper)).toBe('Digitado')
+      expect(wrapper.find('h3').text()).toBe('Novo Cliente')
+    })
+  })
 })

@@ -730,6 +730,8 @@ async function loadCustomers(append = false) {
 
 function openModal(customer?: CustomerDTO) {
   modalFromRoute.value = false
+  // Abrir à mão vence: descarta o ?customerId= que ainda está carregando.
+  ++contextRequestId
   // Limpa erros de CEP
   cepError.value = ''
   searchingCep.value = false
@@ -781,6 +783,7 @@ function openModal(customer?: CustomerDTO) {
 
 const editCustomer = (customer: CustomerDTO) => {
   modalFromRoute.value = false
+  ++contextRequestId
   currentCustomer.value = { ...customer }
   isEditing.value = true
   // Habilita campos de endereço para edição de cliente existente
