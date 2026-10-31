@@ -217,4 +217,70 @@ describe('Agenda', () => {
     expect(leadService.updateMeasurement).toHaveBeenCalledWith(1, 'SCHEDULED', '2026-11-03T00:00:00')
     expect(leadInstallationService.create).not.toHaveBeenCalled()
   })
+
+  async function openVisitFor(day: string) {
+    const wrapper = await mountAgenda()
+    await wrapper.findAll('button').find((b) => b.text() === 'Novo agendamento')!.trigger('click')
+    await wrapper.find('#agenda-lead').setValue('Ana')
+    await wrapper.findAll('button').find((b) => b.text().includes('Ana Box'))!.trigger('click')
+    await wrapper.findAll('button').find((b) => b.text() === 'Visita técnica')!.trigger('click')
+    await wrapper.find('#agenda-date').setValue(day)
+    return wrapper
+  }
+
+  const submitButton = (wrapper: Awaited<ReturnType<typeof mountAgenda>>) =>
+    wrapper.findAll('button').find((b) => b.text() === 'Agendar')!
+
+  it('asks before replacing a visit already scheduled on another day', async () => {
+    vi.mocked(leadService.getAllNonPaginated).mockResolvedValue([
+      lead({ measurementStatus: 'SCHEDULED', measurementDate: '2026-11-05T00:00:00' }),
+    ] as never)
+    vi.mocked(leadService.updateMeasurement).mockResolvedValue({} as never)
+    const wrapper = await openVisitFor('2026-11-03')
+
+    expect(wrapper.text()).toContain('já tem visita marcada em 05/11')
+    expect(submitButton(wrapper).attributes('disabled')).toBeDefined()
+    await wrapper.find('form').trigger('submit')
+    await flushPromises()
+    expect(leadService.updateMeasurement).not.toHaveBeenCalled()
+
+    await wrapper.find('#agenda-confirm-overwrite').setValue(true)
+    expect(submitButton(wrapper).attributes('disabled')).toBeUndefined()
+    await wrapper.find('form').trigger('submit')
+    await flushPromises()
+    expect(leadService.updateMeasurement).toHaveBeenCalledWith(1, 'SCHEDULED', '2026-11-03T00:00:00')
+  })
+
+  it('asks before reopening a measurement that is already done', async () => {
+    vi.mocked(leadService.getAllNonPaginated).mockResolvedValue([
+      lead({ measurementStatus: 'DONE', measurementDate: '2026-10-27T00:00:00' }),
+    ] as never)
+    vi.mocked(leadService.updateMeasurement).mockResolvedValue({} as never)
+    const wrapper = await openVisitFor('2026-11-03')
+
+    expect(wrapper.text()).toContain('Medição já concluída em 27/10')
+    expect(submitButton(wrapper).attributes('disabled')).toBeDefined()
+    await wrapper.find('form').trigger('submit')
+    await flushPromises()
+    expect(leadService.updateMeasurement).not.toHaveBeenCalled()
+
+    await wrapper.find('#agenda-confirm-overwrite').setValue(true)
+    await wrapper.find('form').trigger('submit')
+    await flushPromises()
+    expect(leadService.updateMeasurement).toHaveBeenCalledWith(1, 'SCHEDULED', '2026-11-03T00:00:00')
+  })
+
+  it('does not warn when the visit is already scheduled on the same day', async () => {
+    vi.mocked(leadService.getAllNonPaginated).mockResolvedValue([
+      lead({ measurementStatus: 'SCHEDULED', measurementDate: '2026-11-03T00:00:00' }),
+    ] as never)
+    vi.mocked(leadService.updateMeasurement).mockResolvedValue({} as never)
+    const wrapper = await openVisitFor('2026-11-03')
+
+    expect(wrapper.text()).not.toContain('já tem visita marcada')
+    expect(wrapper.find('#agenda-confirm-overwrite').exists()).toBe(false)
+    await wrapper.find('form').trigger('submit')
+    await flushPromises()
+    expect(leadService.updateMeasurement).toHaveBeenCalledWith(1, 'SCHEDULED', '2026-11-03T00:00:00')
+  })
 })

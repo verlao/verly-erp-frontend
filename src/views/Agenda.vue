@@ -186,6 +186,17 @@
           >
             Dia sugerido pela conversa ({{ fmtDay(suggestedVisitDay) }}). É sugestão, não confirmação.
           </p>
+          <template v-if="visitConflict">
+            <p class="rounded-md border border-warning/40 bg-warning/10 px-3 py-2 text-xs text-warning">
+              {{ visitConflict }}
+            </p>
+            <div class="flex items-center gap-2">
+              <input id="agenda-confirm-overwrite" v-model="confirmOverwrite" type="checkbox" />
+              <Label for="agenda-confirm-overwrite">
+                {{ selectedLead?.measurementStatus === 'DONE' ? 'Confirmo que quero reabrir a medição' : 'Confirmo que quero substituir' }}
+              </Label>
+            </div>
+          </template>
 
           <template v-if="form.kind === 'installation'">
             <div>
@@ -260,7 +271,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { Plus } from 'lucide-vue-next'
 import Button from '../components/ui/Button.vue'
 import Dialog from '../components/ui/Dialog.vue'
@@ -446,6 +457,7 @@ const suggestedVisitDay = ref<string | null>(null)
 
 function pickLead(lead: LeadDTO) {
   selectedLead.value = lead
+  confirmOverwrite.value = false
   leadQuery.value = lead.name
   const rawDay = parseLeadData(lead.data)?.signals?.visit?.date
   suggestedVisitDay.value =
@@ -464,9 +476,31 @@ function setKind(kind: 'visit' | 'installation') {
   if (kind === 'visit') form.value.time = ''
 }
 
+// Agendar visita grava SCHEDULED no lead: sobrescreve a visita de outro dia ou
+// reabre uma medição já concluída. Ambos exigem confirmação explícita.
+const visitConflict = computed<string | null>(() => {
+  const lead = selectedLead.value
+  if (!createOpen.value || form.value.kind !== 'visit' || !lead) return null
+  const day = dayOf(lead.measurementDate)
+  if (lead.measurementStatus === 'DONE') {
+    const when = day ? ` em ${fmtDay(day)}` : ''
+    return `Medição já concluída${when}. Agendar uma nova visita volta o lead para "precisa medir".`
+  }
+  if (lead.measurementStatus === 'SCHEDULED' && day && day !== form.value.date) {
+    return `Este lead já tem visita marcada em ${fmtDay(day)}. Agendar substitui essa visita.`
+  }
+  return null
+})
+
+const confirmOverwrite = ref(false)
+watch(visitConflict, (next, prev) => {
+  if (next !== prev) confirmOverwrite.value = false
+})
+
 const canSubmit = computed(() => {
   if (!form.value.date) return false
   if (!selectedLead.value && createOpen.value) return false
+  if (visitConflict.value && !confirmOverwrite.value) return false
   if (createOpen.value && form.value.kind === 'installation' && !form.value.time) return false
   if (rescheduleOpen.value && !form.value.time) return false
   return true
@@ -477,12 +511,14 @@ function openCreate() {
   leadQuery.value = ''
   formError.value = ''
   suggestedVisitDay.value = null
+  confirmOverwrite.value = false
   form.value = { kind: 'installation', date: '', time: '', address: '', responsible: currentUserName() }
   createOpen.value = true
 }
 
 async function submitCreate() {
   if (!selectedLead.value) return
+  if (visitConflict.value && !confirmOverwrite.value) return
   saving.value = true
   formError.value = ''
   try {
