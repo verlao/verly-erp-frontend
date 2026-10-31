@@ -205,16 +205,16 @@
 
           <!-- Ações: salvar / enviar PDF / enviar mensagem -->
           <div class="flex flex-col sm:flex-row gap-2 mt-4">
-            <Button variant="outline" class="flex-1" :disabled="saving || pdfLoading" @click="save()">
+            <Button variant="outline" class="flex-1" :disabled="saving || pdfLoading || calculatingAny" @click="save()">
               {{ saving ? 'Salvando…' : 'Salvar' }}
             </Button>
-            <Button class="flex-1" :disabled="saving || pdfLoading" @click="sendPdf()">
+            <Button class="flex-1" :disabled="saving || pdfLoading || calculatingAny" @click="sendPdf()">
               <FileText class="w-4 h-4 mr-2" />
               {{ pdfLoading ? 'Gerando PDF…' : 'Enviar PDF' }}
             </Button>
             <Button
               class="flex-1 bg-success hover:bg-success/90 text-success-foreground"
-              :disabled="saving || pdfLoading || !lead.phone"
+              :disabled="saving || pdfLoading || calculatingAny || !lead.phone"
               @click="sendMessage()"
             >
               <MessageSquare class="w-4 h-4 mr-2" />
@@ -303,12 +303,11 @@ function categoryFor(type: string | null | undefined): string | null {
   return NON_GLASS[type] ?? 'VIDRO_TEMPERADO'
 }
 
-// Linhas que efetivamente compõem o orçamento: preço calculado e, se fizerem
-// parte de um grupo de variantes A/B, a que o cliente escolheu.
-function includedRows(): Row[] {
+// Linhas que pertencem ao orçamento: fora de grupo A/B, ou a variante que o
+// cliente escolheu no grupo — com ou sem preço calculado.
+function quoteRows(): Row[] {
   const seenGroups = new Set<string>()
   return rows.value.filter((r) => {
-    if (r.priceUnavailable) return false
     if (!r.variantGroup) return true
     if (r.variantSelected === false) return false
     if (seenGroups.has(r.variantGroup)) return false
@@ -316,6 +315,15 @@ function includedRows(): Row[] {
     return true
   })
 }
+
+// Linhas que efetivamente compõem o total: as do orçamento com preço calculado.
+function includedRows(): Row[] {
+  return quoteRows().filter((r) => !r.priceUnavailable)
+}
+
+// Enquanto uma linha do orçamento recalcula, o preço dela ainda é o da medida
+// antiga: nem o total nem salvar/enviar podem usá-lo.
+const calculatingAny = computed(() => quoteRows().some((r) => r.calculating))
 
 function variantOptionLabel(row: Row): string {
   if (!row.variantGroup) return ''
@@ -350,6 +358,7 @@ const finalTotal = computed(() => {
 // Zero só é zero quando é zero: com item na tela e nenhum preço calculável, o
 // total não pode ser lido como "de graça" (mesmo motivo de price != 0).
 function totalLabel(value: number, ignoreOverride = false): string {
+  if (calculatingAny.value) return 'Aguardando preço'
   const hasOverride = !ignoreOverride && overridePrice.value != null
   if (!hasOverride && rows.value.length > 0 && includedRows().length === 0) return 'Aguardando preço'
   return currency.formatCurrency(value)
@@ -503,6 +512,10 @@ function buildPayload(): CreateQuoteFromLeadPayload {
 async function save(): Promise<{ id: number; daysUntilExpiration?: number } | null> {
   if (rows.value.length === 0) {
     notification.warning('Atenção', 'Adicione ao menos um item')
+    return null
+  }
+  if (calculatingAny.value) {
+    notification.warning('Atenção', 'Aguarde o cálculo do preço terminar')
     return null
   }
   if (includedRows().length === 0) {

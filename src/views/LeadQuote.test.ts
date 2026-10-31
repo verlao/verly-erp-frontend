@@ -283,3 +283,106 @@ describe('LeadQuote manual price and discount', () => {
     expect(message).toContain('💰 *TOTAL: R$ 120,00*')
   })
 })
+
+describe('LeadQuote while a price is recalculating', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    vi.mocked(leadService.getById).mockResolvedValue(lead() as never)
+    vi.mocked(leadService.getFreshById).mockResolvedValue({
+      ...lead(),
+      extractionConfirmedAt: '2026-10-30T10:00:00',
+    } as never)
+    vi.mocked(quoteService.createFromLead).mockResolvedValue({ id: 7 } as never)
+  })
+
+  const footer = (w: Awaited<ReturnType<typeof mountQuote>>, testid: string) =>
+    w.find(`[data-testid="${testid}"]`).text().replace(/ /g, ' ')
+  const actionButtons = (w: Awaited<ReturnType<typeof mountQuote>>) =>
+    ['Salvar', 'Enviar PDF', 'Enviar mensagem'].map((label) => {
+      const button = w.findAll('button').find((b) => b.text().includes(label))
+      expect(button, label).toBeTruthy()
+      return button!
+    })
+
+  async function startRecalculation() {
+    const pending = deferred<{ price: number }>()
+    vi.mocked(productService.calculate)
+      .mockReturnValueOnce(Promise.resolve({ price: 120 }) as never)
+      .mockReturnValueOnce(pending.promise as never)
+    const wrapper = await mountQuote()
+    expect(footer(wrapper, 'quote-total')).toBe('R$ 120,00')
+
+    await widthInput(wrapper).setValue('200')
+    await flushPromises()
+    return { wrapper, pending }
+  }
+
+  it('shows no price and blocks the actions until the new price arrives', async () => {
+    const { wrapper, pending } = await startRecalculation()
+
+    expect(wrapper.text()).toContain('calculando…')
+    expect(footer(wrapper, 'quote-subtotal')).toBe('Aguardando preço')
+    expect(footer(wrapper, 'quote-total')).toBe('Aguardando preço')
+    for (const button of actionButtons(wrapper)) {
+      expect(button.attributes('disabled'), button.text()).toBeDefined()
+    }
+
+    pending.resolve({ price: 240 })
+    await flushPromises()
+    expect(footer(wrapper, 'quote-total')).toBe('R$ 240,00')
+    for (const button of actionButtons(wrapper)) {
+      expect(button.attributes('disabled'), button.text()).toBeUndefined()
+    }
+  })
+
+  it('shows no price even with a manual final price', async () => {
+    const { wrapper } = await startRecalculation()
+
+    await finalPriceInput(wrapper).setValue('500')
+    await flushPromises()
+    expect(footer(wrapper, 'quote-total')).toBe('Aguardando preço')
+  })
+
+  it('does not save or send the message while the price is recalculating', async () => {
+    const { wrapper } = await startRecalculation()
+    const open = vi.spyOn(window, 'open').mockImplementation(() => null)
+    const sendMessage = actionButtons(wrapper)[2]
+
+    await sendMessage.trigger('click')
+    await flushPromises()
+    expect(quoteService.createFromLead).not.toHaveBeenCalled()
+
+    // sem o disabled, o próprio save() tem que recusar
+    sendMessage.element.removeAttribute('disabled')
+    await sendMessage.trigger('click')
+    await flushPromises()
+    expect(quoteService.createFromLead).not.toHaveBeenCalled()
+    expect(open).not.toHaveBeenCalled()
+    expect(notification.warning).toHaveBeenCalledWith('Atenção', 'Aguarde o cálculo do preço terminar')
+    open.mockRestore()
+  })
+
+  it('is not blocked by an unchosen A/B alternative that is recalculating', async () => {
+    vi.mocked(leadService.getById).mockResolvedValue({
+      ...lead(),
+      items: [
+        { quantity: 1, productType: 'BOX', color: 'INCOLOR', sheets: 1, widthCm: 100, heightCm: 100, variantGroup: 'A', variantSelected: true },
+        { quantity: 1, productType: 'JANELA', color: 'INCOLOR', sheets: 1, widthCm: 200, heightCm: 200, variantGroup: 'A', variantSelected: false },
+      ],
+    } as never)
+    const pending = deferred<{ price: number }>()
+    vi.mocked(productService.calculate)
+      .mockReturnValueOnce(Promise.resolve({ price: 100 }) as never)
+      .mockReturnValueOnce(Promise.resolve({ price: 250 }) as never)
+      .mockReturnValueOnce(pending.promise as never)
+    const wrapper = await mountQuote()
+
+    // largura da JANELA (2ª linha): o cálculo dela fica pendurado
+    await wrapper.findAll('input[type="number"]')[4].setValue('300')
+    await flushPromises()
+    expect(wrapper.text()).toContain('calculando…')
+
+    expect(footer(wrapper, 'quote-total')).toBe('R$ 100,00')
+    expect(actionButtons(wrapper)[0].attributes('disabled')).toBeUndefined()
+  })
+})
