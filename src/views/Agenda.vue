@@ -531,9 +531,10 @@ async function submitReschedule() {
   saving.value = true
   formError.value = ''
   try {
-    // PUT substitui os opcionais: reenviamos endereço/responsável atuais para não apagá-los.
+    // PUT substitui os opcionais: reenviamos pedido/endereço/responsável atuais para não apagá-los.
     await leadInstallationService.update(editing.value.leadId, editing.value.id, {
       scheduledAt: `${form.value.date}T${form.value.time}:00`,
+      orderId: editing.value.orderId,
       address: form.value.address.trim() || null,
       responsible: form.value.responsible.trim() || null,
     })

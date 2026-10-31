@@ -148,9 +148,9 @@ describe('Agenda', () => {
     expect(leadService.updateMeasurement).not.toHaveBeenCalled()
   })
 
-  it('keeps address and responsible when rescheduling, and preserves the commercial stage', async () => {
+  it('keeps order, address and responsible when rescheduling, and preserves the commercial stage', async () => {
     vi.mocked(leadInstallationService.list).mockResolvedValue([
-      installation({ address: 'Rua A, 10', responsible: 'Carlos' }),
+      installation({ orderId: 77, address: 'Rua A, 10', responsible: 'Carlos' }),
     ] as never)
     vi.mocked(leadInstallationService.update).mockResolvedValue(installation() as never)
     const wrapper = await mountAgenda()
@@ -162,6 +162,7 @@ describe('Agenda', () => {
 
     expect(leadInstallationService.update).toHaveBeenCalledWith(1, 5, {
       scheduledAt: '2026-10-30T15:00:00',
+      orderId: 77,
       address: 'Rua A, 10',
       responsible: 'Carlos',
     })
