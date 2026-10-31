@@ -179,7 +179,7 @@
 
           <!-- Totais + desconto -->
           <Card class="p-4 mt-4 space-y-2">
-            <div v-if="lead.totalEstimatedValue != null" class="flex justify-between text-sm">
+            <div v-if="lead.totalEstimatedValue != null && lead.totalEstimatedValue > 0" class="flex justify-between text-sm">
               <span class="text-muted-foreground">Estimativa da IA</span>
               <span :class="aiDiverges ? 'text-warning font-medium' : 'text-muted-foreground'">
                 {{ currency.formatCurrency(lead.totalEstimatedValue) }}
@@ -187,7 +187,7 @@
             </div>
             <div class="flex justify-between text-sm">
               <span class="text-muted-foreground">Subtotal</span>
-              <span>{{ currency.formatCurrency(subtotal) }}</span>
+              <span data-testid="quote-subtotal">{{ totalLabel(subtotal, true) }}</span>
             </div>
             <div class="flex justify-between items-center text-sm">
               <span class="text-muted-foreground">Desconto (R$)</span>
@@ -199,22 +199,25 @@
             </div>
             <div class="flex justify-between text-base font-bold border-t border-border pt-2">
               <span>Total</span>
-              <span>{{ currency.formatCurrency(finalTotal) }}</span>
+              <span data-testid="quote-total">{{ totalLabel(finalTotal) }}</span>
             </div>
+            <p v-if="pendingCount > 0" data-testid="quote-pending" class="text-xs text-warning">
+              {{ pendingMessage }}
+            </p>
           </Card>
 
           <!-- Ações: salvar / enviar PDF / enviar mensagem -->
           <div class="flex flex-col sm:flex-row gap-2 mt-4">
-            <Button variant="outline" class="flex-1" :disabled="saving || pdfLoading" @click="save()">
+            <Button variant="outline" class="flex-1" :disabled="saving || pdfLoading || calculatingAny" @click="save()">
               {{ saving ? 'Salvando…' : 'Salvar' }}
             </Button>
-            <Button class="flex-1" :disabled="saving || pdfLoading" @click="sendPdf()">
+            <Button class="flex-1" :disabled="saving || pdfLoading || calculatingAny" @click="sendPdf()">
               <FileText class="w-4 h-4 mr-2" />
               {{ pdfLoading ? 'Gerando PDF…' : 'Enviar PDF' }}
             </Button>
             <Button
               class="flex-1 bg-success hover:bg-success/90 text-success-foreground"
-              :disabled="saving || pdfLoading || !lead.phone"
+              :disabled="saving || pdfLoading || calculatingAny || !lead.phone"
               @click="sendMessage()"
             >
               <MessageSquare class="w-4 h-4 mr-2" />
@@ -238,11 +241,15 @@ import type { LeadDTO } from '../services/lead'
 import productService from '../services/product'
 import quoteService from '../services/quote'
 import type { CreateQuoteFromLeadPayload } from '../services/quote'
-import { confirmLeadExtraction } from '../services/extractionConfirmation'
+import {
+  confirmLeadExtraction,
+  LeadConfirmationNotReadError,
+} from '../services/extractionConfirmation'
 import { buildRichQuoteMessage, buildWhatsAppUrl } from '../lib/whatsapp'
 import { useLeadSignals, fmtTime } from '../composables/useLeadSignals'
 import { useCurrency } from '../composables/useCurrency'
 import { useNotification } from '../composables/useNotification'
+import { friendlyError } from '../lib/errors'
 
 interface Row {
   // null/vazio = ainda não escolhido; nunca assumir um tipo por conta própria.
@@ -265,6 +272,9 @@ interface Row {
   // pra comparar; só a variante com variantSelected !== false conta no total.
   variantGroup: string | null
   variantSelected: boolean
+  // Identifica a última medição pedida ao backend; resposta de uma medição
+  // antiga é descartada (ver recalcRow).
+  calcToken: number
 }
 
 const route = useRoute()
@@ -299,12 +309,11 @@ function categoryFor(type: string | null | undefined): string | null {
   return NON_GLASS[type] ?? 'VIDRO_TEMPERADO'
 }
 
-// Linhas que efetivamente compõem o orçamento: preço calculado e, se fizerem
-// parte de um grupo de variantes A/B, a que o cliente escolheu.
-function includedRows(): Row[] {
+// Linhas que pertencem ao orçamento: fora de grupo A/B, ou a variante que o
+// cliente escolheu no grupo — com ou sem preço calculado.
+function quoteRows(): Row[] {
   const seenGroups = new Set<string>()
   return rows.value.filter((r) => {
-    if (r.priceUnavailable) return false
     if (!r.variantGroup) return true
     if (r.variantSelected === false) return false
     if (seenGroups.has(r.variantGroup)) return false
@@ -312,6 +321,23 @@ function includedRows(): Row[] {
     return true
   })
 }
+
+// Linhas que efetivamente compõem o total: as do orçamento com preço calculado.
+function includedRows(): Row[] {
+  return quoteRows().filter((r) => !r.priceUnavailable)
+}
+
+// Enquanto uma linha do orçamento recalcula, o preço dela ainda é o da medida
+// antiga: nem o total nem salvar/enviar podem usá-lo.
+const calculatingAny = computed(() => quoteRows().some((r) => r.calculating))
+
+// Linha do orçamento sem preço: somar o resto mandaria ao cliente um orçamento
+// sem esse item, com cara de completo.
+const pendingCount = computed(() => quoteRows().filter((r) => !r.calculating && r.priceUnavailable).length)
+const pendingMessage = computed(() => {
+  const n = pendingCount.value
+  return `${n} ${n > 1 ? 'itens' : 'item'} sem preço — defina tipo e medida ou remova o item`
+})
 
 function variantOptionLabel(row: Row): string {
   if (!row.variantGroup) return ''
@@ -330,10 +356,27 @@ function selectVariant(row: Row) {
 }
 
 const subtotal = computed(() => includedRows().reduce((sum, r) => sum + (r.unitPrice || 0) * (r.quantity || 1), 0))
+// v-model.number grava "" quando o campo é apagado: vazio, não numérico ou
+// negativo vale como "sem valor", nunca como R$ 0,00.
+function validAmount(v: unknown): number | null {
+  return typeof v === 'number' && Number.isFinite(v) && v >= 0 ? v : null
+}
+const overridePrice = computed(() => validAmount(finalPriceOverride.value))
+const discountValue = computed(() => validAmount(discount.value))
+
 const finalTotal = computed(() => {
-  if (finalPriceOverride.value != null && finalPriceOverride.value >= 0) return finalPriceOverride.value
-  return Math.max(0, subtotal.value - (discount.value || 0))
+  if (overridePrice.value != null) return overridePrice.value
+  return Math.max(0, subtotal.value - (discountValue.value ?? 0))
 })
+
+// Zero só é zero quando é zero: com item na tela e nenhum preço calculável, o
+// total não pode ser lido como "de graça" (mesmo motivo de price != 0).
+function totalLabel(value: number, ignoreOverride = false): string {
+  if (calculatingAny.value || pendingCount.value > 0) return 'Aguardando preço'
+  const hasOverride = !ignoreOverride && overridePrice.value != null
+  if (!hasOverride && rows.value.length > 0 && includedRows().length === 0) return 'Aguardando preço'
+  return currency.formatCurrency(value)
+}
 
 // Estimativa da IA diverge >10% do subtotal calculado → destaca em warning.
 const aiDiverges = computed(() => {
@@ -348,19 +391,28 @@ function markPriceUnavailable(row: Row, reason: string) {
   row.priceUnavailableReason = reason
 }
 
+// Sequência global das medições: cada recalcRow invalida as respostas anteriores.
+let calcSeq = 0
+
 async function recalcRow(row: Row) {
+  const token = ++calcSeq
+  row.calcToken = token
+
   if (!row.type) {
     markPriceUnavailable(row, 'Escolha o tipo do item')
+    row.calculating = false
     return
   }
   if (row.pendingMeasurement) {
     markPriceUnavailable(row, 'Pendente de medição')
+    row.calculating = false
     return
   }
   // FORRO_PVC e PORTA_ALUMINIO são precificados por m²/unidade e legitimamente
   // não têm width/height — só exigir medida pros tipos que dependem dela.
   if (!NON_GLASS[row.type] && (!row.width || !row.height)) {
     markPriceUnavailable(row, 'Pendente de medida')
+    row.calculating = false
     return
   }
   row.calculating = true
@@ -373,6 +425,9 @@ async function recalcRow(row: Row) {
       width: row.width ?? undefined,
       height: row.height ?? undefined,
     })
+    // Medida mudou enquanto este preço vinha: a resposta é de um item que não
+    // existe mais na tela. Descartar evita preço velho com medida nova.
+    if (row.calcToken !== token) return
     // Backend pode responder price:null + priceUnavailableReason quando não
     // conseguir calcular (em vez de calcular parcial) — nunca tratar como grátis.
     const price = res?.price
@@ -385,9 +440,10 @@ async function recalcRow(row: Row) {
       row.priceUnavailableReason = null
     }
   } catch {
+    if (row.calcToken !== token) return
     markPriceUnavailable(row, 'Erro ao calcular preço')
   } finally {
-    row.calculating = false
+    if (row.calcToken === token) row.calculating = false
   }
 }
 
@@ -407,6 +463,7 @@ function addRow() {
     priceUnavailableReason: 'Escolha o tipo do item',
     variantGroup: null,
     variantSelected: true,
+    calcToken: 0,
   })
 }
 
@@ -436,6 +493,7 @@ async function load() {
       variantGroup: it.variantGroup ?? null,
       // Item antigo sem a info do backend: trata como selecionado (não filtra).
       variantSelected: it.variantSelected ?? true,
+      calcToken: 0,
     }))
     await Promise.all(rows.value.map((r) => recalcRow(r)))
   } catch {
@@ -460,14 +518,22 @@ function buildPayload(): CreateQuoteFromLeadPayload {
       height: r.height ?? undefined,
       quantity: r.quantity,
     })),
-    discount: discount.value ?? undefined,
-    finalPriceOverride: finalPriceOverride.value ?? undefined,
+    ...(discountValue.value != null ? { discount: discountValue.value } : {}),
+    ...(overridePrice.value != null ? { finalPriceOverride: overridePrice.value } : {}),
   }
 }
 
 async function save(): Promise<{ id: number; daysUntilExpiration?: number } | null> {
   if (rows.value.length === 0) {
     notification.warning('Atenção', 'Adicione ao menos um item')
+    return null
+  }
+  if (calculatingAny.value) {
+    notification.warning('Atenção', 'Aguarde o cálculo do preço terminar')
+    return null
+  }
+  if (pendingCount.value > 0) {
+    notification.warning('Atenção', pendingMessage.value)
     return null
   }
   if (includedRows().length === 0) {
@@ -483,9 +549,17 @@ async function save(): Promise<{ id: number; daysUntilExpiration?: number } | nu
     notification.success('Conferência salva', 'Lead, total e tier atualizados')
     return result.quote
   } catch (e: any) {
+    // O POST já criou o orçamento: pedir para salvar de novo duplicaria.
+    if (e instanceof LeadConfirmationNotReadError) {
+      notification.error(
+        'Orçamento criado',
+        `O orçamento #${e.quoteId} foi criado, mas a confirmação do lead não voltou. Recarregue a página para conferir — não salve de novo.`,
+      )
+      return null
+    }
     notification.error(
       'Erro ao confirmar',
-      e.response?.data?.message || e.message || 'Não foi possível salvar a conferência',
+      friendlyError(e, 'Não foi possível salvar a conferência'),
     )
     return null
   } finally {
@@ -551,7 +625,7 @@ async function sendMessage() {
       lineTotal: (r.unitPrice || 0) * (r.quantity || 1),
     })),
     total: finalTotal.value,
-    discount: finalPriceOverride.value == null ? discount.value ?? undefined : undefined,
+    discount: overridePrice.value == null ? discountValue.value ?? undefined : undefined,
     validityDays: created.daysUntilExpiration ?? 7,
   })
   window.open(buildWhatsAppUrl(lead.value.phone, message), '_blank')
