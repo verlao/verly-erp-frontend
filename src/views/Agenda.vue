@@ -467,6 +467,14 @@ function pickLead(lead: LeadDTO) {
   }
 }
 
+// Editar a busca depois de escolher desfaz a escolha: o submit volta a exigir um lead.
+watch(leadQuery, (query) => {
+  if (selectedLead.value && query !== selectedLead.value.name) {
+    selectedLead.value = null
+    suggestedVisitDay.value = null
+  }
+})
+
 function setKind(kind: 'visit' | 'installation') {
   form.value.kind = kind
   // Trocar para visita aplica o dia sugerido (se houver) e mantém a hora fora da visita.

@@ -148,6 +148,33 @@ describe('Agenda', () => {
     expect(leadService.updateMeasurement).not.toHaveBeenCalled()
   })
 
+  it('lets the lead search pick a different lead after one was chosen', async () => {
+    vi.mocked(leadService.getAllNonPaginated).mockResolvedValue([
+      lead(),
+      lead({ id: 2, name: 'Bruno Vidro', phone: '11888888888' }),
+    ] as never)
+    vi.mocked(leadInstallationService.create).mockResolvedValue(installation() as never)
+    const wrapper = await mountAgenda()
+
+    await wrapper.findAll('button').find((b) => b.text() === 'Novo agendamento')!.trigger('click')
+    await wrapper.find('#agenda-lead').setValue('Ana')
+    await wrapper.findAll('button').find((b) => b.text().includes('Ana Box'))!.trigger('click')
+    await wrapper.find('#agenda-lead').setValue('Bruno')
+
+    const bruno = wrapper.findAll('button').find((b) => b.text().includes('Bruno Vidro'))
+    expect(bruno).toBeDefined()
+    expect(submitButton(wrapper).attributes('disabled')).toBeDefined()
+
+    await bruno!.trigger('click')
+    await wrapper.find('#agenda-date').setValue('2026-11-02')
+    await wrapper.find('#agenda-time').setValue('09:30')
+    await wrapper.find('form').trigger('submit')
+    await flushPromises()
+
+    expect(leadInstallationService.create).toHaveBeenCalledTimes(1)
+    expect(vi.mocked(leadInstallationService.create).mock.calls[0][0]).toBe(2)
+  })
+
   it('keeps order, address and responsible when rescheduling, and preserves the commercial stage', async () => {
     vi.mocked(leadInstallationService.list).mockResolvedValue([
       installation({ orderId: 77, address: 'Rua A, 10', responsible: 'Carlos' }),
