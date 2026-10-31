@@ -84,6 +84,28 @@ describe('Agenda', () => {
     })
   })
 
+  it('ignores a stale week response that arrives after the current week', async () => {
+    let resolveStale: (rows: never) => void = () => {}
+    vi.mocked(leadInstallationService.list)
+      .mockImplementationOnce(() => Promise.resolve([]))
+      .mockImplementationOnce(() => new Promise((resolve) => (resolveStale = resolve as never)))
+      .mockImplementationOnce(() =>
+        Promise.resolve([installation({ id: 9, scheduledAt: '2026-11-11T10:00:00' })] as never),
+      )
+    const wrapper = await mountAgenda()
+
+    await wrapper.find('[aria-label="Próxima semana"]').trigger('click')
+    await wrapper.find('[aria-label="Próxima semana"]').trigger('click')
+    await flushPromises()
+    expect(wrapper.text()).toContain('11/11 10:00')
+
+    resolveStale([installation({ id: 8, scheduledAt: '2026-11-04T10:00:00' })] as never)
+    await flushPromises()
+    expect(wrapper.text()).toContain('11/11 10:00')
+    expect(wrapper.text()).not.toContain('Nenhuma instalação agendada nesta semana')
+    expect(wrapper.text()).not.toContain('04/11 10:00')
+  })
+
   it('shows a visit as a day, never inventing a time', async () => {
     vi.mocked(leadService.getAllNonPaginated).mockResolvedValue([
       lead({ measurementStatus: 'SCHEDULED', measurementDate: '2026-10-29T00:00:00' }),

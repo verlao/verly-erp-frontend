@@ -363,24 +363,33 @@ const statusClass = (status: LeadInstallationStatus) =>
     CANCELLED: 'bg-muted text-muted-foreground',
   })[status]
 
+// Só a resposta da chamada mais recente pode tocar o estado: trocar de semana
+// rápido não deixa a resposta de uma semana antiga sobrescrever a atual.
+let loadSeq = 0
+
 async function load() {
+  const seq = ++loadSeq
+  const start = rangeStart.value
+  const end = rangeEnd.value
   loading.value = true
   loadError.value = null
   try {
     const [rows, allLeads] = await Promise.all([
-      leadInstallationService.list({ start: rangeStart.value, end: rangeEnd.value }),
+      leadInstallationService.list({ start, end }),
       leadService.getAllNonPaginated(),
     ])
+    if (seq !== loadSeq) return
     // O backend já filtra pelo intervalo; refiltrar aqui garante que uma resposta
     // sem filtro (ou cache antigo) não faça a semana mostrar outro mês.
     installations.value = rows
-      .filter((row) => row.scheduledAt >= rangeStart.value && row.scheduledAt <= rangeEnd.value)
+      .filter((row) => row.scheduledAt >= start && row.scheduledAt <= end)
       .sort((a, b) => a.scheduledAt.localeCompare(b.scheduledAt))
     leads.value = allLeads
   } catch (error) {
+    if (seq !== loadSeq) return
     loadError.value = friendlyError(error, 'Não foi possível carregar a agenda')
   } finally {
-    loading.value = false
+    if (seq === loadSeq) loading.value = false
   }
 }
 
