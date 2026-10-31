@@ -44,7 +44,7 @@
           </div>
           <div class="rounded-lg border border-border bg-card divide-y divide-border">
             <div v-if="visits.length === 0" class="px-4 py-6 text-sm text-muted-foreground">
-              Nenhuma visita marcada nesta semana.
+              {{ loadError ? 'Visitas desta semana indisponíveis.' : 'Nenhuma visita marcada nesta semana.' }}
             </div>
             <div v-for="lead in visits" :key="lead.id" class="flex flex-wrap items-center gap-x-4 gap-y-1 px-4 py-3">
               <span class="text-sm font-medium text-foreground">{{ fmtDay(lead.measurementDate) }}</span>
@@ -68,7 +68,7 @@
           </div>
           <div class="rounded-lg border border-border bg-card divide-y divide-border">
             <div v-if="installations.length === 0" class="px-4 py-6 text-sm text-muted-foreground">
-              Nenhuma instalação agendada nesta semana.
+              {{ loadError ? 'Instalações desta semana indisponíveis.' : 'Nenhuma instalação agendada nesta semana.' }}
             </div>
             <div
               v-for="row in installations"
@@ -398,6 +398,9 @@ async function load() {
     leads.value = allLeads
   } catch (error) {
     if (seq !== loadSeq) return
+    // As instalações são da semana carregada; manter as da semana anterior sob o
+    // rótulo da semana nova mostraria datas erradas. Os leads não são por semana.
+    installations.value = []
     loadError.value = friendlyError(error, 'Não foi possível carregar a agenda')
   } finally {
     if (seq === loadSeq) loading.value = false

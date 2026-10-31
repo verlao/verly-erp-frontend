@@ -106,6 +106,27 @@ describe('Agenda', () => {
     expect(wrapper.text()).not.toContain('04/11 10:00')
   })
 
+  it('does not keep the previous week installations when the next week fails to load', async () => {
+    vi.mocked(leadInstallationService.list)
+      .mockResolvedValueOnce([installation()] as never)
+      .mockRejectedValueOnce(Object.assign(new Error('boom'), { response: { status: 500 } }))
+    const wrapper = await mountAgenda()
+    expect(wrapper.text()).toContain('30/10 14:00')
+
+    await wrapper.find('[aria-label="Próxima semana"]').trigger('click')
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('02/11 – 08/11')
+    expect(wrapper.text()).not.toContain('30/10 14:00')
+    // Erro não pode parecer agenda livre: nada de "Nenhuma instalação agendada".
+    expect(wrapper.text()).not.toContain('Nenhuma instalação agendada nesta semana')
+    expect(wrapper.text()).toContain('Instalações desta semana indisponíveis.')
+    const banner = wrapper.find('p.text-destructive')
+    expect(banner.exists()).toBe(true)
+    expect(banner.text()).not.toBe('')
+    expect(wrapper.text()).not.toContain('boom')
+  })
+
   it('shows a visit as a day, never inventing a time', async () => {
     vi.mocked(leadService.getAllNonPaginated).mockResolvedValue([
       lead({ measurementStatus: 'SCHEDULED', measurementDate: '2026-10-29T00:00:00' }),
