@@ -201,6 +201,9 @@
               <span>Total</span>
               <span data-testid="quote-total">{{ totalLabel(finalTotal) }}</span>
             </div>
+            <p v-if="pendingCount > 0" data-testid="quote-pending" class="text-xs text-warning">
+              {{ pendingMessage }}
+            </p>
           </Card>
 
           <!-- Ações: salvar / enviar PDF / enviar mensagem -->
@@ -325,6 +328,14 @@ function includedRows(): Row[] {
 // antiga: nem o total nem salvar/enviar podem usá-lo.
 const calculatingAny = computed(() => quoteRows().some((r) => r.calculating))
 
+// Linha do orçamento sem preço: somar o resto mandaria ao cliente um orçamento
+// sem esse item, com cara de completo.
+const pendingCount = computed(() => quoteRows().filter((r) => !r.calculating && r.priceUnavailable).length)
+const pendingMessage = computed(() => {
+  const n = pendingCount.value
+  return `${n} ${n > 1 ? 'itens' : 'item'} sem preço — defina tipo e medida ou remova o item`
+})
+
 function variantOptionLabel(row: Row): string {
   if (!row.variantGroup) return ''
   const group = rows.value.filter((r) => r.variantGroup === row.variantGroup)
@@ -358,7 +369,7 @@ const finalTotal = computed(() => {
 // Zero só é zero quando é zero: com item na tela e nenhum preço calculável, o
 // total não pode ser lido como "de graça" (mesmo motivo de price != 0).
 function totalLabel(value: number, ignoreOverride = false): string {
-  if (calculatingAny.value) return 'Aguardando preço'
+  if (calculatingAny.value || pendingCount.value > 0) return 'Aguardando preço'
   const hasOverride = !ignoreOverride && overridePrice.value != null
   if (!hasOverride && rows.value.length > 0 && includedRows().length === 0) return 'Aguardando preço'
   return currency.formatCurrency(value)
@@ -516,6 +527,10 @@ async function save(): Promise<{ id: number; daysUntilExpiration?: number } | nu
   }
   if (calculatingAny.value) {
     notification.warning('Atenção', 'Aguarde o cálculo do preço terminar')
+    return null
+  }
+  if (pendingCount.value > 0) {
+    notification.warning('Atenção', pendingMessage.value)
     return null
   }
   if (includedRows().length === 0) {

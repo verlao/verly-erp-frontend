@@ -386,3 +386,98 @@ describe('LeadQuote while a price is recalculating', () => {
     expect(actionButtons(wrapper)[0].attributes('disabled')).toBeUndefined()
   })
 })
+
+describe('LeadQuote with an item still without price', () => {
+  const PENDING_TEXT = '1 item sem preço — defina tipo e medida ou remova o item'
+
+  beforeEach(() => {
+    vi.clearAllMocks()
+    vi.mocked(leadService.getById).mockResolvedValue({
+      ...lead(),
+      items: [
+        { quantity: 1, productType: 'JANELA', color: 'INCOLOR', sheets: 1, widthCm: 100, heightCm: 100 },
+        { quantity: 1, productType: 'BOX', color: 'INCOLOR', sheets: 1, widthCm: 150, heightCm: null },
+      ],
+    } as never)
+    vi.mocked(leadService.getFreshById).mockResolvedValue({
+      ...lead(),
+      extractionConfirmedAt: '2026-10-30T10:00:00',
+    } as never)
+    vi.mocked(productService.calculate).mockResolvedValue({ price: 500 } as never)
+    vi.mocked(quoteService.createFromLead).mockResolvedValue({ id: 7 } as never)
+  })
+
+  const footer = (w: Awaited<ReturnType<typeof mountQuote>>, testid: string) =>
+    w.find(`[data-testid="${testid}"]`).text().replace(/ /g, ' ')
+  const button = (w: Awaited<ReturnType<typeof mountQuote>>, label: string) => {
+    const found = w.findAll('button').find((b) => b.text().includes(label))
+    expect(found, label).toBeTruthy()
+    return found!
+  }
+
+  it('shows no price and says which item is missing', async () => {
+    const wrapper = await mountQuote()
+
+    expect(wrapper.text()).toContain('Pendente de medida')
+    expect(footer(wrapper, 'quote-subtotal')).toBe('Aguardando preço')
+    expect(footer(wrapper, 'quote-total')).toBe('Aguardando preço')
+    expect(footer(wrapper, 'quote-pending')).toContain('1 item sem preço')
+  })
+
+  it('does not save or send a quote that leaves the item out', async () => {
+    const wrapper = await mountQuote()
+    const open = vi.spyOn(window, 'open').mockImplementation(() => null)
+
+    await button(wrapper, 'Enviar mensagem').trigger('click')
+    await flushPromises()
+    await button(wrapper, 'Salvar').trigger('click')
+    await flushPromises()
+
+    expect(quoteService.createFromLead).not.toHaveBeenCalled()
+    expect(open).not.toHaveBeenCalled()
+    expect(notification.warning).toHaveBeenCalledTimes(2)
+    expect(notification.warning).toHaveBeenCalledWith('Atenção', PENDING_TEXT)
+    open.mockRestore()
+  })
+
+  it('shows no price even with a manual final price', async () => {
+    const wrapper = await mountQuote()
+
+    // 2 linhas × (largura, altura, folhas, qtd) = 0..7; desconto = 8; preço final = 9
+    await wrapper.findAll('input[type="number"]')[9].setValue('800')
+    await flushPromises()
+    expect(footer(wrapper, 'quote-total')).toBe('Aguardando preço')
+  })
+
+  it('prices and saves the quote again once the item is removed', async () => {
+    const wrapper = await mountQuote()
+    expect(footer(wrapper, 'quote-total')).toBe('Aguardando preço')
+
+    await wrapper.findAll('button').filter((b) => b.text() === 'Remover')[1].trigger('click')
+    await flushPromises()
+    expect(footer(wrapper, 'quote-total')).toBe('R$ 500,00')
+    expect(wrapper.find('[data-testid="quote-pending"]').exists()).toBe(false)
+
+    await button(wrapper, 'Salvar').trigger('click')
+    await flushPromises()
+    expect(quoteService.createFromLead).toHaveBeenCalledTimes(1)
+    const payload = vi.mocked(quoteService.createFromLead).mock.calls[0]?.[0]
+    expect(payload?.items).toHaveLength(1)
+    expect(payload?.items[0]).toMatchObject({ type: 'JANELA', width: 100, height: 100 })
+  })
+
+  it('is not blocked by an unchosen A/B alternative without price', async () => {
+    vi.mocked(leadService.getById).mockResolvedValue({
+      ...lead(),
+      items: [
+        { quantity: 1, productType: 'BOX', color: 'INCOLOR', sheets: 1, widthCm: 100, heightCm: 100, variantGroup: 'A', variantSelected: true },
+        { quantity: 1, productType: 'JANELA', color: 'INCOLOR', sheets: 1, widthCm: null, heightCm: null, variantGroup: 'A', variantSelected: false },
+      ],
+    } as never)
+    vi.mocked(productService.calculate).mockResolvedValue({ price: 100 } as never)
+    const wrapper = await mountQuote()
+
+    expect(footer(wrapper, 'quote-total')).toBe('R$ 100,00')
+    expect(wrapper.find('[data-testid="quote-pending"]').exists()).toBe(false)
+  })
+})
