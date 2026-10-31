@@ -334,16 +334,23 @@ function selectVariant(row: Row) {
 }
 
 const subtotal = computed(() => includedRows().reduce((sum, r) => sum + (r.unitPrice || 0) * (r.quantity || 1), 0))
+// v-model.number grava "" quando o campo é apagado: vazio, não numérico ou
+// negativo vale como "sem valor", nunca como R$ 0,00.
+function validAmount(v: unknown): number | null {
+  return typeof v === 'number' && Number.isFinite(v) && v >= 0 ? v : null
+}
+const overridePrice = computed(() => validAmount(finalPriceOverride.value))
+const discountValue = computed(() => validAmount(discount.value))
+
 const finalTotal = computed(() => {
-  if (finalPriceOverride.value != null && finalPriceOverride.value >= 0) return finalPriceOverride.value
-  return Math.max(0, subtotal.value - (discount.value || 0))
+  if (overridePrice.value != null) return overridePrice.value
+  return Math.max(0, subtotal.value - (discountValue.value ?? 0))
 })
 
 // Zero só é zero quando é zero: com item na tela e nenhum preço calculável, o
 // total não pode ser lido como "de graça" (mesmo motivo de price != 0).
 function totalLabel(value: number, ignoreOverride = false): string {
-  const hasOverride =
-    !ignoreOverride && finalPriceOverride.value != null && finalPriceOverride.value >= 0
+  const hasOverride = !ignoreOverride && overridePrice.value != null
   if (!hasOverride && rows.value.length > 0 && includedRows().length === 0) return 'Aguardando preço'
   return currency.formatCurrency(value)
 }
@@ -488,8 +495,8 @@ function buildPayload(): CreateQuoteFromLeadPayload {
       height: r.height ?? undefined,
       quantity: r.quantity,
     })),
-    discount: discount.value ?? undefined,
-    finalPriceOverride: finalPriceOverride.value ?? undefined,
+    ...(discountValue.value != null ? { discount: discountValue.value } : {}),
+    ...(overridePrice.value != null ? { finalPriceOverride: overridePrice.value } : {}),
   }
 }
 
@@ -579,7 +586,7 @@ async function sendMessage() {
       lineTotal: (r.unitPrice || 0) * (r.quantity || 1),
     })),
     total: finalTotal.value,
-    discount: finalPriceOverride.value == null ? discount.value ?? undefined : undefined,
+    discount: overridePrice.value == null ? discountValue.value ?? undefined : undefined,
     validityDays: created.daysUntilExpiration ?? 7,
   })
   window.open(buildWhatsAppUrl(lead.value.phone, message), '_blank')

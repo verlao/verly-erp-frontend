@@ -202,3 +202,84 @@ describe('LeadQuote pricing', () => {
     expect(shown).not.toContain('SQL')
   })
 })
+
+const discountInput = (w: Awaited<ReturnType<typeof mountQuote>>) =>
+  w.findAll('input[type="number"]')[4]
+const finalPriceInput = (w: Awaited<ReturnType<typeof mountQuote>>) =>
+  w.findAll('input[type="number"]')[5]
+
+describe('LeadQuote manual price and discount', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    vi.mocked(leadService.getById).mockResolvedValue(lead() as never)
+    vi.mocked(leadService.getFreshById).mockResolvedValue({
+      ...lead(),
+      extractionConfirmedAt: '2026-10-30T10:00:00',
+    } as never)
+    vi.mocked(productService.calculate).mockResolvedValue({ price: 120 } as never)
+    vi.mocked(quoteService.createFromLead).mockResolvedValue({ id: 7 } as never)
+  })
+
+  const total = (w: Awaited<ReturnType<typeof mountQuote>>) =>
+    w.find('[data-testid="quote-total"]').text().replace(/ /g, ' ')
+
+  async function clickSendMessage(w: Awaited<ReturnType<typeof mountQuote>>) {
+    const open = vi.spyOn(window, 'open').mockImplementation(() => null)
+    const button = w.findAll('button').find((b) => b.text().includes('Enviar mensagem'))
+    await button!.trigger('click')
+    await flushPromises()
+    const url = String(open.mock.calls[0]?.[0] ?? '')
+    open.mockRestore()
+    return decodeURIComponent(url).replace(/ /g, ' ')
+  }
+
+  it('treats an erased manual price as no override', async () => {
+    const wrapper = await mountQuote()
+
+    await finalPriceInput(wrapper).setValue('500')
+    await flushPromises()
+    expect(total(wrapper)).toBe('R$ 500,00')
+
+    await finalPriceInput(wrapper).setValue('')
+    await flushPromises()
+    expect(total(wrapper)).toBe('R$ 120,00')
+
+    const message = await clickSendMessage(wrapper)
+    const payload = vi.mocked(quoteService.createFromLead).mock.calls[0]?.[0]
+    expect(payload).not.toHaveProperty('finalPriceOverride')
+    expect(payload).not.toHaveProperty('discount')
+    expect(message).toContain('💰 *TOTAL: R$ 120,00*')
+    expect(message).not.toContain('R$ 0,00')
+  })
+
+  it('treats an erased discount as no discount', async () => {
+    const wrapper = await mountQuote()
+
+    await discountInput(wrapper).setValue('20')
+    await flushPromises()
+    expect(total(wrapper)).toBe('R$ 100,00')
+
+    await discountInput(wrapper).setValue('')
+    await flushPromises()
+    expect(total(wrapper)).toBe('R$ 120,00')
+
+    const message = await clickSendMessage(wrapper)
+    const payload = vi.mocked(quoteService.createFromLead).mock.calls[0]?.[0]
+    expect(payload).not.toHaveProperty('discount')
+    expect(message).toContain('💰 *TOTAL: R$ 120,00*')
+    expect(message).not.toContain('Desconto')
+  })
+
+  it('ignores a negative manual price', async () => {
+    const wrapper = await mountQuote()
+
+    await finalPriceInput(wrapper).setValue('-5')
+    await flushPromises()
+    expect(total(wrapper)).toBe('R$ 120,00')
+
+    const message = await clickSendMessage(wrapper)
+    const payload = vi.mocked(quoteService.createFromLead).mock.calls[0]?.[0]
+    expect(payload).not.toHaveProperty('finalPriceOverride')
+    expect(message).toContain('💰 *TOTAL: R$ 120,00*')
+  })
+})
